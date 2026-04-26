@@ -1,0 +1,1 @@
+# AutoSpot---GDSI---G10
