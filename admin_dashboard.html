@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Administrativo - Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="admin_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="admin_dashboard.html">Administrativo</a>
+          <div class="sec-label">Operación</div>
+          <a class="active" href="admin_dashboard.html">Dashboard</a>
+          <a href="admin_documentacion.html">Validar documentación</a>
+          <a href="admin_autos_alquilados.html">Autos alquilados</a>
+          <a href="admin_check_list.html">Check-in / Check-out</a>
+          <a href="admin_incidencias.html">Incidencias</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Administrativo</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Panel administrativo</div>
+            <div class="sub">
+              Vista operativa general para validar documentación, controlar
+              alquileres y gestionar entregas y devoluciones.
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="index.html">Cerrar demo</a>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat dark">
+            <div class="stat-label">Operaciones hoy</div>
+            <div class="stat-value">12</div>
+            <div class="stat-note">Entregas, devoluciones y validaciones</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Documentos a revisar</div>
+            <div class="stat-value">8</div>
+            <div class="stat-note">Pendientes de validación</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Autos alquilados</div>
+            <div class="stat-value">14</div>
+            <div class="stat-note">Distribuidos en 5 estaciones</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Check-ins / outs hoy</div>
+            <div class="stat-value">9</div>
+            <div class="stat-note">Con fotos obligatorias</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Incidencias abiertas</div>
+            <div class="stat-value">3</div>
+            <div class="stat-note">2 daños y 1 demora reportada</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <div class="card">
+              <div class="card-title">Tareas prioritarias</div>
+              <a class="row" href="admin_documentacion.html">
+                <div class="icon">📄</div>
+                <div class="row-main">
+                  <div class="row-name">Validar documentación</div>
+                  <div class="row-sub">5 pólizas y 3 VTV pendientes</div>
+                </div>
+              </a>
+              <a class="row" href="admin_autos_alquilados.html">
+                <div class="icon">🚗</div>
+                <div class="row-main">
+                  <div class="row-name">Supervisar autos alquilados</div>
+                  <div class="row-sub">Filtrar por estación, día y estado</div>
+                </div>
+              </a>
+              <a class="row" href="admin_check_list.html">
+                <div class="icon">📷</div>
+                <div class="row-main">
+                  <div class="row-name">Gestionar check-in / check-out</div>
+                  <div class="row-sub">
+                    Con carga de fotos de retiro y devolución
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Resumen operativo</div>
+              <div class="row">
+                <div class="icon">📍</div>
+                <div class="row-main">
+                  <div class="row-name">Estación con más movimientos</div>
+                  <div class="row-sub">Palermo Soho · 6 operaciones hoy</div>
+                </div>
+              </div>
+              <a class="row" href="admin_incidencias.html"
+                ><div class="icon">🛡️</div>
+                <div class="row-main">
+                  <div class="row-name">Incidencias abiertas</div>
+                  <div class="row-sub">3 reportes pendientes de revisión</div>
+                </div></a
+              >
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-title">Accesos rápidos</div>
+              <a
+                class="btn btn-primary"
+                style="width: 100%; margin-bottom: 10px"
+                href="admin_documentacion.html"
+                >Ir a documentación</a
+              >
+              <a
+                class="btn btn-secondary"
+                style="width: 100%; margin-bottom: 10px"
+                href="admin_autos_alquilados.html"
+                >Ver autos alquilados</a
+              >
+              <a
+                class="btn btn-secondary"
+                style="width: 100%; margin-top: 10px"
+                href="admin_check_list.html"
+                >Abrir check-in / out</a
+              >
+              <a
+                class="btn btn-secondary"
+                style="width: 100%; margin-top: 10px"
+                href="admin_incidencias.html"
+                >Ver incidencias</a
+              >
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

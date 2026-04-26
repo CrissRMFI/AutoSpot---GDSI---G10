@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cliente - Pago Etios</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="user_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="user_dashboard.html">Cliente</a>
+          <div class="sec-label">Principal</div>
+          <a class="active" href="user_dashboard.html">Dashboard</a>
+          <a href="user_alquileres.html">Mis alquileres</a>
+          <a href="user_estaciones.html">Estaciones</a>
+          <a href="user_catalogo.html">Catálogo</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Cliente</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Pago del alquiler</div>
+            <div class="sub">Confirmá el pago para generar tu código</div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="user_catalogo.html"
+              >Volver al catálogo</a
+            >
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">Datos de pago</div>
+            <div class="form-grid">
+              <div class="field">
+                <label>Titular</label><input class="input" value="Grupo 10" />
+              </div>
+              <div class="field">
+                <label>Tarjeta</label
+                ><input class="input" value="Visa terminada en 4821" />
+              </div>
+              <div class="field">
+                <label>Vencimiento</label><input class="input" value="12/28" />
+              </div>
+              <div class="field">
+                <label>CVV</label><input class="input" value="***" />
+              </div>
+            </div>
+            <a
+              class="btn btn-primary"
+              style="margin-top: 16px"
+              href="user_codigo_etios.html"
+              >Pagar y continuar</a
+            >
+          </div>
+          <div class="card">
+            <div class="card-title">Resumen</div>
+            <div class="row">
+              <div class="icon">🚗</div>
+              <div class="row-main">
+                <div class="row-name">Toyota Etios 2022</div>
+                <div class="row-sub">Estación Belgrano</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="icon">💰</div>
+              <div class="row-main">
+                <div class="row-name">Precio total</div>
+                <div class="row-sub">$18.500</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

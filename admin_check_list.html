@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Administrativo - Check-in / Check-out</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="admin_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="admin_dashboard.html">Administrativo</a>
+          <div class="sec-label">Operación</div>
+          <a href="admin_dashboard.html">Dashboard</a>
+          <a href="admin_documentacion.html">Validar documentación</a>
+          <a href="admin_autos_alquilados.html">Autos alquilados</a>
+          <a class="active" href="admin_check_list.html"
+            >Check-in / Check-out</a
+          >
+          <a href="admin_incidencias.html">Incidencias</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Administrativo</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Matriz de check-in / check-out</div>
+            <div class="sub">
+              Cada auto tiene dos columnas: entrega y devolución. Si ya está
+              realizado, puede abrirse en modo lectura.
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="admin_dashboard.html"
+              >Volver al dashboard</a
+            >
+          </div>
+        </div>
+
+        <div class="check-matrix">
+          <div class="check-head">Auto / estado</div>
+          <div class="check-head">Check-out</div>
+          <div class="check-head">Check-in</div>
+
+          <div class="check-cell">
+            <div class="check-title">VW Tiguan 2023 · Cristian Roldán</div>
+            <div class="row-sub">Estación Palermo Soho · código AS-3180-TG</div>
+            <div class="pill pill-green" style="margin-top: 10px">
+              Alquiler activo
+            </div>
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Entrega realizada</div>
+            <div class="row-sub">Ya fue entregado al cliente.</div>
+            <a
+              class="btn btn-secondary"
+              style="margin-top: 12px"
+              href="admin_checkin_checkout_view_out.html"
+              >Ver check-out</a
+            >
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Devolución pendiente</div>
+            <div class="row-sub">Todavía no volvió a estación.</div>
+            <a
+              class="btn btn-primary"
+              style="margin-top: 12px"
+              href="admin_checkin_checkout_in_form.html"
+              >Completar check-in</a
+            >
+          </div>
+
+          <div class="check-cell">
+            <div class="check-title">Toyota Etios 2022 · Ana Martínez</div>
+            <div class="row-sub">Estación Belgrano · código AS-1850-ET</div>
+            <div class="pill pill-gray" style="margin-top: 10px">
+              Alquiler cerrado
+            </div>
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Entrega realizada</div>
+            <div class="row-sub">El auto salió correctamente.</div>
+            <a
+              class="btn btn-secondary"
+              style="margin-top: 12px"
+              href="admin_checkin_checkout_view_out_2.html"
+              >Ver check-out</a
+            >
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Devolución realizada</div>
+            <div class="row-sub">El auto ya fue recibido.</div>
+            <a
+              class="btn btn-secondary"
+              style="margin-top: 12px"
+              href="admin_checkin_checkout_view_in.html"
+              >Ver check-in</a
+            >
+          </div>
+
+          <div class="check-cell">
+            <div class="check-title">Peugeot 208 2024 · Sofía López</div>
+            <div class="row-sub">Estación Recoleta · código AS-2140-PG</div>
+            <div class="pill pill-green" style="margin-top: 10px">
+              Listo para entrega
+            </div>
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Entrega pendiente</div>
+            <div class="row-sub">Aprobado y listo para salir.</div>
+            <a
+              class="btn btn-primary"
+              style="margin-top: 12px"
+              href="admin_checkin_checkout_out_form.html"
+              >Completar check-out</a
+            >
+          </div>
+          <div class="check-cell">
+            <div class="row-name">Devolución futura</div>
+            <div class="row-sub">Se habilita cuando el auto salga.</div>
+            <a class="btn btn-disabled" style="margin-top: 12px" href="#"
+              >No disponible</a
+            >
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

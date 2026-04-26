@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Propietario - Auto esperando alquiler</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="owner_dashboard_full.html"
+          >Auto<span>Spot</span></a
+        >
+        <nav class="nav">
+          <div class="sec-label">Perfiles</div>
+          <a class="" href="user_dashboard.html">Perfil usuario</a>
+          <a class="active" href="owner_dashboard_full.html"
+            >Perfil propietario</a
+          >
+          <div class="sec-label">Principal</div>
+          <a class="active" href="owner_dashboard_full.html">Dashboard</a>
+          <a class="" href="owner_publicar.html">Publicar auto</a>
+          <a class="" href="owner_ingresos.html">Ver ingresos</a>
+          <a class="" href="owner_historial_bajas_full.html"
+            >Historial de publicaciones</a
+          >
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Propietario</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Detalle del auto</div>
+            <div class="sub">Gestión del estado del vehículo ya publicado</div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="owner_dashboard_full.html"
+              >Volver a mis autos</a
+            >
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <img
+              class="image-big"
+              src="https://images.unsplash.com/photo-1592853598062-a5d521d8a89d?auto=format&fit=crop&w=1400&q=80"
+              alt="Renault Kangoo 2022"
+            />
+          </div>
+          <div class="card">
+            <div class="title" style="font-size: 24px">Renault Kangoo 2022</div>
+            <div class="sub">Estación Núñez · esperando alquiler</div>
+            <div class="chips" style="margin-top: 14px">
+              <span class="chip">Utilitario</span
+              ><span class="chip">Manual</span><span class="chip">Nafta</span
+              ><span class="chip">Aire acondicionado</span>
+            </div>
+            <div class="specs">
+              <div class="spec">Patente<strong>MN 567 OP</strong></div>
+              <div class="spec">Categoría<strong>Utilitario</strong></div>
+              <div class="spec">Transmisión<strong>Automática</strong></div>
+              <div class="spec">Aire acondicionado<strong>Sí</strong></div>
+              <div class="spec">Pet friendly<strong>Sí</strong></div>
+              <div class="spec">Combustible<strong>Nafta</strong></div>
+              <div class="spec">Capacidad<strong>5 pasajeros</strong></div>
+              <div class="spec">
+                Situación actual<strong>Disponible en estación</strong>
+              </div>
+            </div>
+            <div class="card" style="margin-top: 16px; margin-bottom: 0">
+              <div class="card-title">Disponibilidad para alquiler</div>
+              <div class="switch-wrap">
+                <div>
+                  <div class="row-name">Habilitar alquiler</div>
+                  <div class="row-sub">
+                    Este auto está listo para entrar al catálogo y recibir
+                    alquileres.
+                  </div>
+                </div>
+                <div class="actions">
+                  <span class="switch on"></span>
+                  <span
+                    class="row-sub"
+                    style="font-weight: 700; color: var(--ok)"
+                    >Disponible para alquilar</span
+                  >
+                </div>
+              </div>
+              <div class="switch-wrap">
+                <div>
+                  <div class="row-name">Pausar alquiler</div>
+                  <div class="row-sub">
+                    Usá este estado cuando quieras retirarlo temporalmente del
+                    catálogo.
+                  </div>
+                </div>
+                <div class="actions">
+                  <span class="switch"></span>
+                  <span
+                    class="row-sub"
+                    style="font-weight: 700; color: var(--muted)"
+                    >Alquiler pausado</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

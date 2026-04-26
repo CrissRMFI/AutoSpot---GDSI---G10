@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Propietario - Dashboard completo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="owner_dashboard_full.html"
+          >Auto<span>Spot</span></a
+        >
+        <nav class="nav">
+          <div class="sec-label">Perfiles</div>
+          <a class="" href="user_dashboard.html">Perfil usuario</a>
+          <a class="active" href="owner_dashboard_full.html"
+            >Perfil propietario</a
+          >
+          <div class="sec-label">Principal</div>
+          <a class="active" href="owner_dashboard_full.html">Dashboard</a>
+          <a class="" href="owner_publicar.html">Publicar auto</a>
+          <a class="" href="owner_ingresos.html">Ver ingresos</a>
+          <a class="" href="owner_historial_bajas_full.html"
+            >Historial de publicaciones</a
+          >
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Propietario</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Mi panel de propietario</div>
+            <div class="sub">
+              Resumen de performance de tu flota · 5 autos activos y 2 dados de
+              baja
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="user_dashboard.html"
+              >Perfil usuario</a
+            >
+            <a class="btn btn-secondary" href="owner_publicar.html"
+              >Publicar auto +</a
+            >
+            <a class="btn btn-primary" href="owner_ingresos.html"
+              >Ver ingresos</a
+            >
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat dark">
+            <div class="stat-label">Ingresos del mes</div>
+            <div class="stat-value">$1.284.300</div>
+            <div class="stat-note">↑ +12% vs marzo</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Días alquilados</div>
+            <div class="stat-value">143</div>
+            <div class="stat-note">7 autos totales · 5 activos</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Calificación promedio</div>
+            <div class="stat-value">4.8</div>
+            <div class="stat-note">58 reseñas verificadas</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Incidentes abiertos</div>
+            <div class="stat-value">1</div>
+            <div class="stat-note">1 revisión de neumático en curso</div>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <div class="card">
+              <div class="card-title">Mis autos activos (5)</div>
+              <a class="row" href="owner_detalle_auto_rented.html">
+                <div class="icon">🚙</div>
+                <div class="row-main">
+                  <div class="row-name">VW Tiguan 2023 · AB 123 CD</div>
+                  <div class="row-sub">
+                    Estación Palermo Soho · categoría Familiar
+                  </div>
+                </div>
+                <div>
+                  <div class="pill pill-green">Alquilado</div>
+                  <div class="row-sub">Hasta hoy 19:00</div>
+                </div>
+              </a>
+              <a class="row" href="owner_detalle_auto_rented_2.html">
+                <div class="icon">🚘</div>
+                <div class="row-main">
+                  <div class="row-name">Peugeot 208 2024 · JK 234 LM</div>
+                  <div class="row-sub">
+                    Estación Recoleta · categoría Económico
+                  </div>
+                </div>
+                <div>
+                  <div class="pill pill-green">Alquilado</div>
+                  <div class="row-sub">Hasta mañana 11:00</div>
+                </div>
+              </a>
+              <a class="row" href="owner_detalle_auto_pending.html">
+                <div class="icon">🚗</div>
+                <div class="row-main">
+                  <div class="row-name">Toyota Corolla 2023 · QW 345 ER</div>
+                  <div class="row-sub">
+                    Estación Belgrano · categoría Económico
+                  </div>
+                </div>
+                <div>
+                  <div class="pill pill-green">Disponible en estación</div>
+                  <div class="row-sub">Esperando alquiler</div>
+                </div>
+              </a>
+              <a class="row" href="owner_detalle_auto_pending_2.html">
+                <div class="icon">🚐</div>
+                <div class="row-main">
+                  <div class="row-name">Renault Kangoo 2022 · MN 567 OP</div>
+                  <div class="row-sub">Estación Núñez · utilitario</div>
+                </div>
+                <div>
+                  <div class="pill pill-green">Disponible en estación</div>
+                  <div class="row-sub">Esperando alquiler</div>
+                </div>
+              </a>
+              <div class="row">
+                <div class="icon">🚕</div>
+                <div class="row-main">
+                  <div class="row-name">Fiat Cronos 2021 · GH 789 IJ</div>
+                  <div class="row-sub">
+                    Estación Caballito · revisión pendiente
+                  </div>
+                </div>
+                <div>
+                  <div class="pill pill-amber">Mantenimiento</div>
+                  <div class="row-sub">Vuelve mañana</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Últimos alquileres</div>
+              <div class="row">
+                <div class="icon">🚙</div>
+                <div class="row-main">
+                  <div class="row-name">VW Tiguan — Cristian R.</div>
+                  <div class="row-sub">Hoy · Palermo Soho · 1 día</div>
+                </div>
+                <div class="row-name">$31.800</div>
+              </div>
+              <div class="row">
+                <div class="icon">🚗</div>
+                <div class="row-main">
+                  <div class="row-name">Toyota Corolla — Ana M.</div>
+                  <div class="row-sub">15 abr · Belgrano · 2 días</div>
+                </div>
+                <div class="row-name">$37.000</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-title">
+                Historial de publicaciones
+                <a class="card-link" href="owner_historial_bajas_full.html"
+                  >Ver detalle →</a
+                >
+              </div>
+              <div class="row">
+                <div class="icon">📁</div>
+                <div class="row-main">
+                  <div class="row-name">2 autos dados de baja</div>
+                  <div class="row-sub">
+                    También convivís con autos activos en el panel
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Próxima liquidación</div>
+              <div class="price">
+                $426.800<small>A acreditar el 30 de abril</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

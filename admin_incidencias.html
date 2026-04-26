@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Administrativo - Incidencias</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="admin_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="admin_dashboard.html">Administrativo</a>
+          <div class="sec-label">Operación</div>
+          <a href="admin_dashboard.html">Dashboard</a>
+          <a href="admin_documentacion.html">Validar documentación</a>
+          <a href="admin_autos_alquilados.html">Autos alquilados</a>
+          <a href="admin_check_list.html">Check-in / Check-out</a>
+          <a class="active" href="admin_incidencias.html">Incidencias</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Administrativo</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Incidencias</div>
+            <div class="sub">
+              Reportes generados por clientes durante alquileres activos o al
+              cierre de operación
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="admin_dashboard.html"
+              >Volver al dashboard</a
+            >
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Incidencias abiertas</div>
+          <div class="row">
+            <div class="icon">⚠️</div>
+            <div class="row-main">
+              <div class="row-name">VW Tiguan 2023 · Cristian Roldán</div>
+              <div class="row-sub">
+                Rayón leve reportado en puerta delantera derecha · código
+                AS-3180-TG
+              </div>
+            </div>
+            <div class="pill pill-amber">Pendiente</div>
+          </div>
+          <div class="row">
+            <div class="icon">⏱️</div>
+            <div class="row-main">
+              <div class="row-name">Peugeot 208 2024 · Sofía López</div>
+              <div class="row-sub">
+                Demora en devolución · código AS-2140-PG
+              </div>
+            </div>
+            <div class="pill pill-amber">Pendiente</div>
+          </div>
+          <div class="row">
+            <div class="icon">🔧</div>
+            <div class="row-main">
+              <div class="row-name">Toyota Etios 2022 · Ana Martínez</div>
+              <div class="row-sub">
+                Ruido mecánico informado al check-in · código AS-1850-ET
+              </div>
+            </div>
+            <div class="pill pill-amber">En revisión</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Formulario de check-in</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="admin_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="admin_dashboard.html">Administrativo</a>
+          <div class="sec-label">Operación</div>
+          <a href="admin_dashboard.html">Dashboard</a>
+          <a href="admin_documentacion.html">Validar documentación</a>
+          <a href="admin_autos_alquilados.html">Autos alquilados</a>
+          <a class="active" href="admin_check_list.html"
+            >Check-in / Check-out</a
+          >
+          <a href="admin_incidencias.html">Incidencias</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Administrativo</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Formulario de check-in</div>
+            <div class="sub">
+              Auto que vuelve a estación después del alquiler
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="admin_check_list.html"
+              >Volver a la matriz</a
+            >
+          </div>
+        </div>
+        <div class="card" style="margin-bottom: 18px; text-align: center">
+          <div class="card-title" style="justify-content: center">
+            Código de seguridad a validar
+          </div>
+          <div
+            style="
+              font-size: 34px;
+              font-weight: 800;
+              letter-spacing: 0.08em;
+              color: var(--accent);
+            "
+          >
+            AS-3180-TG
+          </div>
+          <div class="sub" style="margin-top: 8px">
+            Debe coincidir con el código generado para el cliente.
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">Datos de operación</div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Tipo de operación</label
+                ><input class="input" value="Check-in" />
+              </div>
+              <div class="field">
+                <label>Auto</label
+                ><input class="input" value="VW Tiguan 2023" />
+              </div>
+              <div class="field">
+                <label>Cliente</label
+                ><input class="input" value="Cristian Roldán" />
+              </div>
+              <div class="field">
+                <label>Estación</label
+                ><input class="input" value="Palermo Soho" />
+              </div>
+              <div class="field">
+                <label>Código de seguridad</label
+                ><input class="input" value="AS-3180-TG" />
+              </div>
+              <div class="field">
+                <label>Combustible</label
+                ><input class="input" value="3/4 tanque" />
+              </div>
+            </div>
+            <div class="field" style="margin-top: 12px">
+              <label>Checklist</label
+              ><textarea>
+Verificar carrocería, espejos, neumáticos, luces, combustible, kilometraje e interior.</textarea
+              >
+            </div>
+            <div class="field" style="margin-top: 12px">
+              <label>Observaciones</label
+              ><textarea
+                placeholder="Daños previos, limpieza, accesorios entregados."
+              ></textarea>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Fotos requeridas</div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Frente del auto</div>
+                <div class="row-sub">Registro fotográfico</div>
+              </div>
+              <a class="btn btn-secondary" href="#">Subir foto</a>
+            </div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Lateral izquierdo</div>
+                <div class="row-sub">Registro fotográfico</div>
+              </div>
+              <a class="btn btn-secondary" href="#">Subir foto</a>
+            </div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Lateral derecho</div>
+                <div class="row-sub">Registro fotográfico</div>
+              </div>
+              <a class="btn btn-secondary" href="#">Subir foto</a>
+            </div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Interior / tablero</div>
+                <div class="row-sub">Registro fotográfico</div>
+              </div>
+              <a class="btn btn-secondary" href="#">Subir foto</a>
+            </div>
+            <a
+              class="btn btn-primary"
+              style="width: 100%; margin-top: 16px"
+              href="admin_check_list.html"
+              >Confirmar check-in</a
+            >
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

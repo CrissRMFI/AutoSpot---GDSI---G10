@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cliente - Detalle Etios</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="user_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="user_dashboard.html">Cliente</a>
+          <div class="sec-label">Principal</div>
+          <a href="user_dashboard.html">Dashboard</a>
+          <a href="user_alquileres.html">Mis alquileres</a>
+          <a href="user_estaciones.html">Estaciones</a>
+          <a class="active" href="user_catalogo.html">Catálogo</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Cliente</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Detalle del auto</div>
+            <div class="sub">
+              Información ampliada del vehículo seleccionado en catálogo
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="user_catalogo.html"
+              >Volver al catálogo</a
+            >
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <img
+              class="image-big"
+              src="toyo_etios_2022.png"
+              alt="Toyota Etios 2022"
+            />
+          </div>
+          <div class="card">
+            <div class="title" style="font-size: 24px">Toyota Etios 2022</div>
+            <div class="sub">Estación Belgrano</div>
+            <div class="chips" style="margin-top: 14px">
+              <span class="chip">Económico</span><span class="chip">Manual</span
+              ><span class="chip">Nafta</span
+              ><span class="chip">Aire acondicionado</span>
+            </div>
+            <div class="price" style="margin-top: 8px">
+              $18.500<small>por día · seguro base incluido</small>
+            </div>
+            <div class="specs">
+              <div class="spec">Transmisión<strong>Manual</strong></div>
+              <div class="spec">Aire acondicionado<strong>Sí</strong></div>
+              <div class="spec">Pet friendly<strong>No</strong></div>
+              <div class="spec">Combustible<strong>Nafta</strong></div>
+              <div class="spec">Capacidad<strong>5 pasajeros</strong></div>
+              <div class="spec">Baúl<strong>Mediano</strong></div>
+              <div class="spec">Kilometraje diario<strong>250 km</strong></div>
+              <div class="spec">Retiro<strong>Belgrano</strong></div>
+              <div class="spec">
+                Tipo de carrocería<strong>Sedán compacto</strong>
+              </div>
+              <div class="spec">Bluetooth<strong>Sí</strong></div>
+              <div class="spec">ABS<strong>Sí</strong></div>
+              <div class="spec">
+                Sensores de estacionamiento<strong>No</strong>
+              </div>
+            </div>
+            <div class="actions" style="margin-top: 18px">
+              <a class="btn btn-primary" href="user_pago_etios.html"
+                >Alquilar</a
+              >
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

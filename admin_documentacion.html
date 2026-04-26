@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Administrativo - Validar documentación</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="admin_dashboard.html">Auto<span>Spot</span></a>
+        <nav class="nav">
+          <div class="sec-label">Acceso</div>
+          <a class="active" href="admin_dashboard.html">Administrativo</a>
+          <div class="sec-label">Operación</div>
+          <a href="admin_dashboard.html">Dashboard</a>
+          <a class="active" href="admin_documentacion.html"
+            >Validar documentación</a
+          >
+          <a href="admin_autos_alquilados.html">Autos alquilados</a>
+          <a href="admin_check_list.html">Check-in / Check-out</a>
+          <a href="admin_incidencias.html">Incidencias</a>
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Administrativo</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Validar documentación</div>
+            <div class="sub">
+              Documentos enviados por usuarios propietarios al publicar un auto
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="admin_dashboard.html"
+              >Volver al dashboard</a
+            >
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Pendientes</div>
+          <div class="row">
+            <div class="icon">📄</div>
+            <div class="row-main">
+              <div class="row-name">Toyota Corolla 2023 · Roberto García</div>
+              <div class="row-sub">Título automotor + póliza + VTV</div>
+            </div>
+            <div class="actions">
+              <a class="btn btn-secondary" href="#">Ver</a
+              ><a class="btn btn-primary" href="#">Aprobar</a>
+            </div>
+          </div>
+          <div class="row">
+            <div class="icon">🛡️</div>
+            <div class="row-main">
+              <div class="row-name">Jeep Renegade 2022 · Laura M.</div>
+              <div class="row-sub">Póliza pendiente de revisión</div>
+            </div>
+            <div class="actions">
+              <a class="btn btn-secondary" href="#">Ver</a
+              ><a class="btn btn-primary" href="#">Aprobar</a>
+            </div>
+          </div>
+          <div class="row">
+            <div class="icon">✅</div>
+            <div class="row-main">
+              <div class="row-name">Renault Kangoo 2021 · Pablo T.</div>
+              <div class="row-sub">VTV subida hoy 08:15</div>
+            </div>
+            <div class="actions">
+              <a class="btn btn-secondary" href="#">Ver</a
+              ><a class="btn btn-primary" href="#">Aprobar</a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

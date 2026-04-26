@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Propietario - Publicar auto</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="back" href="index.html">← Volver al inicio</a>
+        <a class="logo" href="owner_dashboard_full.html"
+          >Auto<span>Spot</span></a
+        >
+        <nav class="nav">
+          <div class="sec-label">Perfiles</div>
+          <a class="" href="user_dashboard.html">Perfil usuario</a>
+          <a class="active" href="owner_dashboard_full.html"
+            >Perfil propietario</a
+          >
+          <div class="sec-label">Principal</div>
+          <a class="" href="owner_dashboard_full.html">Dashboard</a>
+          <a class="active" href="owner_publicar.html">Publicar auto</a>
+          <a class="" href="owner_ingresos.html">Ver ingresos</a>
+          <a class="" href="owner_historial_bajas_full.html"
+            >Historial de publicaciones</a
+          >
+        </nav>
+        <div class="userbox">
+          <div class="userline">
+            <div class="avatar">G10</div>
+            <div>
+              <div class="username">Grupo 10</div>
+              <div class="userrole">Propietario</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <div class="title">Publicar auto</div>
+            <div class="sub">
+              Formulario de alta con datos legales y documentación
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-secondary" href="owner_dashboard_full.html"
+              >Volver al panel</a
+            >
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">Formulario de alta</div>
+            <div class="form-grid">
+              <div class="field">
+                <label>Marca y modelo</label
+                ><input class="input" placeholder="Ej. Toyota Corolla 2023" />
+              </div>
+              <div class="field">
+                <label>Patente</label
+                ><input class="input" placeholder="Ej. AA 456 BB" />
+              </div>
+              <div class="field">
+                <label>Año</label><input class="input" placeholder="Ej. 2023" />
+              </div>
+              <div class="field">
+                <label>Número de chasis</label
+                ><input
+                  class="input"
+                  placeholder="Ingresá el número de chasis"
+                />
+              </div>
+              <div class="field">
+                <label>Número de motor</label
+                ><input
+                  class="input"
+                  placeholder="Ingresá el número de motor"
+                />
+              </div>
+              <div class="field">
+                <label>Titular registral</label
+                ><input class="input" placeholder="Nombre del titular" />
+              </div>
+              <div class="field">
+                <label>Cédula verde</label
+                ><input
+                  class="input"
+                  placeholder="Número o estado de vigencia"
+                />
+              </div>
+              <div class="field">
+                <label>Póliza de seguro</label
+                ><input class="input" placeholder="Número de póliza" />
+              </div>
+              <div class="field">
+                <label>VTV</label
+                ><input
+                  class="input"
+                  placeholder="Fecha de vencimiento o constancia"
+                />
+              </div>
+              <div class="field">
+                <label>Estación asignada</label
+                ><input class="input" placeholder="Ej. Belgrano" />
+              </div>
+              <div class="field">
+                <label>Teléfono de contacto</label
+                ><input class="input" placeholder="Ej. +54 11 5555 5555" />
+              </div>
+            </div>
+            <div class="field" style="margin-top: 12px">
+              <label>Descripción legal y operativa</label
+              ><textarea
+                placeholder="Describí el estado general, observaciones legales y operativas del vehículo"
+              ></textarea>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Documentación</div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Título automotor</div>
+                <div class="row-sub">PDF o imagen del título</div>
+              </div>
+              <a class="btn btn-secondary" href="owner_upload_titulo.html"
+                >Subir archivo</a
+              >
+            </div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">Póliza de seguro</div>
+                <div class="row-sub">Comprobante vigente</div>
+              </div>
+              <a class="btn btn-secondary" href="owner_upload_poliza.html"
+                >Subir archivo</a
+              >
+            </div>
+            <div class="upload-row">
+              <div>
+                <div class="row-name">VTV / revisión técnica</div>
+                <div class="row-sub">Constancia de vigencia</div>
+              </div>
+              <a class="btn btn-secondary" href="owner_upload_vtv.html"
+                >Subir archivo</a
+              >
+            </div>
+            <a
+              class="btn btn-primary"
+              style="width: 100%; margin-top: 16px"
+              href="owner_dashboard_full.html"
+              >Enviar doc a revisión</a
+            >
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
