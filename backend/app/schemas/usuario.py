@@ -10,7 +10,7 @@ Referencia de CAs cubiertos aquí:
   CA 2 → contraseña corta   → "La contrasenia debe tener minimo 8 caracteres"
 """
 import re
-
+import uuid
 from pydantic import BaseModel, field_validator
 
 # Expresión regular RFC 5322 simplificada, suficiente para validación
@@ -19,10 +19,9 @@ _EMAIL_REGEX = re.compile(
     r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
 )
 
-
 class RegistroUsuarioSchema(BaseModel):
     """
-    Payload de entrada para el registro de un nuevo Usuario (US 5U).
+    Payload de entrada para el registro de un nuevo Usuario.
 
     Campos:
         email    : Debe ser un correo electrónico con formato válido.
@@ -62,14 +61,13 @@ class RegistroUsuarioSchema(BaseModel):
             raise ValueError("La contraseña debe tener minimo 8 caracteres")
         return v
 
-
 class UsuarioPublicoSchema(BaseModel):
     """
     Respuesta pública del Usuario tras un registro exitoso.
     Nunca expone hashed_password ni datos sensibles.
     """
 
-    id: str
+    id: uuid.UUID
     email: str
     is_active: bool
 
