@@ -22,7 +22,7 @@ Referencias:
 import pytest
 from pydantic import ValidationError
 
-from app.exceptions import UsuarioNoEncontradoError
+from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.services.datos_personales_usuario import registrar_datos_personales
@@ -215,4 +215,66 @@ class TestUsuarioInexistente:
             )
 
         assert str(exc_info.value) == "Usuario no encontrado"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Regla de negocio — Datos personales ya registrados
+#
+#  La US 1U representa el registro inicial de datos personales.
+#  La actualización posterior queda reservada para la US 4U.
+# ══════════════════════════════════════════════════════════════════════════════
+class TestDatosPersonalesYaRegistrados:
+    """
+    Verifica que un Usuario no pueda registrar dos veces sus datos personales.
+
+    Esta regla evita duplicidad documental y mantiene una única fuente de verdad
+    para la identidad asociada a la cuenta.
+    """
+
+    def test_no_permite_registrar_datos_personales_dos_veces_para_mismo_usuario(
+        self,
+        db_session,
+    ):
+        """
+        Primer registro: exitoso.
+        Segundo registro para el mismo Usuario: error de dominio.
+        """
+        usuario = crear_usuario(
+            db=db_session,
+            schema=RegistroUsuarioSchema(
+                email="duplicado.datos@autospot.com",
+                password="password123",
+            ),
+        )
+
+        payload_inicial = DatosPersonalesUsuarioSchema(
+            dni="12345678",
+            nombre="Mateo",
+            apellido="Gomez",
+            foto_dni_frente_url="uploads/dni/12345678/frente.jpg",
+            foto_dni_dorso_url="uploads/dni/12345678/dorso.jpg",
+        )
+
+        registrar_datos_personales(
+            db=db_session,
+            usuario_id=usuario.id,
+            schema=payload_inicial,
+        )
+
+        payload_repetido = DatosPersonalesUsuarioSchema(
+            dni="87654321",
+            nombre="Otro",
+            apellido="Nombre",
+            foto_dni_frente_url="uploads/dni/87654321/frente.jpg",
+            foto_dni_dorso_url="uploads/dni/87654321/dorso.jpg",
+        )
+
+        with pytest.raises(DatosPersonalesYaRegistradosError) as exc_info:
+            registrar_datos_personales(
+                db=db_session,
+                usuario_id=usuario.id,
+                schema=payload_repetido,
+            )
+
+        assert str(exc_info.value) == "Datos personales ya registrados"
 

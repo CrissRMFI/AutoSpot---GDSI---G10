@@ -33,3 +33,16 @@ class UsuarioNoEncontradoError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Usuario no encontrado")
 
+
+class DatosPersonalesYaRegistradosError(AutoSpotError):
+    """
+    Se lanza cuando se intenta registrar datos personales para un Usuario
+    que ya posee un registro de documentación personal.
+
+    La US 1U cubre el registro inicial; la actualización posterior corresponde
+    a la US 4U de gestión y actualización de perfil.
+    Mensaje canónico: "Datos personales ya registrados"
+    """
+    def __init__(self) -> None:
+        super().__init__("Datos personales ya registrados")
+

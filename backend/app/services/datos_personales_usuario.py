@@ -15,7 +15,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import UsuarioNoEncontradoError
+from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from app.models.usuario import Usuario
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
@@ -44,10 +44,19 @@ def registrar_datos_personales(
 
     Raises:
         UsuarioNoEncontradoError: Si el Usuario no existe.
+        DatosPersonalesYaRegistradosError: Si el Usuario ya registró sus datos.
     """
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if usuario is None:
         raise UsuarioNoEncontradoError()
+
+    datos_existentes = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == usuario_id)
+        .first()
+    )
+    if datos_existentes is not None:
+        raise DatosPersonalesYaRegistradosError()
 
     datos_personales = DatosPersonalesUsuario(
         usuario_id=usuario_id,
