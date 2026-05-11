@@ -153,3 +153,155 @@ class TestCA1CA2_RegistroDatosPersonalesHTTP:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Errores HTTP — Usuario inexistente, duplicado y payload inválido
+# ══════════════════════════════════════════════════════════════════════════════
+class TestErroresRegistroDatosPersonalesHTTP:
+    """
+    Verifica que el endpoint traduzca correctamente errores de dominio
+    y validaciones de payload a respuestas HTTP.
+    """
+
+    def _crear_cliente(self):
+        """
+        Helper: crea engine, sesión de test y TestClient configurado.
+
+        Retorna:
+            tuple(engine, client_context_manager)
+        """
+        engine = _make_test_engine()
+        Base.metadata.create_all(engine)
+
+        TestingSessionLocal = sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=engine,
+        )
+
+        app.dependency_overrides[get_db] = _override_get_db_factory(
+            TestingSessionLocal
+        )
+
+        return engine, TestClient(app)
+
+    def test_usuario_inexistente_devuelve_404(self):
+        """
+        Si usuario_id no corresponde a una cuenta existente,
+        el endpoint debe responder 404.
+        """
+        import uuid
+
+        engine, client_context = self._crear_cliente()
+
+        try:
+            with client_context as client:
+                usuario_id_inexistente = uuid.uuid4()
+
+                response = client.put(
+                    f"/usuarios/{usuario_id_inexistente}/datos-personales",
+                    json={
+                        "dni": "00000001",
+                        "nombre": "Usuario",
+                        "apellido": "Prueba",
+                        "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
+                        "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
+                    },
+                )
+
+                assert response.status_code == 404, (
+                    f"Se esperaba 404, se recibió {response.status_code}. "
+                    f"Body: {response.text}"
+                )
+                assert response.json()["detail"] == "Usuario no encontrado"
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_datos_personales_ya_registrados_devuelve_409(self):
+        """
+        Si el Usuario ya registró datos personales,
+        el segundo intento debe responder 409.
+        """
+        engine, client_context = self._crear_cliente()
+
+        try:
+            with client_context as client:
+                usuario_id = _registrar_usuario(client)
+
+                payload = {
+                    "dni": "00000001",
+                    "nombre": "Usuario",
+                    "apellido": "Prueba",
+                    "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
+                    "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
+                }
+
+                primera_respuesta = client.put(
+                    f"/usuarios/{usuario_id}/datos-personales",
+                    json=payload,
+                )
+                assert primera_respuesta.status_code == 201
+
+                segunda_respuesta = client.put(
+                    f"/usuarios/{usuario_id}/datos-personales",
+                    json=payload,
+                )
+
+                assert segunda_respuesta.status_code == 409, (
+                    f"Se esperaba 409, se recibió {segunda_respuesta.status_code}. "
+                    f"Body: {segunda_respuesta.text}"
+                )
+                assert (
+                    segunda_respuesta.json()["detail"]
+                    == "Datos personales ya registrados"
+                )
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_payload_con_campo_obligatorio_vacio_devuelve_422(self):
+        """
+        Si falta un campo obligatorio o viene vacío,
+        FastAPI/Pydantic debe responder 422 antes de llegar al servicio.
+        """
+        engine, client_context = self._crear_cliente()
+
+        try:
+            with client_context as client:
+                usuario_id = _registrar_usuario(client)
+
+                response = client.put(
+                    f"/usuarios/{usuario_id}/datos-personales",
+                    json={
+                        "dni": "",
+                        "nombre": "Usuario",
+                        "apellido": "Prueba",
+                        "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
+                        "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
+                    },
+                )
+
+                assert response.status_code == 422, (
+                    f"Se esperaba 422, se recibió {response.status_code}. "
+                    f"Body: {response.text}"
+                )
+
+                errores = response.json().get("detail", [])
+                mensajes = [error.get("msg", "") for error in errores]
+
+                assert any("Campo obligatorio" in mensaje for mensaje in mensajes), (
+                    f"Se esperaba mensaje 'Campo obligatorio', "
+                    f"pero se recibió: {mensajes}"
+                )
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
