@@ -15,6 +15,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.exceptions import UsuarioNoEncontradoError
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from app.models.usuario import Usuario
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
@@ -42,11 +43,11 @@ def registrar_datos_personales(
         DatosPersonalesUsuario persistido.
 
     Raises:
-        ValueError: Si el Usuario no existe.
+        UsuarioNoEncontradoError: Si el Usuario no existe.
     """
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if usuario is None:
-        raise ValueError("Usuario no encontrado")
+        raise UsuarioNoEncontradoError()
 
     datos_personales = DatosPersonalesUsuario(
         usuario_id=usuario_id,

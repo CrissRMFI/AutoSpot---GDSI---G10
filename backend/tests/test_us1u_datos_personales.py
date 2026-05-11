@@ -22,6 +22,7 @@ Referencias:
 import pytest
 from pydantic import ValidationError
 
+from app.exceptions import UsuarioNoEncontradoError
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.services.datos_personales_usuario import registrar_datos_personales
@@ -175,4 +176,43 @@ class TestCA3_CamposObligatorios:
         campos_con_error = [error["loc"][0] for error in errores]
 
         assert "dni" in campos_con_error
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Regla de negocio — Usuario inexistente
+#
+#  Para registrar datos personales debe existir previamente una cuenta creada.
+#  Si el Usuario no existe, el registro no debe realizarse.
+# ══════════════════════════════════════════════════════════════════════════════
+class TestUsuarioInexistente:
+    """
+    Verifica que no se puedan registrar datos personales para un Usuario
+    inexistente.
+    """
+
+    def test_no_registra_datos_personales_si_usuario_no_existe(self, db_session):
+        """
+        Si el usuario_id no corresponde a un Usuario existente, el servicio
+        debe lanzar una excepción de dominio.
+        """
+        import uuid
+
+        payload = DatosPersonalesUsuarioSchema(
+            dni="12345678",
+            nombre="Mateo",
+            apellido="Gomez",
+            foto_dni_frente_url="uploads/dni/12345678/frente.jpg",
+            foto_dni_dorso_url="uploads/dni/12345678/dorso.jpg",
+        )
+
+        usuario_id_inexistente = uuid.uuid4()
+
+        with pytest.raises(UsuarioNoEncontradoError) as exc_info:
+            registrar_datos_personales(
+                db=db_session,
+                usuario_id=usuario_id_inexistente,
+                schema=payload,
+            )
+
+        assert str(exc_info.value) == "Usuario no encontrado"
 

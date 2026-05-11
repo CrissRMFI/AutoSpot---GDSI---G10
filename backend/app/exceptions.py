@@ -20,3 +20,16 @@ class MailExistenteError(AutoSpotError):
     """
     def __init__(self) -> None:
         super().__init__("Mail existente")
+
+
+class UsuarioNoEncontradoError(AutoSpotError):
+    """
+    Se lanza cuando se intenta operar sobre un Usuario inexistente.
+
+    Aplica a historias donde una acción depende de una cuenta previamente creada,
+    como la US 1U de registro de datos personales.
+    Mensaje canónico: "Usuario no encontrado"
+    """
+    def __init__(self) -> None:
+        super().__init__("Usuario no encontrado")
+
