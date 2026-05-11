@@ -1,0 +1,64 @@
+"""
+Servicio de negocio — US 1U: Registro datos personales.
+
+Responsabilidades de esta capa:
+    1. Verificar que el Usuario exista.
+    2. Registrar DNI, nombre y apellido.
+    3. Registrar foto frente y dorso del DNI.
+    4. Persistir los datos personales asociados al Usuario.
+    5. Dejar estado inicial de validación en PENDIENTE_VALIDACION.
+
+Esta capa NO valida campos obligatorios vacíos;
+esa responsabilidad pertenece al schema Pydantic.
+"""
+import uuid
+
+from sqlalchemy.orm import Session
+
+from app.models.datos_personales_usuario import DatosPersonalesUsuario
+from app.models.usuario import Usuario
+from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
+
+
+def registrar_datos_personales(
+    db: Session,
+    usuario_id: uuid.UUID,
+    schema: DatosPersonalesUsuarioSchema,
+) -> DatosPersonalesUsuario:
+    """
+    Registra los datos personales de un Usuario existente.
+
+    Flujo:
+        1. Verifica que exista el Usuario base creado previamente.
+        2. Crea un registro de DatosPersonalesUsuario asociado.
+        3. Persiste el registro y lo retorna hidratado.
+
+    Args:
+        db         : Sesión SQLAlchemy activa.
+        usuario_id : UUID del Usuario existente.
+        schema     : Payload ya validado por DatosPersonalesUsuarioSchema.
+
+    Returns:
+        DatosPersonalesUsuario persistido.
+
+    Raises:
+        ValueError: Si el Usuario no existe.
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario is None:
+        raise ValueError("Usuario no encontrado")
+
+    datos_personales = DatosPersonalesUsuario(
+        usuario_id=usuario_id,
+        dni=schema.dni,
+        nombre=schema.nombre,
+        apellido=schema.apellido,
+        foto_dni_frente_url=schema.foto_dni_frente_url,
+        foto_dni_dorso_url=schema.foto_dni_dorso_url,
+    )
+
+    db.add(datos_personales)
+    db.commit()
+    db.refresh(datos_personales)
+
+    return datos_personales
