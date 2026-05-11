@@ -12,15 +12,16 @@ Criterios de Aceptación cubiertos inicialmente:
   ├─────┼──────────────────────────────────────────────────────────────────┤
   │ CA1 │ Cuenta creada + carga DNI, nombre y apellido                     │
   │ CA2 │ Cuenta creada + sube foto frente y dorso del DNI                 │
+│ CA3 │ Campo obligatorio omitido o inválido → no registra e informa error│
   └─────┴──────────────────────────────────────────────────────────────────┘
-
-Pendiente:
-  CA3 │ Campo obligatorio omitido o inválido → no registra e informa error.
 
 Referencias:
   - Backlog Sprint 1 — US 1U Registro datos personales
   - docs/core_negocio/dominio_actores.md
 """
+import pytest
+from pydantic import ValidationError
+
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.services.datos_personales_usuario import registrar_datos_personales
@@ -95,3 +96,83 @@ class TestCA1CA2_RegistroDatosPersonales:
 
         # Estado inicial para futura auditoría documental
         assert datos_personales.estado_validacion == "PENDIENTE_VALIDACION"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA3 — Campo obligatorio omitido o inválido
+#
+#  "Dado que tengo una cuenta creada, cuando intento guardar los datos
+#   personales con un campo obligatorio omitido o inválido, entonces el registro
+#   no se realiza y se informa que faltan campos o hay campos incorrectos."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA3_CamposObligatorios:
+    """
+    Verifica que el schema rechaza campos obligatorios vacíos u omitidos.
+
+    Esta validación ocurre antes de llegar al servicio, por lo tanto evita que
+    se registre documentación personal incompleta.
+    """
+
+    PAYLOAD_VALIDO = {
+        "dni": "12345678",
+        "nombre": "Mateo",
+        "apellido": "Gomez",
+        "foto_dni_frente_url": "uploads/dni/12345678/frente.jpg",
+        "foto_dni_dorso_url": "uploads/dni/12345678/dorso.jpg",
+    }
+
+    def _assert_error_campo_obligatorio(self, payload: dict) -> None:
+        """
+        Helper: verifica que Pydantic rechaza el payload con el mensaje canónico.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            DatosPersonalesUsuarioSchema(**payload)
+
+        mensajes = [e["msg"] for e in exc_info.value.errors()]
+        assert any("Campo obligatorio" in msg for msg in mensajes), (
+            f"Se esperaba 'Campo obligatorio' en los errores, "
+            f"pero se recibió: {mensajes}"
+        )
+
+    def test_ca3_dni_vacio_es_invalido(self):
+        """El DNI vacío no debe ser aceptado."""
+        payload = {**self.PAYLOAD_VALIDO, "dni": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca3_nombre_vacio_es_invalido(self):
+        """El nombre vacío no debe ser aceptado."""
+        payload = {**self.PAYLOAD_VALIDO, "nombre": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca3_apellido_vacio_es_invalido(self):
+        """El apellido vacío no debe ser aceptado."""
+        payload = {**self.PAYLOAD_VALIDO, "apellido": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca3_foto_frente_vacia_es_invalida(self):
+        """La foto del frente del DNI vacía no debe ser aceptada."""
+        payload = {**self.PAYLOAD_VALIDO, "foto_dni_frente_url": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca3_foto_dorso_vacia_es_invalida(self):
+        """La foto del dorso del DNI vacía no debe ser aceptada."""
+        payload = {**self.PAYLOAD_VALIDO, "foto_dni_dorso_url": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca3_campo_obligatorio_omitido_es_invalido(self):
+        """
+        Si falta un campo obligatorio, Pydantic debe rechazar el payload.
+
+        En este caso se omite `dni`.
+        """
+        payload = self.PAYLOAD_VALIDO.copy()
+        payload.pop("dni")
+
+        with pytest.raises(ValidationError) as exc_info:
+            DatosPersonalesUsuarioSchema(**payload)
+
+        errores = exc_info.value.errors()
+        campos_con_error = [error["loc"][0] for error in errores]
+
+        assert "dni" in campos_con_error
+
