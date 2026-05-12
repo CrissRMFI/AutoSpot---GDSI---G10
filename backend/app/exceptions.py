@@ -74,6 +74,17 @@ class DatosPersonalesYaRegistradosError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Datos personales ya registrados")
 
+class DatosPersonalesNoRegistradosError(AutoSpotError):
+    """
+    Se lanza cuando se intenta acceder a datos personales de un Usuario
+    que no ha registrado su documentación personal.
+
+    La US 4U cubre la actualizacion de los datos personales, el registro
+    inicial corresponde a la US 1U.
+    Mensaje canónico: "Datos personales no registrados"
+    """
+    def __init__(self) -> None:
+        super().__init__("Datos personales no registrados")
 
 
 class VehiculoNoEncontradoError(AutoSpotError):
