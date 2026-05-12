@@ -21,7 +21,35 @@ class MailExistenteError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Mail existente")
 
+class MailInexistenteError(AutoSpotError):
+    """
+    Se lanza cuando el correo no existe en la base de datos durante el login.
+    """
+    def __init__(self) -> None:
+        super().__init__("Mail inexistente")
 
+class ContraseniaIncorrectaError(AutoSpotError):
+    """
+    Se lanza cuando el correo existe pero la contraseña no coincide.
+    """
+    def __init__(self) -> None:
+        super().__init__("Contraseña incorrecta")
+
+class MailInexistenteError(AutoSpotError):
+    """
+    Se lanza cuando el correo no existe en la base de datos durante el login.
+    """
+    def __init__(self) -> None:
+        super().__init__("Email inexistente")
+
+class ContraseniaIncorrectaError(AutoSpotError):
+    """
+    Se lanza cuando el correo existe pero la contraseña no coincide.
+    """
+    def __init__(self) -> None:
+        super().__init__("Contraseña incorrecta")
+  
+        
 class UsuarioNoEncontradoError(AutoSpotError):
     """
     Se lanza cuando se intenta operar sobre un Usuario inexistente.
@@ -58,3 +86,4 @@ class VehiculoNoEncontradoError(AutoSpotError):
     """
     def __init__(self) -> None:
         super().__init__("Vehiculo no encontrado")
+

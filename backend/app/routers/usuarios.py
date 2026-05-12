@@ -25,9 +25,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import MailExistenteError
-from app.schemas.usuario import RegistroUsuarioSchema, UsuarioPublicoSchema
-from app.services.usuario import crear_usuario
+from app.exceptions import MailExistenteError, MailInexistenteError, ContraseniaIncorrectaError
+from app.schemas.usuario import RegistroUsuarioSchema, UsuarioPublicoSchema, UsuarioLogin
+from app.services.usuario import crear_usuario, autenticar_usuario
 
 router = APIRouter(
     prefix="/usuarios",
@@ -93,6 +93,55 @@ def registrar_usuario(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),  # → "Mail existente"
+        ) from exc
+
+    return UsuarioPublicoSchema.model_validate(usuario)
+
+@router.post(
+    "/login",
+    response_model=UsuarioPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Iniciar sesión con email y contraseña",
+    description="Autentica al usuario en el sistema usando su email y contraseña.",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Usuario autenticado exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Credenciales inválidas (email inexistente o contraseña incorrecta).",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "mail_inexistente": {"value": {"detail": "Email inexistente"}},
+                        "contrasenia_incorrecta": {"value": {"detail": "Contraseña incorrecta"}}
+                    }
+                }
+            },
+        },
+    },
+)
+def iniciar_sesion(
+    payload: UsuarioLogin,
+    db: Session = Depends(get_db),
+) -> UsuarioPublicoSchema:
+    """
+    POST /usuarios/login
+    
+    Verifica las credenciales del usuario y otorga acceso al sistema.
+    Cumple con el criterio de seguridad de devolver un mensaje de error 
+    genérico para proteger la existencia de la cuenta.
+    """
+    try:
+        usuario = autenticar_usuario(db=db, credenciales=payload)
+    except MailInexistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+    except ContraseniaIncorrectaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
         ) from exc
 
     return UsuarioPublicoSchema.model_validate(usuario)
