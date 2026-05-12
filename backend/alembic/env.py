@@ -16,6 +16,8 @@ from app.database import Base, DATABASE_URL
 # Es crucial importar todos los modelos aquí para que Base.metadata los detecte
 from app.models.usuario import Usuario
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
+from app.models.vehiculo import Vehiculo
+from app.models.foto_vehiculo import FotoVehiculo
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
