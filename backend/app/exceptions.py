@@ -20,3 +20,12 @@ class MailExistenteError(AutoSpotError):
     """
     def __init__(self) -> None:
         super().__init__("Mail existente")
+
+class CredencialesInvalidasError(AutoSpotError):
+    """
+    Se lanza cuando el intento de inicio de sesión falla por email o contraseña incorrectos.
+    Mensaje genérico para no revelar información sobre la existencia de la cuenta (CA 2).
+    Mensaje canónico: "Credenciales incorrectas"
+    """
+    def __init__(self) -> None:
+        super().__init__("Credenciales incorrectas")
