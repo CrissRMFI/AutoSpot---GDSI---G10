@@ -395,3 +395,105 @@ class TestCA3_FotosVehiculo:
 
         assert foto.formato == "webp"
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA5 — Cantidad mínima de fotos requeridas
+#
+#  "Dado que soy dueño de un auto y me encuentro cargando fotos,
+#   cuando no cargo la cantidad mínima de fotos requeridas, que en este caso
+#   son 4, una de cada lado del auto, entonces se bloquea la solicitud."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA5_FotosMinimasVehiculo:
+    """
+    Verifica que el registro del vehículo exija cuatro fotos mínimas,
+    una por cada lado requerido.
+    """
+
+    PAYLOAD_VALIDO = TestCA1_CamposObligatoriosVehiculo.PAYLOAD_VALIDO
+
+    def _assert_error_fotos_requeridas(self, fotos: list[dict]) -> None:
+        """Helper: verifica que el schema rechaza el conjunto de fotos."""
+        payload = {**self.PAYLOAD_VALIDO, "fotos": fotos}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any(
+            "Cantidad minima de fotos requerida" in mensaje
+            for mensaje in mensajes
+        ), f"Se esperaba error de fotos requeridas, pero se recibió: {mensajes}"
+
+    def test_ca5_menos_de_cuatro_fotos_bloquea_solicitud(self):
+        """Con solo tres fotos, la solicitud debe bloquearse."""
+        fotos = [
+            {
+                "lado": "FRENTE",
+                "url": "uploads/vehiculos/corolla/frente.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "TRASERA",
+                "url": "uploads/vehiculos/corolla/trasera.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "LATERAL_IZQUIERDO",
+                "url": "uploads/vehiculos/corolla/lateral_izquierdo.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+        ]
+
+        self._assert_error_fotos_requeridas(fotos)
+
+    def test_ca5_cuatro_fotos_pero_falta_un_lado_requerido_bloquea_solicitud(self):
+        """
+        Aunque haya cuatro fotos, si falta un lado requerido, debe fallar.
+        En este caso falta LATERAL_DERECHO y se repite FRENTE.
+        """
+        fotos = [
+            {
+                "lado": "FRENTE",
+                "url": "uploads/vehiculos/corolla/frente_1.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "FRENTE",
+                "url": "uploads/vehiculos/corolla/frente_2.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "TRASERA",
+                "url": "uploads/vehiculos/corolla/trasera.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "LATERAL_IZQUIERDO",
+                "url": "uploads/vehiculos/corolla/lateral_izquierdo.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+        ]
+
+        self._assert_error_fotos_requeridas(fotos)
+
+    def test_ca5_cuatro_fotos_una_de_cada_lado_es_valido(self):
+        """Con cuatro fotos y una de cada lado requerido, el schema es válido."""
+        schema = RegistroVehiculoSchema(**self.PAYLOAD_VALIDO)
+
+        lados = {foto.lado for foto in schema.fotos}
+
+        assert len(schema.fotos) == 4
+        assert lados == {
+            "FRENTE",
+            "TRASERA",
+            "LATERAL_IZQUIERDO",
+            "LATERAL_DERECHO",
+        }
+
