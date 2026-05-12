@@ -15,7 +15,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError
+from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError, DatosPersonalesNoRegistradosError
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from app.models.usuario import Usuario
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
@@ -68,6 +68,55 @@ def registrar_datos_personales(
     )
 
     db.add(datos_personales)
+    db.commit()
+    db.refresh(datos_personales)
+
+    return datos_personales
+
+def actualizar_datos_personales(
+    db: Session,
+    usuario_id: uuid.UUID,
+    schema: DatosPersonalesUsuarioSchema,
+) -> DatosPersonalesUsuario:
+    """
+    Actualiza los datos personales de un Usuario existente.
+
+    Flujo:
+        1. Verifica que exista el Usuario base creado previamente.
+        2. Verifica que existan datos personales previos para ese Usuario.
+        3. Actualiza el registro de DatosPersonalesUsuario asociado.
+        4. Persiste los cambios y retorna el registro hidratado.
+
+    Args:
+        db         : Sesión SQLAlchemy activa.
+        usuario_id : UUID del Usuario existente.
+        schema     : Payload ya validado por DatosPersonalesUsuarioSchema.
+
+    Returns:
+        DatosPersonalesUsuario actualizado.
+
+    Raises:
+        UsuarioNoEncontradoError: Si el Usuario no existe.
+        DatosPersonalesNoRegistradosError: Si el Usuario no tiene datos personales previos para actualizar.
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario is None:
+        raise UsuarioNoEncontradoError()
+
+    datos_personales = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == usuario_id)
+        .first()
+    )
+    if datos_personales is None:
+        raise DatosPersonalesNoRegistradosError("No hay datos personales previos para actualizar")
+
+    datos_personales.dni = schema.dni
+    datos_personales.nombre = schema.nombre
+    datos_personales.apellido = schema.apellido
+    datos_personales.foto_dni_frente_url = schema.foto_dni_frente_url
+    datos_personales.foto_dni_dorso_url = schema.foto_dni_dorso_url
+
     db.commit()
     db.refresh(datos_personales)
 

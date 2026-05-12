@@ -9,10 +9,12 @@ Responsabilidades de esta capa:
 Esta capa NO valida formato de email ni longitud de contraseña;
 esa responsabilidad pertenece al schema Pydantic (RegistroUsuarioSchema).
 """
+import uuid
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.exceptions import MailExistenteError
+from app.exceptions import MailExistenteError, UsuarioNoEncontradoError
 from app.models.usuario import Usuario
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.utils.security import hash_password
@@ -64,3 +66,37 @@ def crear_usuario(db: Session, schema: RegistroUsuarioSchema) -> Usuario:
 
     return nuevo_usuario
 
+def actualizar_usuario(db: Session, usuario_id: uuid.UUID, schema: RegistroUsuarioSchema) -> Usuario:
+    """
+    Actualiza los datos de un Usuario existente.
+
+    Flujo:
+        1. Verifica que el Usuario exista.
+        2. Verifica unicidad del nuevo email (si se está actualizando).
+        3. Hashea la nueva contraseña (si se está actualizando).
+        4. Actualiza los campos y persiste los cambios.
+
+    Args:
+        db         : Sesión SQLAlchemy activa.
+        usuario_id : UUID del Usuario a actualizar.
+        schema     : Payload con los campos a actualizar (email y/o password)."""
+    
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise UsuarioNoEncontradoError()
+
+    if schema.email and schema.email != usuario.email:
+        email_existente = (
+            db.query(Usuario).filter(Usuario.email == schema.email and Usuario.id != usuario_id).first()
+        )
+        if email_existente:
+            raise MailExistenteError()
+        usuario.email = schema.email
+
+    if schema.password:
+        usuario.hashed_password = hash_password(schema.password)
+
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario

@@ -21,11 +21,13 @@ Lenguaje Ubicuo (dominio_actores.md):
     - El prefijo de ruta es /usuarios (entidad base de autenticación).
     - Los actores Conductor/Propietario/Operador especializan esta entidad en USs futuras.
 """
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import MailExistenteError
+from app.exceptions import MailExistenteError, UsuarioNoEncontradoError
 from app.schemas.usuario import RegistroUsuarioSchema, UsuarioPublicoSchema
 from app.services.usuario import crear_usuario
 
@@ -95,4 +97,26 @@ def registrar_usuario(
             detail=str(exc),  # → "Mail existente"
         ) from exc
 
+    return UsuarioPublicoSchema.model_validate(usuario)
+
+def actualizar_usuario(
+        usuario_id: uuid.UUID,
+        payload: RegistroUsuarioSchema,
+        db: Session = Depends(get_db),
+    ) -> UsuarioPublicoSchema:
+    """
+    Actualiza los datos de un Usuario existente.
+    """
+    try:
+        usuario = actualizar_usuario(db=db, usuario_id=usuario_id, schema=payload)
+    except UsuarioNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),  # → "Usuario no encontrado"
+        ) from exc
+    except MailExistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),  # → "Mail existente"
+        ) from exc
     return UsuarioPublicoSchema.model_validate(usuario)

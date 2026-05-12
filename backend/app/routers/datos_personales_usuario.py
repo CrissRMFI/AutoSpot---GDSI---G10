@@ -23,13 +23,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.exceptions import (
     DatosPersonalesYaRegistradosError,
+    DatosPersonalesNoRegistradosError,
     UsuarioNoEncontradoError,
 )
 from app.schemas.datos_personales_usuario import (
     DatosPersonalesUsuarioPublicoSchema,
     DatosPersonalesUsuarioSchema,
 )
-from app.services.datos_personales_usuario import registrar_datos_personales
+from app.services.datos_personales_usuario import registrar_datos_personales, actualizar_datos_personales
 
 router = APIRouter(
     prefix="/usuarios",
@@ -102,6 +103,42 @@ def registrar_datos_personales_usuario(
     except DatosPersonalesYaRegistradosError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    return DatosPersonalesUsuarioPublicoSchema.model_validate(datos_personales)
+
+def actualizar_datos_personales_usuario(
+    usuario_id: uuid.UUID,
+    payload: DatosPersonalesUsuarioSchema,
+    db: Session = Depends(get_db),
+) -> DatosPersonalesUsuarioPublicoSchema:
+    """
+    PUT /usuarios/{usuario_id}/datos-personales
+
+    Flujo:
+        1. FastAPI valida usuario_id como UUID y el body con Pydantic.
+        2. El servicio verifica que el Usuario exista.
+        3. El servicio verifica que existan datos personales previos para actualizar.
+        4. Si todo es correcto, actualiza, persiste y retorna los datos.
+
+    Returns:
+        DatosPersonalesUsuarioPublicoSchema.
+    """
+    try:
+        datos_personales = actualizar_datos_personales(
+            db=db,
+            usuario_id=usuario_id,
+            schema=payload,
+        )
+    except UsuarioNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DatosPersonalesNoRegistradosError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
 
