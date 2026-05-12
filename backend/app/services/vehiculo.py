@@ -1,0 +1,76 @@
+"""
+Servicio de negocio — US 1D: Cargar características y fotos del auto.
+
+Responsabilidades de esta capa:
+    1. Verificar que el propietario exista como Usuario base.
+    2. Registrar características obligatorias del vehículo.
+    3. Registrar fotos asociadas.
+    4. Persistir el vehículo con estado inicial PENDIENTE_DOCUMENTACION.
+
+Esta capa NO valida campos obligatorios, año, formato o cantidad de fotos;
+esas responsabilidades pertenecen al schema Pydantic.
+"""
+from sqlalchemy.orm import Session
+
+from app.exceptions import UsuarioNoEncontradoError
+from app.models.foto_vehiculo import FotoVehiculo
+from app.models.usuario import Usuario
+from app.models.vehiculo import Vehiculo
+from app.schemas.vehiculo import RegistroVehiculoSchema
+
+
+def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
+    """
+    Registra un vehículo con sus características y fotos.
+
+    Flujo:
+        1. Verifica que exista el Usuario propietario.
+        2. Crea el Vehiculo con estado inicial PENDIENTE_DOCUMENTACION.
+        3. Crea las FotoVehiculo asociadas.
+        4. Persiste y retorna el Vehiculo hidratado.
+
+    Args:
+        db     : Sesión SQLAlchemy activa.
+        schema : Payload ya validado por RegistroVehiculoSchema.
+
+    Returns:
+        Vehiculo persistido con sus fotos asociadas.
+
+    Raises:
+        UsuarioNoEncontradoError: Si el propietario no existe.
+    """
+    propietario = (
+        db.query(Usuario)
+        .filter(Usuario.id == schema.propietario_id)
+        .first()
+    )
+    if propietario is None:
+        raise UsuarioNoEncontradoError()
+
+    vehiculo = Vehiculo(
+        propietario_id=schema.propietario_id,
+        marca=schema.marca,
+        modelo=schema.modelo,
+        anio=schema.anio,
+        tipo_transmision=schema.tipo_transmision,
+        capacidad=schema.capacidad,
+        categoria=schema.categoria,
+        tipo_combustible=schema.tipo_combustible,
+        pets_friendly=schema.pets_friendly,
+    )
+
+    vehiculo.fotos = [
+        FotoVehiculo(
+            lado=foto.lado,
+            url=foto.url,
+            formato=foto.formato,
+            tamanio_bytes=foto.tamanio_bytes,
+        )
+        for foto in schema.fotos
+    ]
+
+    db.add(vehiculo)
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
