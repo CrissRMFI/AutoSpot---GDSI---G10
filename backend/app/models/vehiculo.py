@@ -5,6 +5,7 @@ Representa el activo que un dueño registra en la plataforma con sus
 características obligatorias. Las fotos se modelan en una entidad separada
 para permitir múltiples imágenes asociadas al mismo vehículo.
 """
+from decimal import Decimal
 import uuid
 from datetime import datetime, timezone
 

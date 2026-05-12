@@ -14,22 +14,23 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import UsuarioNoEncontradoError
+from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
 from app.schemas.vehiculo import (
+    DefinirPrecioVehiculoSchema,
+    PrecioVehiculoResponseSchema,
     RegistroVehiculoPayloadSchema,
     RegistroVehiculoSchema,
     VehiculoPublicoSchema,
 )
-from app.services.vehiculo import registrar_vehiculo
+from app.services.vehiculo import definir_precio_vehiculo, registrar_vehiculo
 
 router = APIRouter(
-    prefix="/usuarios",
     tags=["vehiculos"],
 )
 
 
 @router.post(
-    "/{propietario_id}/vehiculos",
+    "/usuarios/{propietario_id}/vehiculos",
     response_model=VehiculoPublicoSchema,
     status_code=status.HTTP_201_CREATED,
     summary="Registrar vehículo con características y fotos",
@@ -82,3 +83,59 @@ def registrar_vehiculo_usuario(
         ) from exc
 
     return VehiculoPublicoSchema.model_validate(vehiculo)
+
+
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/precio",
+    response_model=PrecioVehiculoResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Definir precio diario del vehículo",
+    description=(
+        "Define la tarifa diaria de alquiler para un vehículo existente. "
+        "US 5D: solo precio por día, sin descuentos, comisión ni precio dinámico."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Precio diario definido exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def definir_precio_diario_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: DefinirPrecioVehiculoSchema,
+    db: Session = Depends(get_db),
+) -> PrecioVehiculoResponseSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/precio
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Pydantic valida que precio_por_dia sea mayor a cero.
+        3. El servicio verifica que el vehículo exista.
+        4. Se persiste la tarifa diaria.
+    """
+    try:
+        vehiculo = definir_precio_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            precio_por_dia=payload.precio_por_dia,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return PrecioVehiculoResponseSchema.model_validate(vehiculo)

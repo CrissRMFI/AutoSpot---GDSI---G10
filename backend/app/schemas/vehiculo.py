@@ -13,6 +13,7 @@ Criterios de Aceptación cubiertos progresivamente:
     CA5 → cantidad mínima de fotos requeridas.
     CA6 → registro exitoso con campos correctos.
 """
+from decimal import Decimal
 import uuid
 from datetime import datetime
 
@@ -278,3 +279,40 @@ class VehiculoPublicoSchema(BaseModel):
     fotos: list[FotoVehiculoPublicoSchema]
 
     model_config = {"from_attributes": True}
+
+
+class DefinirPrecioVehiculoSchema(BaseModel):
+    """
+    Payload de entrada para definir la tarifa diaria de un vehículo.
+
+    US 5D — Alcance:
+        - solo precio por día
+        - sin descuentos
+        - sin comisión
+        - sin precio dinámico
+        - sin moneda múltiple
+        - sin precio semanal/mensual
+    """
+
+    precio_por_dia: Decimal
+
+    @field_validator("precio_por_dia")
+    @classmethod
+    def validar_precio_por_dia(cls, v: Decimal) -> Decimal:
+        """CA1 — Rechaza tarifas diarias iguales o menores a cero."""
+        if v <= 0:
+            raise ValueError("Precio por dia invalido")
+        return v
+
+
+class PrecioVehiculoResponseSchema(BaseModel):
+    """
+    Respuesta pública de la US 5D luego de definir la tarifa diaria.
+    """
+
+    id: uuid.UUID
+    precio_por_dia: Decimal
+
+    model_config = {
+        "from_attributes": True,
+    }
