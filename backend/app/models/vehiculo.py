@@ -9,7 +9,7 @@ from decimal import Decimal
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -80,6 +80,12 @@ class Vehiculo(Base):
         Boolean,
         nullable=False,
         doc="Indica si el vehículo acepta mascotas.",
+    )
+    # ── Tarifa diaria (US 5D) ────────────────────────────────────────────────
+    precio_por_dia: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=10, scale=2),
+        nullable=True,
+        doc="Tarifa diaria definida por el propietario para alquilar el vehículo.",
     )
 
     # ── Estado del registro ──────────────────────────────────────────────────
