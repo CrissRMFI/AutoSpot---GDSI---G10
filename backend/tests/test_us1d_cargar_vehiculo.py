@@ -244,3 +244,60 @@ class TestCA1_CamposObligatoriosVehiculo:
 
         self._assert_error_validacion(payload, "marca")
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA2 — Año del auto inválido
+#
+#  "Dado que soy dueño de un auto y me encuentro llenando el formulario,
+#   cuando ingreso un año mayor al actual o menor al límite permitido,
+#   entonces se informa el error correspondiente."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA2_AnioVehiculo:
+    """
+    Verifica que el schema rechaza años fuera del rango permitido.
+    """
+
+    PAYLOAD_VALIDO = TestCA1_CamposObligatoriosVehiculo.PAYLOAD_VALIDO
+
+    def _assert_error_anio_invalido(self, anio: int) -> None:
+        """Helper: verifica que el año inválido sea rechazado."""
+        payload = {**self.PAYLOAD_VALIDO, "anio": anio}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any("Anio del auto invalido" in mensaje for mensaje in mensajes), (
+            f"Se esperaba 'Anio del auto invalido', pero se recibió: {mensajes}"
+        )
+
+    def test_ca2_anio_mayor_al_actual_es_invalido(self):
+        """Un año posterior al actual no debe ser aceptado."""
+        from datetime import datetime
+
+        anio_futuro = datetime.now().year + 1
+        self._assert_error_anio_invalido(anio_futuro)
+
+    def test_ca2_anio_menor_al_limite_permitido_es_invalido(self):
+        """Un año menor a 1990 no debe ser aceptado."""
+        self._assert_error_anio_invalido(1989)
+
+    def test_ca2_anio_limite_permitido_es_valido(self):
+        """El año mínimo permitido debe ser aceptado."""
+        payload = {**self.PAYLOAD_VALIDO, "anio": 1990}
+
+        schema = RegistroVehiculoSchema(**payload)
+
+        assert schema.anio == 1990
+
+    def test_ca2_anio_actual_es_valido(self):
+        """El año actual debe ser aceptado."""
+        from datetime import datetime
+
+        anio_actual = datetime.now().year
+        payload = {**self.PAYLOAD_VALIDO, "anio": anio_actual}
+
+        schema = RegistroVehiculoSchema(**payload)
+
+        assert schema.anio == anio_actual
+
