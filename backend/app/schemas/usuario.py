@@ -72,3 +72,12 @@ class UsuarioPublicoSchema(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+class UsuarioLogin(BaseModel):
+    """
+    Payload de entrada para el inicio de sesión.
+    No requiere validaciones estrictas de longitud como el registro,
+    sino solo formato base para procesar contra la base de datos.
+    """
+    email: str
+    password: str

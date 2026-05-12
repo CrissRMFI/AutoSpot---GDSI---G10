@@ -17,6 +17,11 @@
 **entonces** el sistema debe verificar la autenticidad de los datos y otorgar acceso al entorno operativo correspondiente a su perfil.
 
 ### CA 2
-**Dado que** se ingresan credenciales erroneas,
+**Dado que** se ingresa un mail no registrado,
 **cuando** el sistema procesa el intento de acceso,
-**entonces** debe denegar la entrada mediante un mensaje que no revele informacion sobre la existencia de la cuenta o la validez de los campos individuales.
+**entonces**  debe denegar la entrada mediante un mensaje que diga "Mail inexistente".
+
+### CA 3
+**Dado que** se ingresa la contraseña incorrecta,
+**cuando** el sistema procesa el intento de acceso,
+**entonces**  debe denegar la entrada mediante un mensaje que diga "Contraseña incorrecta".
