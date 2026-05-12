@@ -301,3 +301,97 @@ class TestCA2_AnioVehiculo:
 
         assert schema.anio == anio_actual
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA3 — Foto con formato inválido o tamaño mayor al permitido
+#
+#  "Dado que soy dueño de un auto y me encuentro cargando fotos,
+#   cuando cargo una foto en un formato inválido o de mayor tamaño al permitido,
+#   entonces se rechaza la foto y se informa el error correspondiente."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA3_FotosVehiculo:
+    """
+    Verifica que el schema rechaza fotos con formato inválido, tamaño inválido
+    o tamaño superior al permitido.
+    """
+
+    def test_ca3_formato_de_foto_invalido_es_rechazado(self):
+        """Una foto con formato no permitido debe ser rechazada."""
+        with pytest.raises(ValidationError) as exc_info:
+            FotoVehiculoSchema(
+                lado="FRENTE",
+                url="uploads/vehiculos/corolla/frente.gif",
+                formato="gif",
+                tamanio_bytes=500_000,
+            )
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any("Formato de foto invalido" in mensaje for mensaje in mensajes), (
+            f"Se esperaba 'Formato de foto invalido', pero se recibió: {mensajes}"
+        )
+
+    def test_ca3_tamanio_de_foto_mayor_al_permitido_es_rechazado(self):
+        """Una foto que supera los 5MB debe ser rechazada."""
+        tamanio_mayor_a_5mb = (5 * 1024 * 1024) + 1
+
+        with pytest.raises(ValidationError) as exc_info:
+            FotoVehiculoSchema(
+                lado="FRENTE",
+                url="uploads/vehiculos/corolla/frente.jpg",
+                formato="jpg",
+                tamanio_bytes=tamanio_mayor_a_5mb,
+            )
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any("Tamanio de foto excedido" in mensaje for mensaje in mensajes), (
+            f"Se esperaba 'Tamanio de foto excedido', pero se recibió: {mensajes}"
+        )
+
+    def test_ca3_tamanio_de_foto_cero_es_rechazado(self):
+        """Una foto con tamaño cero no debe ser aceptada."""
+        with pytest.raises(ValidationError) as exc_info:
+            FotoVehiculoSchema(
+                lado="FRENTE",
+                url="uploads/vehiculos/corolla/frente.jpg",
+                formato="jpg",
+                tamanio_bytes=0,
+            )
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any("Tamanio de foto invalido" in mensaje for mensaje in mensajes), (
+            f"Se esperaba 'Tamanio de foto invalido', pero se recibió: {mensajes}"
+        )
+
+    def test_ca3_formato_jpg_es_valido(self):
+        """El formato jpg debe ser aceptado."""
+        foto = FotoVehiculoSchema(
+            lado="FRENTE",
+            url="uploads/vehiculos/corolla/frente.jpg",
+            formato="jpg",
+            tamanio_bytes=500_000,
+        )
+
+        assert foto.formato == "jpg"
+
+    def test_ca3_formato_png_es_valido(self):
+        """El formato png debe ser aceptado."""
+        foto = FotoVehiculoSchema(
+            lado="FRENTE",
+            url="uploads/vehiculos/corolla/frente.png",
+            formato="png",
+            tamanio_bytes=500_000,
+        )
+
+        assert foto.formato == "png"
+
+    def test_ca3_formato_webp_es_valido(self):
+        """El formato webp debe ser aceptado."""
+        foto = FotoVehiculoSchema(
+            lado="FRENTE",
+            url="uploads/vehiculos/corolla/frente.webp",
+            formato="webp",
+            tamanio_bytes=500_000,
+        )
+
+        assert foto.formato == "webp"
+
