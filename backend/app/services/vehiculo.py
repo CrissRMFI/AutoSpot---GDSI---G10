@@ -12,7 +12,7 @@ esas responsabilidades pertenecen al schema Pydantic.
 """
 from sqlalchemy.orm import Session
 
-from app.exceptions import UsuarioNoEncontradoError
+from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
 from app.models.foto_vehiculo import FotoVehiculo
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
@@ -70,6 +70,50 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     ]
 
     db.add(vehiculo)
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
+
+
+def definir_precio_vehiculo(
+    db: Session,
+    vehiculo_id,
+    precio_por_dia,
+) -> Vehiculo:
+    """
+    Define la tarifa diaria de un vehículo existente.
+
+    US 5D — Alcance actual:
+        - guarda precio por día
+        - sin descuentos
+        - sin comisión
+        - sin precio dinámico
+        - sin moneda múltiple
+
+    Args:
+        db             : Sesión SQLAlchemy activa.
+        vehiculo_id    : Identificador del vehículo.
+        precio_por_dia : Tarifa diaria validada por capas superiores.
+
+    Returns:
+        Vehiculo actualizado.
+
+    Nota:
+        La validación de vehículo inexistente se completará en el siguiente
+        bloque de TDD con una excepción de dominio específica.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    vehiculo.precio_por_dia = precio_por_dia
+
     db.commit()
     db.refresh(vehiculo)
 

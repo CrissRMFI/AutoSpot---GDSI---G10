@@ -46,3 +46,15 @@ class DatosPersonalesYaRegistradosError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Datos personales ya registrados")
 
+
+
+class VehiculoNoEncontradoError(AutoSpotError):
+    """
+    Se lanza cuando se intenta operar sobre un Vehiculo inexistente.
+
+    Aplica a historias donde una acción depende de un vehículo previamente
+    registrado, como la US 5D de definición de tarifa diaria.
+    Mensaje canónico: "Vehiculo no encontrado"
+    """
+    def __init__(self) -> None:
+        super().__init__("Vehiculo no encontrado")
