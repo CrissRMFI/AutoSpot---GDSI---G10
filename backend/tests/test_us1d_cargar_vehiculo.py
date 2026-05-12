@@ -10,16 +10,14 @@ Criterios de Aceptación cubiertos inicialmente:
   ┌─────┬──────────────────────────────────────────────────────────────────┐
   │ CA  │ Descripción                                                      │
   ├─────┼──────────────────────────────────────────────────────────────────┤
-  │ CA6 │ Campos obligatorios correctos → información del auto guardada    │
+  │ CA1 │ Campos obligatorios omitidos → bloquea guardado                  │
+│ CA6 │ Campos obligatorios correctos → información del auto guardada    │
   └─────┴──────────────────────────────────────────────────────────────────┘
 
-Pendientes:
-  CA1 │ Campos obligatorios omitidos → bloquea guardado.
-  CA2 │ Año mayor al actual o menor al límite permitido → error.
-  CA3 │ Foto con formato inválido o tamaño mayor al permitido → error.
-  CA4 │ Combinación marca/modelo inexistente → impide continuar.
-  CA5 │ Menos de 4 fotos, una de cada lado → bloquea solicitud.
 """
+import pytest
+from pydantic import ValidationError
+
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.schemas.vehiculo import FotoVehiculoSchema, RegistroVehiculoSchema
 from app.services.usuario import crear_usuario
@@ -111,3 +109,138 @@ class TestCA6_RegistroExitosoVehiculo:
             "LATERAL_IZQUIERDO",
             "LATERAL_DERECHO",
         }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA1 — Campos obligatorios omitidos
+#
+#  "Dado que soy dueño de un auto y me encuentro llenando el formulario,
+#   cuando falten campos obligatorios, entonces se bloquea el guardado."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA1_CamposObligatoriosVehiculo:
+    """
+    Verifica que el schema rechaza payloads incompletos o inválidos
+    antes de llegar al servicio de negocio.
+    """
+
+    PAYLOAD_VALIDO = {
+        "propietario_id": "00000000-0000-0000-0000-000000000001",
+        "marca": "Toyota",
+        "modelo": "Corolla",
+        "anio": 2020,
+        "tipo_transmision": "AUTOMATICA",
+        "capacidad": 5,
+        "categoria": "SEDAN",
+        "tipo_combustible": "NAFTA",
+        "pets_friendly": True,
+        "fotos": [
+            {
+                "lado": "FRENTE",
+                "url": "uploads/vehiculos/corolla/frente.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "TRASERA",
+                "url": "uploads/vehiculos/corolla/trasera.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "LATERAL_IZQUIERDO",
+                "url": "uploads/vehiculos/corolla/lateral_izquierdo.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "LATERAL_DERECHO",
+                "url": "uploads/vehiculos/corolla/lateral_derecho.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+        ],
+    }
+
+    def _assert_error_validacion(self, payload: dict, campo: str) -> None:
+        """
+        Helper: verifica que Pydantic rechaza el payload y marca el campo.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        errores = exc_info.value.errors()
+        campos_con_error = [error["loc"][0] for error in errores]
+
+        assert campo in campos_con_error, (
+            f"Se esperaba error en campo '{campo}', "
+            f"pero los errores fueron: {errores}"
+        )
+
+    def _assert_error_campo_obligatorio(self, payload: dict) -> None:
+        """
+        Helper: verifica que se informa el mensaje canónico de campo obligatorio.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+
+        assert any("Campo obligatorio" in mensaje for mensaje in mensajes), (
+            f"Se esperaba 'Campo obligatorio', pero se recibió: {mensajes}"
+        )
+
+    def test_ca1_marca_vacia_es_invalida(self):
+        """La marca es obligatoria."""
+        payload = {**self.PAYLOAD_VALIDO, "marca": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca1_modelo_vacio_es_invalido(self):
+        """El modelo es obligatorio."""
+        payload = {**self.PAYLOAD_VALIDO, "modelo": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca1_tipo_transmision_vacio_es_invalido(self):
+        """El tipo de transmisión es obligatorio."""
+        payload = {**self.PAYLOAD_VALIDO, "tipo_transmision": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca1_categoria_vacia_es_invalida(self):
+        """La categoría es obligatoria."""
+        payload = {**self.PAYLOAD_VALIDO, "categoria": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca1_tipo_combustible_vacio_es_invalido(self):
+        """El tipo de combustible es obligatorio."""
+        payload = {**self.PAYLOAD_VALIDO, "tipo_combustible": ""}
+        self._assert_error_campo_obligatorio(payload)
+
+    def test_ca1_capacidad_invalida_bloquea_guardado(self):
+        """La capacidad debe ser mayor a cero."""
+        payload = {**self.PAYLOAD_VALIDO, "capacidad": 0}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any("Capacidad invalida" in mensaje for mensaje in mensajes)
+
+    def test_ca1_fotos_vacias_bloquean_guardado(self):
+        """Debe enviarse la cantidad mínima de fotos requeridas."""
+        payload = {**self.PAYLOAD_VALIDO, "fotos": []}
+
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any(
+            "Cantidad minima de fotos requerida" in mensaje
+            for mensaje in mensajes
+        )
+
+    def test_ca1_campo_obligatorio_omitido_bloquea_guardado(self):
+        """Si se omite un campo obligatorio, Pydantic debe rechazar el payload."""
+        payload = self.PAYLOAD_VALIDO.copy()
+        payload.pop("marca")
+
+        self._assert_error_validacion(payload, "marca")
+
