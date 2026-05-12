@@ -21,6 +21,7 @@ Criterios cubiertos inicialmente:
   CA1 → precio mayor a cero permite guardar la tarifa diaria.
 """
 from decimal import Decimal
+import uuid
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
@@ -203,13 +204,27 @@ class TestCA1_DefinirPrecioVehiculoHTTP:
 
                 assert body["id"] == vehiculo["id"]
                 assert Decimal(str(body["precio_por_dia"])) == Decimal("35000.00")
+                TestingSessionLocal = sessionmaker(
+                    autocommit=False,
+                    autoflush=False,
+                    bind=engine,
+                )
 
+                with TestingSessionLocal() as db:
+                    vehiculo_reconsultado = (
+                        db.query(Vehiculo)
+                        .filter(Vehiculo.id == uuid.UUID(vehiculo["id"]))
+                        .first()
+                    )
+
+                    assert vehiculo_reconsultado is not None
+                    assert vehiculo_reconsultado.precio_por_dia == Decimal("35000.00")
         finally:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
 
-
+    
 # ══════════════════════════════════════════════════════════════════════════════
 #  Error HTTP — Vehículo inexistente
 # ══════════════════════════════════════════════════════════════════════════════
