@@ -20,3 +20,29 @@ class MailExistenteError(AutoSpotError):
     """
     def __init__(self) -> None:
         super().__init__("Mail existente")
+
+
+class UsuarioNoEncontradoError(AutoSpotError):
+    """
+    Se lanza cuando se intenta operar sobre un Usuario inexistente.
+
+    Aplica a historias donde una acción depende de una cuenta previamente creada,
+    como la US 1U de registro de datos personales.
+    Mensaje canónico: "Usuario no encontrado"
+    """
+    def __init__(self) -> None:
+        super().__init__("Usuario no encontrado")
+
+
+class DatosPersonalesYaRegistradosError(AutoSpotError):
+    """
+    Se lanza cuando se intenta registrar datos personales para un Usuario
+    que ya posee un registro de documentación personal.
+
+    La US 1U cubre el registro inicial; la actualización posterior corresponde
+    a la US 4U de gestión y actualización de perfil.
+    Mensaje canónico: "Datos personales ya registrados"
+    """
+    def __init__(self) -> None:
+        super().__init__("Datos personales ya registrados")
+

@@ -16,6 +16,7 @@ Documentación interactiva (generada automáticamente por FastAPI):
 """
 from fastapi import FastAPI
 
+from app.routers import datos_personales_usuario as router_datos_personales
 from app.routers import usuarios as router_usuarios
 
 app = FastAPI(
@@ -29,3 +30,4 @@ app = FastAPI(
 
 # ── Registro de routers ───────────────────────────────────────────────────────
 app.include_router(router_usuarios.router)
+app.include_router(router_datos_personales.router)

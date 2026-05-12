@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.database import Base, DATABASE_URL
 # Es crucial importar todos los modelos aquí para que Base.metadata los detecte
 from app.models.usuario import Usuario
+from app.models.datos_personales_usuario import DatosPersonalesUsuario
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
