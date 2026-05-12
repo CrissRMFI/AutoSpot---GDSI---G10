@@ -18,6 +18,7 @@ from fastapi import FastAPI
 
 from app.routers import datos_personales_usuario as router_datos_personales
 from app.routers import usuarios as router_usuarios
+from app.routers import vehiculos as router_vehiculos
 
 app = FastAPI(
     title="AutoSpot API",
@@ -30,4 +31,5 @@ app = FastAPI(
 
 # ── Registro de routers ───────────────────────────────────────────────────────
 app.include_router(router_usuarios.router)
+app.include_router(router_vehiculos.router)
 app.include_router(router_datos_personales.router)
