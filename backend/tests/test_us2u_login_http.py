@@ -112,7 +112,7 @@ class TestCA2_LoginFallidoHTTP:
         )
 
         assert response.status_code == 401
-        assert response.json() == {"detail": "Credenciales incorrectas"}
+        assert response.json() == {"detail": "Email inexistente"}
 
     def test_login_fallido_password_incorrecto_devuelve_401(self, client: TestClient):
         # 1. Registrar usuario
@@ -125,4 +125,4 @@ class TestCA2_LoginFallidoHTTP:
         )
 
         assert response.status_code == 401
-        assert response.json() == {"detail": "Credenciales incorrectas"}
+        assert response.json() == {"detail": "Contraseña incorrecta"}

@@ -25,7 +25,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import MailExistenteError, CredencialesInvalidasError
+from app.exceptions import MailExistenteError, MailInexistenteError, ContraseniaIncorrectaError
 from app.schemas.usuario import RegistroUsuarioSchema, UsuarioPublicoSchema, UsuarioLogin
 from app.services.usuario import crear_usuario, autenticar_usuario
 
@@ -108,10 +108,13 @@ def registrar_usuario(
             "description": "Usuario autenticado exitosamente.",
         },
         status.HTTP_401_UNAUTHORIZED: {
-            "description": "Credenciales inválidas (email o contraseña incorrectos).",
+            "description": "Credenciales inválidas (email inexistente o contraseña incorrecta).",
             "content": {
                 "application/json": {
-                    "example": {"detail": "Credenciales incorrectas"}
+                    "examples": {
+                        "mail_inexistente": {"value": {"detail": "Email inexistente"}},
+                        "contrasenia_incorrecta": {"value": {"detail": "Contraseña incorrecta"}}
+                    }
                 }
             },
         },
@@ -130,7 +133,12 @@ def iniciar_sesion(
     """
     try:
         usuario = autenticar_usuario(db=db, credenciales=payload)
-    except CredencialesInvalidasError as exc:
+    except MailInexistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+    except ContraseniaIncorrectaError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),

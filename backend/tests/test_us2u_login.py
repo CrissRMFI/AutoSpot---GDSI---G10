@@ -4,7 +4,7 @@ Capa: Servicios
 """
 import pytest
 
-from app.exceptions import CredencialesInvalidasError
+from app.exceptions import MailInexistenteError, ContraseniaIncorrectaError
 from app.schemas.usuario import UsuarioLogin, RegistroUsuarioSchema
 from app.services.usuario import crear_usuario, autenticar_usuario
 
@@ -34,23 +34,23 @@ def test_autenticar_usuario_exito(db_session):
 
 def test_autenticar_usuario_email_inexistente(db_session):
     """
-    CA 2: Dado que se ingresan credenciales erróneas (email no existe),
-    entonces debe denegar la entrada mediante un mensaje genérico.
+    CA 2: Dado que se ingresaun email no registrado,
+    entonces debe denegar la entrada mediante un mensaje un mensaje que diga "Email inexistente".
     """
     schema_login = UsuarioLogin(
         email="noexiste@test.com", password="Password123!"
     )
 
-    with pytest.raises(CredencialesInvalidasError) as exc_info:
+    with pytest.raises(MailInexistenteError) as exc_info:
         autenticar_usuario(db_session, schema_login)
 
-    assert str(exc_info.value) == "Credenciales incorrectas"
+    assert str(exc_info.value) == "Email inexistente"
 
 
 def test_autenticar_usuario_password_incorrecto(db_session):
     """
-    CA 2: Dado que se ingresan credenciales erróneas (password incorrecto),
-    entonces debe denegar la entrada mediante el mismo mensaje genérico.
+    CA 3: Dado que se ingresa la contraseña incorrecta,
+    entonces debe denegar la entrada mediante un mensaje que diga "Contraseña incorrecta".
     """
     # Setup: Crear un usuario
     schema_registro = RegistroUsuarioSchema(
@@ -63,7 +63,7 @@ def test_autenticar_usuario_password_incorrecto(db_session):
         email="test_login2@test.com", password="MalaPassword1!"
     )
 
-    with pytest.raises(CredencialesInvalidasError) as exc_info:
+    with pytest.raises(ContraseniaIncorrectaError) as exc_info:
         autenticar_usuario(db_session, schema_login)
 
-    assert str(exc_info.value) == "Credenciales incorrectas"
+    assert str(exc_info.value) == "Contraseña incorrecta"

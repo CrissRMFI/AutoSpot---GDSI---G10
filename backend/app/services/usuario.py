@@ -12,7 +12,7 @@ esa responsabilidad pertenece al schema Pydantic (RegistroUsuarioSchema).
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.exceptions import MailExistenteError, CredencialesInvalidasError
+from app.exceptions import MailExistenteError, MailInexistenteError, ContraseniaIncorrectaError
 from app.models.usuario import Usuario
 from app.schemas.usuario import RegistroUsuarioSchema, UsuarioLogin
 from app.utils.security import hash_password, verify_password
@@ -80,9 +80,9 @@ def autenticar_usuario(db: Session, credenciales: UsuarioLogin) -> Usuario:
     """
     usuario = db.query(Usuario).filter(Usuario.email == credenciales.email).first()
     if not usuario:
-        raise CredencialesInvalidasError()
+        raise MailInexistenteError()
         
     if not verify_password(credenciales.password, usuario.hashed_password):
-        raise CredencialesInvalidasError()
+        raise ContraseniaIncorrectaError()
         
     return usuario
