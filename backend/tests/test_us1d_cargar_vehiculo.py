@@ -497,3 +497,72 @@ class TestCA5_FotosMinimasVehiculo:
             "LATERAL_DERECHO",
         }
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CA4 — Combinación marca/modelo inexistente
+#
+#  "Dado que soy dueño de un auto y me encuentro llenando el formulario,
+#   cuando la combinación marca + modelo no exista, entonces se impide continuar."
+# ══════════════════════════════════════════════════════════════════════════════
+class TestCA4_MarcaModeloVehiculo:
+    """
+    Verifica que el schema acepte únicamente combinaciones marca/modelo
+    existentes en el catálogo inicial hardcodeado.
+    """
+
+    PAYLOAD_VALIDO = TestCA1_CamposObligatoriosVehiculo.PAYLOAD_VALIDO
+
+    def _assert_error_marca_modelo(self, marca: str, modelo: str) -> None:
+        """Helper: verifica que la combinación marca/modelo sea rechazada."""
+        payload = {
+            **self.PAYLOAD_VALIDO,
+            "marca": marca,
+            "modelo": modelo,
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            RegistroVehiculoSchema(**payload)
+
+        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
+        assert any(
+            "Combinacion marca modelo inexistente" in mensaje
+            for mensaje in mensajes
+        ), (
+            "Se esperaba 'Combinacion marca modelo inexistente', "
+            f"pero se recibió: {mensajes}"
+        )
+
+    def test_ca4_marca_modelo_existente_es_valida(self):
+        """Toyota Corolla existe en el catálogo inicial."""
+        payload = {
+            **self.PAYLOAD_VALIDO,
+            "marca": "Toyota",
+            "modelo": "Corolla",
+        }
+
+        schema = RegistroVehiculoSchema(**payload)
+
+        assert schema.marca == "Toyota"
+        assert schema.modelo == "Corolla"
+
+    def test_ca4_marca_inexistente_bloquea_solicitud(self):
+        """Una marca inexistente debe impedir continuar."""
+        self._assert_error_marca_modelo(
+            marca="MarcaInexistente",
+            modelo="Corolla",
+        )
+
+    def test_ca4_modelo_inexistente_para_marca_existente_bloquea_solicitud(self):
+        """Un modelo que no pertenece a la marca debe impedir continuar."""
+        self._assert_error_marca_modelo(
+            marca="Toyota",
+            modelo="Fiesta",
+        )
+
+    def test_ca4_modelo_inexistente_bloquea_solicitud(self):
+        """Un modelo inexistente para una marca válida debe impedir continuar."""
+        self._assert_error_marca_modelo(
+            marca="Toyota",
+            modelo="ModeloFantasma",
+        )
+

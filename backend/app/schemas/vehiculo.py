@@ -32,6 +32,18 @@ LADOS_FOTO_REQUERIDOS = {
 }
 
 
+
+# Catálogo inicial hardcodeado para US 1D.
+# Más adelante puede reemplazarse por una tabla o servicio de catálogo.
+CATALOGO_MARCA_MODELO = {
+    "Toyota": {"Corolla", "Etios", "Hilux"},
+    "Ford": {"Fiesta", "Focus", "Ranger"},
+    "Volkswagen": {"Gol", "Polo", "Amarok"},
+    "Chevrolet": {"Onix", "Cruze", "S10"},
+    "Renault": {"Clio", "Sandero", "Kangoo"},
+}
+
+
 class FotoVehiculoSchema(BaseModel):
     """
     Payload de entrada para una foto del vehículo.
@@ -129,6 +141,18 @@ class RegistroVehiculoSchema(BaseModel):
         if v <= 0:
             raise ValueError("Capacidad invalida")
         return v
+
+    @model_validator(mode="after")
+    def validar_marca_modelo(self):
+        """
+        CA4 — Valida que la combinación marca/modelo exista en el catálogo.
+        """
+        modelos_validos = CATALOGO_MARCA_MODELO.get(self.marca)
+
+        if modelos_validos is None or self.modelo not in modelos_validos:
+            raise ValueError("Combinacion marca modelo inexistente")
+
+        return self
 
     @model_validator(mode="after")
     def validar_fotos_requeridas(self):
