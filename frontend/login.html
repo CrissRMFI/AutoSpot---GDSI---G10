@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AutoSpot - Iniciar Sesión</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+<body style="display:flex; flex-direction:column; min-height:100vh;">
+  <header style="padding: 20px 48px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: #f0ebe2;">
+    <a href="index.html" class="logo">Auto<span>Spot</span></a>
+  </header>
+  
+  <div class="login-wrap">
+    <div class="login-grid">
+      <div class="login-brand">
+        <h1 style="font-family: 'Unbounded', sans-serif;">Iniciar Sesión</h1>
+        <p>Bienvenido de nuevo a AutoSpot.</p>
+        <div style="margin-top: 40px;">
+          <p style="font-size: 14px; color: #888;">¿No tienes cuenta?</p>
+          <a href="register.html" class="btn btn-secondary" style="margin-top: 10px;">Registrarme</a>
+        </div>
+      </div>
+      <div class="login-panel">
+        <form id="loginForm">
+          <div class="field" style="margin-bottom: 16px;">
+            <label for="email">Email</label>
+            <input type="email" id="email" class="input" required />
+          </div>
+          <div class="field" style="margin-bottom: 24px;">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" class="input" required />
+          </div>
+          
+          <div id="errorMsg" style="color: var(--warn); font-size: 13px; margin-bottom: 16px; font-weight: 700; display: none;"></div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;">Ingresar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.style.display = 'none';
+      errorMsg.textContent = '';
+
+      try {
+        const response = await fetch('http://localhost:8000/usuarios/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+          // Lógica de Redirección según rol (simulado por email ya que no se provee por el backend aún)
+          const emailLower = email.toLowerCase();
+          if (emailLower.includes('admin') || emailLower.includes('recepcionista')) {
+            window.location.href = 'admin_dashboard.html';
+          } else if (emailLower.includes('owner') || emailLower.includes('duenio')) {
+            window.location.href = 'owner_dashboard_full.html';
+          } else {
+            window.location.href = 'user_dashboard.html';
+          }
+        } else {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            // Maneja "Email inexistente" y "Contraseña incorrecta"
+            errorMsg.textContent = errorData.detail; 
+          } else {
+            errorMsg.textContent = "Error al iniciar sesión. Inténtelo de nuevo.";
+          }
+          errorMsg.style.display = 'block';
+        }
+      } catch (error) {
+        errorMsg.textContent = "Error de conexión con el servidor.";
+        errorMsg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
