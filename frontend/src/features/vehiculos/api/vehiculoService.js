@@ -16,3 +16,9 @@ export const definirPrecioVehiculo = async (vehiculoId, precioPorDia) => {
 
   return response.data;
 };
+
+export const listarVehiculosDelPropietario = async (propietarioId) => {
+  const response = await httpClient.get(`/usuarios/${propietarioId}/vehiculos`);
+
+  return response.data;
+};
