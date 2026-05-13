@@ -3,10 +3,19 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
+import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
 
 const AppRoutes = () => {
   return (
     <Routes>
+      <Route
+        path="/datos-personales"
+        element={
+          <ProtectedRoute>
+            <DatosPersonalesPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       <Route path="/login" element={<LoginPage />} />
