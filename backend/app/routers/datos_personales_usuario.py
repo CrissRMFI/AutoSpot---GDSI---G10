@@ -108,13 +108,39 @@ def registrar_datos_personales_usuario(
 
     return DatosPersonalesUsuarioPublicoSchema.model_validate(datos_personales)
 
+@router.put(
+    "/{usuario_id}/datos-personales/actualizar",
+    response_model=DatosPersonalesUsuarioPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar datos personales del usuario",
+    description=(
+        "Actualiza DNI, nombre, apellido y documentación básica del usuario. "
+        "Endpoint temporal hasta implementar autenticación/JWT."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Datos personales actualizados exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Usuario no encontrado o datos personales no registrados.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Usuario no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Payload inválido o campos obligatorios faltantes.",
+        },
+    },
+)
 def actualizar_datos_personales_usuario(
     usuario_id: uuid.UUID,
     payload: DatosPersonalesUsuarioSchema,
     db: Session = Depends(get_db),
 ) -> DatosPersonalesUsuarioPublicoSchema:
     """
-    PUT /usuarios/{usuario_id}/datos-personales
+    PUT /usuarios/{usuario_id}/datos-personales/actualizar
 
     Flujo:
         1. FastAPI valida usuario_id como UUID y el body con Pydantic.

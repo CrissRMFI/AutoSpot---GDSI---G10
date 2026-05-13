@@ -124,6 +124,33 @@ def registrar_usuario(
 
     return UsuarioPublicoSchema.model_validate(usuario)
 
+@router.put(
+    "/{usuario_id}/actualizar",
+    response_model=UsuarioPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar datos de un usuario existente",
+    description=(
+        "Permite actualizar la información de un Usuario existente. "
+        "El email debe ser único y la contraseña se hashea antes de persistir."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Usuario actualizado exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Usuario no encontrado.",
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "El email ya está registrado en la plataforma.",
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": (
+                "Payload inválido: email con formato incorrecto "
+                "o contraseña de menos de 8 caracteres."
+            ),
+        },
+    },
+)
 def actualizar_usuario(
         usuario_id: uuid.UUID,
         payload: RegistroUsuarioSchema,
