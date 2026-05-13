@@ -71,6 +71,14 @@ class DatosPersonalesYaRegistradosError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Datos personales ya registrados")
 
+class DniYaRegistradoError(AutoSpotError):
+    """
+    Se lanza cuando se intenta registrar un DNI que ya se encuentra
+    asociado a otro usuario en el sistema.
+    """
+    def __init__(self) -> None:
+        super().__init__("El DNI ya se encuentra registrado por otro usuario")
+
 class DatosPersonalesNoRegistradosError(AutoSpotError):
     """
     Se lanza cuando se intenta acceder a datos personales de un Usuario

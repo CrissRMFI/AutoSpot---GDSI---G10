@@ -4,6 +4,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
+import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
 
 const AppRoutes = () => {
   return (
@@ -44,6 +45,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/propietario/publicar"
+        element={
+          <ProtectedRoute>
+            <PublicarVehiculoPage />
           </ProtectedRoute>
         }
       />

@@ -108,6 +108,16 @@ class RegistroVehiculoSchema(BaseModel):
     categoria: str
     tipo_combustible: str
     pets_friendly: bool
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    cedula: str | None = None
+    poliza: str | None = None
+    vtv: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
     fotos: list[FotoVehiculoSchema]
 
     @field_validator(
@@ -185,6 +195,16 @@ class RegistroVehiculoPayloadSchema(BaseModel):
     categoria: str
     tipo_combustible: str
     pets_friendly: bool
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    cedula: str | None = None
+    poliza: str | None = None
+    vtv: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
     fotos: list[FotoVehiculoSchema]
 
     @field_validator(
@@ -276,6 +296,16 @@ class VehiculoPublicoSchema(BaseModel):
     tipo_combustible: str
     pets_friendly: bool
     estado_registro: str
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    cedula: str | None = None
+    poliza: str | None = None
+    vtv: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
     fotos: list[FotoVehiculoPublicoSchema]
 
     model_config = {"from_attributes": True}

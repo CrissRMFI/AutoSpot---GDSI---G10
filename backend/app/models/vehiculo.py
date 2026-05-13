@@ -81,6 +81,57 @@ class Vehiculo(Base):
         nullable=False,
         doc="Indica si el vehículo acepta mascotas.",
     )
+    # ── Datos legales y de documentación ─────────────────────────────────────
+    patente: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        doc="Patente del vehículo.",
+    )
+    chasis: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Número de chasis.",
+    )
+    motor: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Número de motor.",
+    )
+    titular: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Titular registral del vehículo.",
+    )
+    cedula: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Cédula verde (número o estado).",
+    )
+    poliza: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Número de póliza de seguro.",
+    )
+    vtv: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="VTV (fecha de vencimiento o constancia).",
+    )
+    estacion: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        doc="Estación asignada.",
+    )
+    telefono: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        doc="Teléfono de contacto.",
+    )
+    descripcion: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="Descripción legal y operativa del vehículo.",
+    )
     # ── Tarifa diaria (US 5D) ────────────────────────────────────────────────
     precio_por_dia: Mapped[Decimal | None] = mapped_column(
         Numeric(precision=10, scale=2),

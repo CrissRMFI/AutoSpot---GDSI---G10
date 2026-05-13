@@ -25,6 +25,7 @@ from app.exceptions import (
     DatosPersonalesYaRegistradosError,
     DatosPersonalesNoRegistradosError,
     UsuarioNoEncontradoError,
+    DniYaRegistradoError,
 )
 from app.schemas.datos_personales_usuario import (
     DatosPersonalesUsuarioPublicoSchema,
@@ -105,6 +106,11 @@ def registrar_datos_personales_usuario(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+    except DniYaRegistradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
     return DatosPersonalesUsuarioPublicoSchema.model_validate(datos_personales)
 
@@ -165,6 +171,11 @@ def actualizar_datos_personales_usuario(
     except DatosPersonalesNoRegistradosError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DniYaRegistradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
 

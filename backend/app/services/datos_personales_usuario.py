@@ -15,7 +15,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError, DatosPersonalesNoRegistradosError
+from app.exceptions import DatosPersonalesYaRegistradosError, UsuarioNoEncontradoError, DatosPersonalesNoRegistradosError, DniYaRegistradoError
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from app.models.usuario import Usuario
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
@@ -57,6 +57,14 @@ def registrar_datos_personales(
     )
     if datos_existentes is not None:
         raise DatosPersonalesYaRegistradosError()
+
+    dni_existente = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.dni == schema.dni)
+        .first()
+    )
+    if dni_existente is not None:
+        raise DniYaRegistradoError()
 
     datos_personales = DatosPersonalesUsuario(
         usuario_id=usuario_id,
@@ -110,6 +118,15 @@ def actualizar_datos_personales(
     )
     if datos_personales is None:
         raise DatosPersonalesNoRegistradosError("No hay datos personales previos para actualizar")
+
+    if schema.dni != datos_personales.dni:
+        dni_existente = (
+            db.query(DatosPersonalesUsuario)
+            .filter(DatosPersonalesUsuario.dni == schema.dni)
+            .first()
+        )
+        if dni_existente is not None:
+            raise DniYaRegistradoError()
 
     datos_personales.dni = schema.dni
     datos_personales.nombre = schema.nombre
