@@ -7,8 +7,8 @@ con el controlador ya implementado).
 Estrategia de tests:
     - Se usa `httpx.TestClient` de FastAPI, que permite levantar la app
       en memoria sin necesidad de un servidor real.
-    - La sesión de PostgreSQL de producción se reemplaza por SQLite en
-      memoria usando `app.dependency_overrides` (patrón oficial de FastAPI).
+    - El fixture `client` (definido en conftest.py) inyecta una DB PostgreSQL
+      de test limpia por cada test usando `app.dependency_overrides`.
     - Cada test recibe un cliente limpio con DB vacía → idempotencia total.
 
 Criterios de Aceptación cubiertos en esta suite:
@@ -29,74 +29,6 @@ Referencias:
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-
-from app.database import Base, get_db
-from app.main import app
-from app.models.usuario import Usuario  # noqa: F401 (Imported for Base.metadata)
-
-# ── Configuración de DB en memoria para tests de integración ──────────────────
-TEST_DATABASE_URL = "sqlite:///:memory:"
-
-
-def _make_test_engine():
-    """Crea un engine SQLite en memoria con foreign keys activadas."""
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
-    return engine
-
-
-@pytest.fixture()
-def client():
-    """
-    Fixture que levanta la app FastAPI completa con una DB SQLite en memoria.
-
-    Ciclo de vida:
-        1. Crea engine + schema (tablas) en SQLite.
-        2. Sobreescribe la dependency `get_db` de FastAPI con la DB de test.
-        3. Provee un `TestClient` listo para hacer requests HTTP.
-        4. Teardown: elimina tablas, libera engine y restaura overrides.
-
-    Scope: function (una DB limpia por cada test).
-    """
-    engine = _make_test_engine()
-    Base.metadata.create_all(engine)
-
-    TestingSessionLocal = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine,
-    )
-
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    # Inyecta la DB de test en lugar de la de producción
-    app.dependency_overrides[get_db] = override_get_db
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    # Teardown
-    app.dependency_overrides.clear()
-    Base.metadata.drop_all(engine)
-    engine.dispose()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

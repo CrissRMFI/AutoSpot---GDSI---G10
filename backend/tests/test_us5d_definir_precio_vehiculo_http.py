@@ -24,38 +24,17 @@ from decimal import Decimal
 import uuid
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+from tests.conftest import _make_test_engine
 
 # Imports necesarios para que Base.metadata conozca los modelos en tests.
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
-
-
-TEST_DATABASE_URL = "sqlite:///:memory:"
-
-
-def _make_test_engine():
-    """Crea un engine SQLite en memoria con foreign keys activadas."""
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
-    return engine
 
 
 def _override_get_db_factory(testing_session_local):
