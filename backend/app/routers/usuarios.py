@@ -49,7 +49,12 @@ from app.schemas.usuario import (
     UsuarioLogin,
     LoginResponseSchema,
 )
-from app.services.usuario import crear_usuario, autenticar_usuario, cerrar_sesion
+from app.services.usuario import (
+    crear_usuario,
+    autenticar_usuario,
+    cerrar_sesion,
+    actualizar_usuario as actualizar_usuario_service,
+)
 from app.utils.security import crear_access_token
 
 # ── Esquema de seguridad para Bearer token ───────────────────────────────────
@@ -152,25 +157,30 @@ def registrar_usuario(
     },
 )
 def actualizar_usuario(
-        usuario_id: uuid.UUID,
-        payload: RegistroUsuarioSchema,
-        db: Session = Depends(get_db),
-    ) -> UsuarioPublicoSchema:
+    usuario_id: uuid.UUID,
+    payload: RegistroUsuarioSchema,
+    db: Session = Depends(get_db),
+) -> UsuarioPublicoSchema:
     """
     Actualiza los datos de un Usuario existente.
     """
     try:
-        usuario = actualizar_usuario(db=db, usuario_id=usuario_id, schema=payload)
+        usuario = actualizar_usuario_service(
+            db=db,
+            usuario_id=usuario_id,
+            schema=payload,
+        )
     except UsuarioNoEncontradoError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),  # → "Usuario no encontrado"
+            detail=str(exc),
         ) from exc
     except MailExistenteError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),  # → "Mail existente"
+            detail=str(exc),
         ) from exc
+
     return UsuarioPublicoSchema.model_validate(usuario)
 @router.post(
     "/login",
