@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "../../../layouts/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const mensaje = location.state?.mensaje;
   const { login } = useAuth();
 
   const [form, setForm] = useState({
@@ -90,7 +92,7 @@ const LoginPage = () => {
             required
           />
         </div>
-
+        {mensaje && <div className="success-msg">{mensaje}</div>}
         {error && <div className="error-msg">{error}</div>}
 
         <button

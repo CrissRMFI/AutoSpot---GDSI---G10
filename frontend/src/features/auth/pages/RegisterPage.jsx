@@ -42,11 +42,11 @@ const RegisterPage = () => {
         password: form.password,
       });
 
-      if (form.intent === "owner") {
-        navigate("/propietario/dashboard");
-      } else {
-        navigate("/usuario/dashboard");
-      }
+      navigate("/login", {
+        state: {
+          mensaje: "Cuenta creada correctamente. Iniciá sesión para continuar.",
+        },
+      });
     } catch (err) {
       const status = err.response?.status;
       const detalle = err.response?.data?.detail;

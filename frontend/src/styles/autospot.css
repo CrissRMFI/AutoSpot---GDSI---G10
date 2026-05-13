@@ -244,3 +244,13 @@ textarea:focus {
     font-size: 34px;
   }
 }
+
+.success-msg {
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  background-color: #e7f8ed;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 500;
+}
