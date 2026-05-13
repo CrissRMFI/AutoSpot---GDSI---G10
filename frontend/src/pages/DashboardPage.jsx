@@ -31,9 +31,17 @@ const DashboardPage = () => {
           <div className="login-brand">
             <h1>Panel principal</h1>
             <p>
-              Esta pantalla es temporal. Sirve para verificar que el login, el
-              token JWT y la sesión en React funcionan correctamente.
+              Panel temporal del Sprint 1 para validar registro, inicio de
+              sesión, cierre de sesión, datos personales y publicación de
+              vehículos.
             </p>
+
+            <div className="mt-10">
+              <p className="muted-small">
+                En esta primera iteración, los accesos se concentran en un panel
+                común para verificar los flujos principales implementados.
+              </p>
+            </div>
           </div>
 
           <div className="login-panel">
@@ -51,12 +59,19 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <Link to="/datos-personales" className="btn btn-primary">
-              Completar datos personales
-            </Link>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Link to="/datos-personales" className="btn btn-primary">
+                Completar o actualizar datos personales
+              </Link>
+
+              <Link to="/propietario/publicar" className="btn btn-secondary">
+                Publicar vehículo y definir precio diario
+              </Link>
+            </div>
 
             <p className="help-text">
-              Próximo paso: conectar carga de vehículo y precio diario.
+              Flujos disponibles en Sprint 1: perfil de usuario, publicación de
+              vehículo, carga de fotos y definición de precio por día.
             </p>
           </div>
         </section>
