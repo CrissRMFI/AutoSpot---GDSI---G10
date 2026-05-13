@@ -57,64 +57,108 @@
             <div class="card-title">Formulario de alta</div>
             <div class="form-grid">
               <div class="field">
-                <label>Marca y modelo</label
-                ><input class="input" placeholder="Ej. Toyota Corolla 2023" />
+                <label for="inp-marca">Marca</label
+                ><select id="inp-marca" class="input">
+                  <option value="">Seleccioná una marca</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Ford">Ford</option>
+                  <option value="Volkswagen">Volkswagen</option>
+                  <option value="Chevrolet">Chevrolet</option>
+                  <option value="Renault">Renault</option>
+                </select>
               </div>
               <div class="field">
-                <label>Patente</label
-                ><input class="input" placeholder="Ej. AA 456 BB" />
+                <label for="inp-modelo">Modelo</label
+                ><select id="inp-modelo" class="input">
+                  <option value="">Seleccioná un modelo</option>
+                </select>
               </div>
               <div class="field">
-                <label>Año</label><input class="input" placeholder="Ej. 2023" />
+                <label for="inp-anio">Año</label
+                ><input id="inp-anio" class="input" type="number" min="1990" placeholder="Ej. 2023" />
               </div>
               <div class="field">
-                <label>Número de chasis</label
-                ><input
-                  class="input"
-                  placeholder="Ingresá el número de chasis"
-                />
+                <label for="inp-transmision">Tipo de transmisión</label
+                ><select id="inp-transmision" class="input">
+                  <option value="">Seleccioná</option>
+                  <option value="MANUAL">Manual</option>
+                  <option value="AUTOMATICA">Automática</option>
+                </select>
               </div>
               <div class="field">
-                <label>Número de motor</label
-                ><input
-                  class="input"
-                  placeholder="Ingresá el número de motor"
-                />
+                <label for="inp-capacidad">Capacidad (pasajeros)</label
+                ><input id="inp-capacidad" class="input" type="number" min="1" placeholder="Ej. 5" />
               </div>
               <div class="field">
-                <label>Titular registral</label
-                ><input class="input" placeholder="Nombre del titular" />
+                <label for="inp-categoria">Categoría</label
+                ><select id="inp-categoria" class="input">
+                  <option value="">Seleccioná</option>
+                  <option value="SEDAN">Sedán</option>
+                  <option value="SUV">SUV</option>
+                  <option value="HATCHBACK">Hatchback</option>
+                  <option value="PICKUP">Pickup</option>
+                  <option value="COUPE">Coupé</option>
+                </select>
               </div>
               <div class="field">
-                <label>Cédula verde</label
-                ><input
-                  class="input"
-                  placeholder="Número o estado de vigencia"
-                />
+                <label for="inp-combustible">Tipo de combustible</label
+                ><select id="inp-combustible" class="input">
+                  <option value="">Seleccioná</option>
+                  <option value="NAFTA">Nafta</option>
+                  <option value="DIESEL">Diesel</option>
+                  <option value="ELECTRICO">Eléctrico</option>
+                  <option value="HIBRIDO">Híbrido</option>
+                  <option value="GNC">GNC</option>
+                </select>
               </div>
               <div class="field">
-                <label>Póliza de seguro</label
-                ><input class="input" placeholder="Número de póliza" />
+                <label for="inp-pets">Acepta mascotas</label
+                ><select id="inp-pets" class="input">
+                  <option value="true">Sí</option>
+                  <option value="false">No</option>
+                </select>
               </div>
               <div class="field">
-                <label>VTV</label
-                ><input
-                  class="input"
-                  placeholder="Fecha de vencimiento o constancia"
-                />
+                <label for="inp-patente">Patente</label
+                ><input id="inp-patente" class="input" placeholder="Ej. AA 456 BB" />
               </div>
               <div class="field">
-                <label>Estación asignada</label
-                ><input class="input" placeholder="Ej. Belgrano" />
+                <label for="inp-chasis">Número de chasis</label
+                ><input id="inp-chasis" class="input" placeholder="Ingresá el número de chasis" />
               </div>
               <div class="field">
-                <label>Teléfono de contacto</label
-                ><input class="input" placeholder="Ej. +54 11 5555 5555" />
+                <label for="inp-motor">Número de motor</label
+                ><input id="inp-motor" class="input" placeholder="Ingresá el número de motor" />
+              </div>
+              <div class="field">
+                <label for="inp-titular">Titular registral</label
+                ><input id="inp-titular" class="input" placeholder="Nombre del titular" />
+              </div>
+              <div class="field">
+                <label for="inp-cedula">Cédula verde</label
+                ><input id="inp-cedula" class="input" placeholder="Número o estado de vigencia" />
+              </div>
+              <div class="field">
+                <label for="inp-poliza">Póliza de seguro</label
+                ><input id="inp-poliza" class="input" placeholder="Número de póliza" />
+              </div>
+              <div class="field">
+                <label for="inp-vtv">VTV</label
+                ><input id="inp-vtv" class="input" placeholder="Fecha de vencimiento o constancia" />
+              </div>
+              <div class="field">
+                <label for="inp-estacion">Estación asignada</label
+                ><input id="inp-estacion" class="input" placeholder="Ej. Belgrano" />
+              </div>
+              <div class="field">
+                <label for="inp-telefono">Teléfono de contacto</label
+                ><input id="inp-telefono" class="input" placeholder="Ej. +54 11 5555 5555" />
               </div>
             </div>
             <div class="field" style="margin-top: 12px">
-              <label>Descripción legal y operativa</label
+              <label for="inp-descripcion">Descripción legal y operativa</label
               ><textarea
+                id="inp-descripcion"
                 placeholder="Describí el estado general, observaciones legales y operativas del vehículo"
               ></textarea>
             </div>
@@ -148,15 +192,169 @@
                 >Subir archivo</a
               >
             </div>
-            <a
+            <div id="form-feedback" style="display:none; padding: 10px 14px; border-radius: 8px; font-size: 0.875rem; margin-top: 12px;"></div>
+            <button
+              id="btn-enviar"
               class="btn btn-primary"
               style="width: 100%; margin-top: 16px"
-              href="owner_dashboard_full.html"
-              >Enviar doc a revisión</a
+              onclick="enviarVehiculo()"
+              >Enviar doc a revisión</button
             >
           </div>
         </div>
       </main>
     </div>
+
+  <script>
+    // ── Catálogo marca/modelo (debe coincidir con el backend) ─────────────────
+    const CATALOGO = {
+      Toyota:     ["Corolla", "Etios", "Hilux"],
+      Ford:       ["Fiesta", "Focus", "Ranger"],
+      Volkswagen: ["Gol", "Polo", "Amarok"],
+      Chevrolet:  ["Onix", "Cruze", "S10"],
+      Renault:    ["Clio", "Sandero", "Kangoo"],
+    };
+
+    // ── Fotos hardcodeadas (URLs de tests) ────────────────────────────────────
+    const FOTOS_HARDCODEADAS = [
+      {
+        lado: "FRENTE",
+        url: "uploads/vehiculos/corolla/frente.jpg",
+        formato: "jpg",
+        tamanio_bytes: 500000,
+      },
+      {
+        lado: "TRASERA",
+        url: "uploads/vehiculos/corolla/trasera.jpg",
+        formato: "jpg",
+        tamanio_bytes: 500000,
+      },
+      {
+        lado: "LATERAL_IZQUIERDO",
+        url: "uploads/vehiculos/corolla/lateral_izquierdo.jpg",
+        formato: "jpg",
+        tamanio_bytes: 500000,
+      },
+      {
+        lado: "LATERAL_DERECHO",
+        url: "uploads/vehiculos/corolla/lateral_derecho.jpg",
+        formato: "jpg",
+        tamanio_bytes: 500000,
+      },
+    ];
+
+    // ── URL base del backend ──────────────────────────────────────────────────
+    const API_BASE = "http://localhost:8000";
+
+    // ── Poblar modelos según marca seleccionada ───────────────────────────────
+    document.getElementById("inp-marca").addEventListener("change", function () {
+      const marca = this.value;
+      const selectModelo = document.getElementById("inp-modelo");
+      selectModelo.innerHTML = '<option value="">Seleccioná un modelo</option>';
+      if (marca && CATALOGO[marca]) {
+        CATALOGO[marca].forEach((modelo) => {
+          const opt = document.createElement("option");
+          opt.value = modelo;
+          opt.textContent = modelo;
+          selectModelo.appendChild(opt);
+        });
+      }
+    });
+
+    // ── Mostrar feedback en el formulario ─────────────────────────────────────
+    function mostrarFeedback(mensaje, tipo) {
+      const el = document.getElementById("form-feedback");
+      el.textContent = mensaje;
+      el.style.display = "block";
+      if (tipo === "error") {
+        el.style.background = "rgba(239,68,68,0.15)";
+        el.style.color = "#f87171";
+        el.style.border = "1px solid rgba(239,68,68,0.3)";
+      } else {
+        el.style.background = "rgba(34,197,94,0.15)";
+        el.style.color = "#4ade80";
+        el.style.border = "1px solid rgba(34,197,94,0.3)";
+      }
+    }
+
+    // ── Leer propietario_id guardado en el login ──────────────────────────────
+    function getPropietarioId() {
+      // Se espera que el login guarde el UUID del usuario en sessionStorage
+      return sessionStorage.getItem("usuario_id") || localStorage.getItem("usuario_id");
+    }
+
+    // ── Enviar vehículo a revisión ────────────────────────────────────────────
+    async function enviarVehiculo() {
+      const marca       = document.getElementById("inp-marca").value.trim();
+      const modelo      = document.getElementById("inp-modelo").value.trim();
+      const anio        = parseInt(document.getElementById("inp-anio").value, 10);
+      const transmision = document.getElementById("inp-transmision").value.trim();
+      const capacidad   = parseInt(document.getElementById("inp-capacidad").value, 10);
+      const categoria   = document.getElementById("inp-categoria").value.trim();
+      const combustible = document.getElementById("inp-combustible").value.trim();
+      const petsVal     = document.getElementById("inp-pets").value;
+      const pets        = petsVal === "true";
+
+      // Validación básica en el cliente
+      if (!marca || !modelo || !anio || !transmision || !capacidad || !categoria || !combustible) {
+        mostrarFeedback("Por favor completá todos los campos obligatorios del formulario.", "error");
+        return;
+      }
+
+      const propietarioId = getPropietarioId();
+      if (!propietarioId) {
+        mostrarFeedback("No se encontró el ID del propietario. Por favor iniciá sesión nuevamente.", "error");
+        return;
+      }
+
+      const payload = {
+        marca,
+        modelo,
+        anio,
+        tipo_transmision: transmision,
+        capacidad,
+        categoria,
+        tipo_combustible: combustible,
+        pets_friendly: pets,
+        fotos: FOTOS_HARDCODEADAS,
+      };
+
+      const btn = document.getElementById("btn-enviar");
+      btn.disabled = true;
+      btn.textContent = "Enviando…";
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/usuarios/${propietarioId}/vehiculos`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          mostrarFeedback(
+            `✓ Vehículo registrado exitosamente. ID: ${data.id} — Estado: ${data.estado_registro}`,
+            "success"
+          );
+          btn.textContent = "Enviado ✓";
+          // Redirigir al dashboard tras 2 segundos
+          setTimeout(() => { window.location.href = "owner_dashboard_full.html"; }, 2000);
+        } else {
+          const err = await response.json().catch(() => ({}));
+          const detalle = err.detail || `Error ${response.status}`;
+          mostrarFeedback(`✗ Error al registrar: ${detalle}`, "error");
+          btn.disabled = false;
+          btn.textContent = "Enviar doc a revisión";
+        }
+      } catch (e) {
+        mostrarFeedback(`✗ No se pudo conectar con el servidor: ${e.message}`, "error");
+        btn.disabled = false;
+        btn.textContent = "Enviar doc a revisión";
+      }
+    }
+  </script>
   </body>
 </html>

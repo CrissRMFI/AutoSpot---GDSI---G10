@@ -59,6 +59,11 @@
         });
 
         if (response.ok) {
+          const data = await response.json();
+          // Guardar ID y token para uso en otras páginas
+          sessionStorage.setItem('usuario_id', data.id);
+          sessionStorage.setItem('access_token', data.access_token);
+
           // Lógica de Redirección según rol (simulado por email ya que no se provee por el backend aún)
           const emailLower = email.toLowerCase();
           if (emailLower.includes('admin') || emailLower.includes('recepcionista')) {

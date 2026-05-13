@@ -15,6 +15,7 @@ Documentación interactiva (generada automáticamente por FastAPI):
     - ReDoc      : http://localhost:8000/redoc
 """
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import datos_personales_usuario as router_datos_personales
 from app.routers import usuarios as router_usuarios
@@ -27,6 +28,15 @@ app = FastAPI(
         "Activos (Vehículos) a través de una red de Estaciones físicas."
     ),
     version="0.1.0",
+)
+
+# ── Configuración CORS ────────────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permitir solicitudes desde cualquier origen (frontend)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Permitir todos los headers
 )
 
 # ── Registro de routers ───────────────────────────────────────────────────────
