@@ -98,7 +98,6 @@ const DashboardPage = () => {
                 lineHeight: 1.6,
               }}
             >
-              Desde este panel podés acceder a los flujos disponibles en el
               Sprint 1: completar tus datos personales y publicar un vehículo
               con precio diario.
             </p>
