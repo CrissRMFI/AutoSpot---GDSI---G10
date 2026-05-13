@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AutoSpot - Registro</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+<body style="display:flex; flex-direction:column; min-height:100vh;">
+  <header style="padding: 20px 48px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: #f0ebe2;">
+    <a href="index.html" class="logo">Auto<span>Spot</span></a>
+  </header>
+  
+  <div class="login-wrap">
+    <div class="login-grid">
+      <div class="login-brand">
+        <h1 style="font-family: 'Unbounded', sans-serif;">Crear Cuenta</h1>
+        <p>Únete a AutoSpot. Alquila o pon tu auto en alquiler.</p>
+        <div style="margin-top: 40px;">
+          <p style="font-size: 14px; color: #888;">¿Ya tienes cuenta?</p>
+          <a href="login.html" class="btn btn-secondary" style="margin-top: 10px;">Iniciar Sesión</a>
+        </div>
+      </div>
+      <div class="login-panel">
+        <form id="registerForm">
+          <div class="field" style="margin-bottom: 16px;">
+            <label for="intent">Intención</label>
+            <select id="intent" class="input" required>
+              <option value="user">Quiero alquilar un auto</option>
+              <option value="owner">Quiero poner mi auto en alquiler</option>
+            </select>
+          </div>
+          
+          <div class="field" style="margin-bottom: 16px;">
+            <label for="email">Email</label>
+            <input type="email" id="email" class="input" required />
+          </div>
+          
+          <div class="field" style="margin-bottom: 24px;">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" class="input" required minlength="8" />
+            <small style="color: var(--muted); font-size: 11px; margin-top: 4px; display: block;">Mínimo 8 caracteres.</small>
+          </div>
+          
+          <div id="errorMsg" style="color: var(--warn); font-size: 13px; margin-bottom: 16px; font-weight: 700; display: none;"></div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;">Registrarme</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const intent = document.getElementById('intent').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.style.display = 'none';
+      errorMsg.textContent = '';
+
+      // Validación de longitud por frontend
+      if (password.length < 8) {
+        errorMsg.textContent = "La contraseña debe tener minimo 8 caracteres";
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:8000/usuarios/registro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+          // Lógica de redirección según el select
+          if (intent === 'owner') {
+            window.location.href = 'owner_dashboard_full.html';
+          } else {
+            window.location.href = 'user_dashboard.html';
+          }
+        } else {
+          const errorData = await response.json();
+          // Manejo de errores específicos
+          if (response.status === 409 && errorData.detail) {
+            errorMsg.textContent = errorData.detail; // "Mail existente"
+          } else if (response.status === 422) {
+            errorMsg.textContent = "Datos inválidos. Verifique el formato de email.";
+          } else if (errorData.detail) {
+            errorMsg.textContent = errorData.detail;
+          } else {
+            errorMsg.textContent = "Error al registrar. Inténtelo de nuevo.";
+          }
+          errorMsg.style.display = 'block';
+        }
+      } catch (error) {
+        errorMsg.textContent = "Error de conexión con el servidor.";
+        errorMsg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
