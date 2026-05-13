@@ -7,7 +7,7 @@ Metodología: TDD
 
 Estrategia:
   - Se usa TestClient de FastAPI.
-  - Se reemplaza la sesión real por SQLite en memoria.
+  - El fixture `client` (conftest.py) o `_make_test_engine` proveen PostgreSQL de test.
   - Cada test corre con una base limpia.
 
 Criterios de Aceptación cubiertos inicialmente:
@@ -23,35 +23,14 @@ Referencias:
   - docs/core_negocio/dominio_actores.md
 """
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+from tests.conftest import _make_test_engine
+
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
-
-
-# ── Configuración de DB en memoria para tests de integración ──────────────────
-TEST_DATABASE_URL = "sqlite:///:memory:"
-
-
-def _make_test_engine():
-    """Crea un engine SQLite en memoria con foreign keys activadas."""
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
-    return engine
 
 
 def _override_get_db_factory(testing_session_local):
@@ -304,4 +283,3 @@ class TestErroresRegistroDatosPersonalesHTTP:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
-

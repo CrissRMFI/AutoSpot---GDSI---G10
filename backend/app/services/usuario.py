@@ -12,6 +12,7 @@ Responsabilidades de esta capa:
 Esta capa NO valida formato de email ni longitud de contraseña;
 esa responsabilidad pertenece al schema Pydantic (RegistroUsuarioSchema).
 """
+
 import uuid
 from datetime import datetime, timezone
 
@@ -54,55 +55,80 @@ def crear_usuario(db: Session, schema: RegistroUsuarioSchema) -> Usuario:
     Raises:
         MailExistenteError: Si el email ya está registrado en la plataforma.
     """
-    # ── CA 5: Verificar unicidad del email ───────────────────────────────────
     email_existente = (
-        db.query(Usuario).filter(Usuario.email == schema.email).first()
+        db.query(Usuario)
+        .filter(Usuario.email == schema.email)
+        .first()
     )
+
     if email_existente:
         raise MailExistenteError()
 
-    # ── CA 4 (hashing): Nunca persistir texto plano ──────────────────────────
     nuevo_usuario = Usuario(
         email=schema.email,
         hashed_password=hash_password(schema.password),
     )
 
     db.add(nuevo_usuario)
+
     try:
         db.commit()
-        db.refresh(nuevo_usuario)  # Hidrata id, created_at, etc.
+        db.refresh(nuevo_usuario)
     except IntegrityError:
-        # Safety net para race conditions (dos registros simultáneos del mismo email)
         db.rollback()
         raise MailExistenteError()
 
     return nuevo_usuario
 
-def actualizar_usuario(db: Session, usuario_id: uuid.UUID, schema: RegistroUsuarioSchema) -> Usuario:
+
+def actualizar_usuario(
+    db: Session,
+    usuario_id: uuid.UUID,
+    schema: RegistroUsuarioSchema,
+) -> Usuario:
     """
     Actualiza los datos de un Usuario existente.
 
     Flujo:
         1. Verifica que el Usuario exista.
-        2. Verifica unicidad del nuevo email (si se está actualizando).
-        3. Hashea la nueva contraseña (si se está actualizando).
+        2. Verifica unicidad del nuevo email, si se está actualizando.
+        3. Hashea la nueva contraseña, si se está actualizando.
         4. Actualiza los campos y persiste los cambios.
 
     Args:
         db         : Sesión SQLAlchemy activa.
         usuario_id : UUID del Usuario a actualizar.
-        schema     : Payload con los campos a actualizar (email y/o password)."""
-    
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        schema     : Payload con los campos a actualizar.
+
+    Returns:
+        El objeto Usuario actualizado.
+
+    Raises:
+        UsuarioNoEncontradoError: Si no existe un Usuario con ese id.
+        MailExistenteError: Si el nuevo email ya pertenece a otro Usuario.
+    """
+    usuario = (
+        db.query(Usuario)
+        .filter(Usuario.id == usuario_id)
+        .first()
+    )
+
     if not usuario:
         raise UsuarioNoEncontradoError()
 
     if schema.email and schema.email != usuario.email:
         email_existente = (
-            db.query(Usuario).filter(Usuario.email == schema.email and Usuario.id != usuario_id).first()
+            db.query(Usuario)
+            .filter(
+                Usuario.email == schema.email,
+                Usuario.id != usuario_id,
+            )
+            .first()
         )
+
         if email_existente:
             raise MailExistenteError()
+
         usuario.email = schema.email
 
     if schema.password:
@@ -112,31 +138,37 @@ def actualizar_usuario(db: Session, usuario_id: uuid.UUID, schema: RegistroUsuar
     db.refresh(usuario)
 
     return usuario
+
+
 def autenticar_usuario(db: Session, credenciales: UsuarioLogin) -> Usuario:
     """
     Autentica un usuario verificando su email y contraseña.
-    
+
     Args:
         db: Sesión de la base de datos.
         credenciales: Schema con email y contraseña.
-        
+
     Returns:
         El modelo de Usuario si las credenciales son válidas.
-        
+
     Raises:
-        CredencialesInvalidasError: Si el email no existe o la contraseña no coincide.
+        MailInexistenteError: Si el email no existe.
+        ContraseniaIncorrectaError: Si la contraseña no coincide.
     """
-    usuario = db.query(Usuario).filter(Usuario.email == credenciales.email).first()
+    usuario = (
+        db.query(Usuario)
+        .filter(Usuario.email == credenciales.email)
+        .first()
+    )
+
     if not usuario:
         raise MailInexistenteError()
-        
+
     if not verify_password(credenciales.password, usuario.hashed_password):
         raise ContraseniaIncorrectaError()
-        
+
     return usuario
 
-
-# ── US 3U: Logout y validación de tokens ─────────────────────────────────────
 
 def cerrar_sesion(db: Session, token: str) -> None:
     """
@@ -155,7 +187,6 @@ def cerrar_sesion(db: Session, token: str) -> None:
         TokenInvalidoError : Si el token es inválido, expirado o ya fue
                              invalidado previamente.
     """
-    # ── Decodificar y validar token ───────────────────────────────────────
     try:
         payload = verificar_access_token(token)
     except jwt.ExpiredSignatureError:
@@ -164,21 +195,24 @@ def cerrar_sesion(db: Session, token: str) -> None:
         raise TokenInvalidoError("Token inválido")
 
     jti = payload.get("jti")
+
     if not jti:
         raise TokenInvalidoError("Token inválido")
 
-    # ── Verificar que no esté ya en la blacklist ─────────────────────────
     ya_invalidado = (
-        db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+        db.query(TokenBlacklist)
+        .filter(TokenBlacklist.jti == jti)
+        .first()
     )
+
     if ya_invalidado:
         raise TokenInvalidoError("Token inválido")
 
-    # ── Insertar en blacklist ────────────────────────────────────────────
     registro = TokenBlacklist(
         jti=jti,
         expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
     )
+
     db.add(registro)
     db.commit()
 
@@ -210,12 +244,16 @@ def validar_token_activo(db: Session, token: str) -> dict:
         raise TokenInvalidoError("Token inválido")
 
     jti = payload.get("jti")
+
     if not jti:
         raise TokenInvalidoError("Token inválido")
 
     en_blacklist = (
-        db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+        db.query(TokenBlacklist)
+        .filter(TokenBlacklist.jti == jti)
+        .first()
     )
+
     if en_blacklist:
         raise TokenInvalidoError("Token inválido")
 
