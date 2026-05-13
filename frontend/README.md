@@ -1,25 +1,16 @@
-# AutoSpot---GDSI---G10
+# React + Vite
 
-AutoSpot HTML
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Páginas principales:
+Currently, two official plugins are available:
 
-- index.html
-- user_dashboard.html
-- user_alquileres.html
-- user_estaciones.html
-- user_catalogo.html
-- user_historial_auto.html
-- user_reportar_problema.html
-- - owner_dashboard_full.html
-- - owner_historial_bajas_full.html
-- owner_ingresos.html
-- owner_publicar.html
-- owner_detalle_auto_rented.html
-- owner_detalle_auto_pending.html
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-Notas:
+## React Compiler
 
-- Todo es HTML estático enlazado entre páginas.
-- No hay JavaScript es solo el proto inicial.
-- El login es visual/demostrativo.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
