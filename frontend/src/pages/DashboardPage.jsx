@@ -1,15 +1,42 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { listarVehiculosDelPropietario } from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario, logout } = useAuth();
+  const [vehiculos, setVehiculos] = useState([]);
+  const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
+  const [errorVehiculos, setErrorVehiculos] = useState("");
 
   const mensaje = location.state?.message;
 
   const nombreUsuario =
     usuario?.nombre || usuario?.first_name || usuario?.email || "Usuario";
+
+  useEffect(() => {
+    const cargarVehiculos = async () => {
+      if (!usuario?.id) {
+        return;
+      }
+
+      setCargandoVehiculos(true);
+      setErrorVehiculos("");
+
+      try {
+        const data = await listarVehiculosDelPropietario(usuario.id);
+        setVehiculos(data);
+      } catch (error) {
+        setErrorVehiculos("No se pudieron cargar tus vehículos publicados.");
+      } finally {
+        setCargandoVehiculos(false);
+      }
+    };
+
+    cargarVehiculos();
+  }, [usuario?.id]);
 
   const cerrarSesion = async () => {
     await logout();
@@ -297,6 +324,133 @@ const DashboardPage = () => {
               </p>
             </div>
           </div>
+        </section>
+        <section
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 22,
+            padding: 24,
+            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
+            marginTop: 28,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 16,
+              marginBottom: 20,
+            }}
+          >
+            <div>
+              <h2 style={{ margin: "0 0 6px", fontSize: 24 }}>
+                Mis vehículos publicados
+              </h2>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#6b7280",
+                  fontSize: 14,
+                }}
+              >
+                Vehículos registrados por tu cuenta durante el flujo de
+                publicación.
+              </p>
+            </div>
+
+            <Link to="/propietario/publicar" className="btn btn-primary">
+              Publicar otro vehículo
+            </Link>
+          </div>
+
+          {cargandoVehiculos && (
+            <p className="help-text">Cargando vehículos publicados...</p>
+          )}
+
+          {errorVehiculos && (
+            <p className="help-text" style={{ color: "#b91c1c" }}>
+              {errorVehiculos}
+            </p>
+          )}
+
+          {!cargandoVehiculos && !errorVehiculos && vehiculos.length === 0 && (
+            <div
+              style={{
+                border: "1px dashed #d1d5db",
+                borderRadius: 18,
+                padding: 24,
+                backgroundColor: "#f9fafb",
+              }}
+            >
+              <strong>Todavía no publicaste vehículos.</strong>
+
+              <p className="help-text" style={{ marginBottom: 16 }}>
+                Cuando registres un vehículo, aparecerá listado en esta sección.
+              </p>
+
+              <Link to="/propietario/publicar" className="btn btn-secondary">
+                Publicar vehículo
+              </Link>
+            </div>
+          )}
+
+          {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {vehiculos.map((vehiculo) => (
+                <article
+                  key={vehiculo.id}
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 18,
+                    padding: 18,
+                    backgroundColor: "#f9fafb",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 8px", fontSize: 18 }}>
+                    {vehiculo.marca} {vehiculo.modelo}
+                  </h3>
+
+                  <p className="help-text" style={{ marginBottom: 8 }}>
+                    Año: {vehiculo.anio}
+                  </p>
+
+                  <p className="help-text" style={{ marginBottom: 8 }}>
+                    Categoría: {vehiculo.categoria}
+                  </p>
+
+                  <p className="help-text" style={{ marginBottom: 8 }}>
+                    Transmisión: {vehiculo.tipo_transmision}
+                  </p>
+
+                  <p className="help-text" style={{ marginBottom: 8 }}>
+                    Combustible: {vehiculo.tipo_combustible}
+                  </p>
+
+                  <p
+                    style={{
+                      margin: "12px 0 0",
+                      fontWeight: 700,
+                      color: "#111827",
+                    }}
+                  >
+                    Precio diario:{" "}
+                    {vehiculo.precio_por_dia
+                      ? `$${vehiculo.precio_por_dia}`
+                      : "No definido"}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>

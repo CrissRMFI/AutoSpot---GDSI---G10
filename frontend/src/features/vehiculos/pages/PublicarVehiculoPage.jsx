@@ -231,7 +231,11 @@ const PublicarVehiculoPage = () => {
       );
 
       setTimeout(() => {
-        navigate("/propietario/dashboard");
+        navigate("/propietario/dashboard", {
+          state: {
+            message: "Vehículo publicado correctamente.",
+          },
+        });
       }, 2000);
     } catch (e) {
       const detalle = e.response?.data?.detail;

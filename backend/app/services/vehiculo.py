@@ -118,3 +118,28 @@ def definir_precio_vehiculo(
     db.refresh(vehiculo)
 
     return vehiculo
+
+def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehiculo]:
+    """
+    Lista los vehículos registrados por un propietario.
+
+    Alcance Sprint 1:
+        - permite verificar desde el dashboard que los vehículos publicados
+          quedaron registrados.
+        - no implementa catálogo público.
+        - no implementa filtros, reservas, edición ni eliminación.
+    """
+    propietario = (
+        db.query(Usuario)
+        .filter(Usuario.id == propietario_id)
+        .first()
+    )
+
+    if propietario is None:
+        raise UsuarioNoEncontradoError()
+
+    return (
+        db.query(Vehiculo)
+        .filter(Vehiculo.propietario_id == propietario_id)
+        .all()
+    )

@@ -22,7 +22,11 @@ from app.schemas.vehiculo import (
     RegistroVehiculoSchema,
     VehiculoPublicoSchema,
 )
-from app.services.vehiculo import definir_precio_vehiculo, registrar_vehiculo
+from app.services.vehiculo import (
+    definir_precio_vehiculo,
+    listar_vehiculos_por_propietario,
+    registrar_vehiculo,
+)
 
 router = APIRouter(
     tags=["vehiculos"],
@@ -85,6 +89,56 @@ def registrar_vehiculo_usuario(
     return VehiculoPublicoSchema.model_validate(vehiculo)
 
 
+@router.get(
+    "/usuarios/{propietario_id}/vehiculos",
+    response_model=list[VehiculoPublicoSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Listar vehículos publicados por un propietario",
+    description=(
+        "Lista los vehículos registrados por un usuario propietario. "
+        "Endpoint temporal hasta implementar autenticación/JWT y rol Propietario."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Vehículos del propietario obtenidos exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Propietario no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Usuario no encontrado"}
+                }
+            },
+        },
+    },
+)
+def listar_vehiculos_usuario(
+    propietario_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> list[VehiculoPublicoSchema]:
+    """
+    GET /usuarios/{propietario_id}/vehiculos
+
+    Flujo:
+        1. FastAPI valida propietario_id como UUID.
+        2. El servicio verifica que el propietario exista.
+        3. Se devuelven los vehículos registrados por ese propietario.
+    """
+    try:
+        vehiculos = listar_vehiculos_por_propietario(
+            db=db,
+            propietario_id=propietario_id,
+        )
+    except UsuarioNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return [
+        VehiculoPublicoSchema.model_validate(vehiculo)
+        for vehiculo in vehiculos
+    ]
 
 @router.patch(
     "/vehiculos/{vehiculo_id}/precio",
