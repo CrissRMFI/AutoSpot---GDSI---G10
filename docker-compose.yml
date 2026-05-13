@@ -1,0 +1,53 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Docker Compose — AutoSpot (PostgreSQL + FastAPI)
+#
+# Uso:
+#   Levantar todo:                docker compose up --build
+#   Solo la base de datos:        docker compose up db -d
+#   Correr tests (DB levantada):  cd backend && py -m pytest tests/ -v
+#   Detener todo:                 docker compose down
+#   Detener + borrar volúmenes:   docker compose down -v
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL 16 ──────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: autospot_db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI (Uvicorn) ──────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: autospot_web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Dentro de Docker, el host de la DB es el nombre del servicio
+      DB_HOST: db
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local

@@ -14,6 +14,9 @@ pydantic[email]>=2.7.0      # Incluye email-validator para EmailStr
 bcrypt>=4.0.0               # Hashing bcrypt directamente (passlib no soporta bcrypt>=4)
 PyJWT>=2.8.0                # Tokens JWT para autenticación y logout (US 3U)
 
+# ── Configuración ──────────────────────────────────────────────────────────
+python-dotenv>=1.0.0        # Carga .env automáticamente
+
 # ── Testing ─────────────────────────────────────────────────────────────────
 pytest>=8.2.0
 pytest-asyncio>=0.23.0

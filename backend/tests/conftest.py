@@ -2,24 +2,65 @@
 conftest.py — Fixtures compartidas para la suite de tests de AutoSpot.
 
 Estrategia de base de datos en tests:
-  - Se usa SQLite en memoria (sqlite:///:memory:) para aislar completamente
-    los tests sin requerir infraestructura de PostgreSQL.
-  - Cada test recibe una sesión limpia (scope="function") y la DB se destruye
-    al finalizar, garantizando idempotencia total.
+  - Se usa PostgreSQL (misma tecnología que producción) conectándose a la
+    base `autospot_test_db` creada por `docker/init-test-db.sql`.
+  - Cada test recibe tablas limpias (create_all/drop_all por función),
+    garantizando idempotencia total y paridad con el entorno real.
 
-Nota sobre compatibilidad SQLite/PostgreSQL:
-  - El modelo usa tipos agnósticos de SQLAlchemy 2.0 (Mapped[uuid.UUID] se
-    serializa como VARCHAR en SQLite y como UUID nativo en PostgreSQL).
-  - Los PRAGMA de SQLite activan las foreign keys para respetar integridad.
+Requisito previo:
+  - El contenedor de PostgreSQL debe estar corriendo:
+      docker compose up db -d
+
+Fixtures exportadas:
+  - db_session : Sesión SQLAlchemy limpia (para tests unitarios de servicios).
+  - client     : TestClient de FastAPI con dependency override (para tests HTTP).
+
+Nota sobre imports de modelos:
+  - Se importan TODOS los modelos para que Base.metadata conozca todas las
+    tablas al ejecutar create_all(). Sin estos imports, las tablas con foreign
+    keys fallarían silenciosamente.
 """
+import os
+
 import pytest
-from sqlalchemy import create_engine, event
+from dotenv import load_dotenv
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Base
+from app.database import Base, get_db
+from app.main import app
 
-TEST_DATABASE_URL = "sqlite:///:memory:"
+# ── Importar todos los modelos para Base.metadata ────────────────────────────
+from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
+from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.usuario import Usuario  # noqa: F401
+from app.models.vehiculo import Vehiculo  # noqa: F401
+from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 
+# ── Construir URL de la base de datos de test ────────────────────────────────
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+
+DB_USER = os.getenv("DB_USER", "autospot_user")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "autospot_pass")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME_TEST = os.getenv("DB_NAME_TEST", "autospot_test_db")
+
+TEST_DATABASE_URL = (
+    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME_TEST}"
+)
+
+
+def _make_test_engine():
+    """Crea un engine PostgreSQL para tests."""
+    return create_engine(
+        TEST_DATABASE_URL,
+        pool_pre_ping=True,
+    )
+
+
+# ── Fixture: sesión de DB para tests unitarios de servicios ──────────────────
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -27,23 +68,12 @@ def db_session():
     Fixture que provee una sesión de DB limpia y aislada por cada test.
 
     Ciclo de vida:
-      1. Crea engine SQLite en memoria.
+      1. Crea engine PostgreSQL de test.
       2. Crea todas las tablas definidas en los modelos (Base.metadata).
       3. Abre una sesión y la cede al test (yield).
       4. Cierra la sesión y elimina todas las tablas (teardown automático).
     """
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-    )
-
-    # Activa foreign keys en SQLite (desactivadas por defecto)
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_connection, _connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
+    engine = _make_test_engine()
     Base.metadata.create_all(engine)
 
     TestingSessionLocal = sessionmaker(
@@ -59,3 +89,44 @@ def db_session():
         session.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+# ── Fixture: TestClient HTTP para tests de integración ───────────────────────
+
+@pytest.fixture(scope="function")
+def client():
+    """
+    Fixture que levanta la app FastAPI completa con PostgreSQL de test.
+
+    Ciclo de vida:
+      1. Crea engine + schema (tablas) en PostgreSQL de test.
+      2. Sobreescribe la dependency `get_db` de FastAPI con la DB de test.
+      3. Provee un `TestClient` listo para hacer requests HTTP.
+      4. Teardown: elimina tablas, libera engine y restaura overrides.
+
+    Scope: function (tablas limpias por cada test).
+    """
+    engine = _make_test_engine()
+    Base.metadata.create_all(engine)
+
+    TestingSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    app.dependency_overrides.clear()
+    Base.metadata.drop_all(engine)
+    engine.dispose()
