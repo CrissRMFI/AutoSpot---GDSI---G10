@@ -11,6 +11,17 @@ class AutoSpotError(Exception):
     pass
 
 
+class TokenInvalidoError(AutoSpotError):
+    """
+    Se lanza cuando un token JWT es inválido, expirado o ya fue invalidado
+    por un logout previo (blacklist).
+
+    Corresponde a los CA1 y CA2 de la US 3U.
+    Mensaje canónico: "Token inválido"
+    """
+    def __init__(self, mensaje: str = "Token inválido") -> None:
+        super().__init__(mensaje)
+
 class MailExistenteError(AutoSpotError):
     """
     Se lanza cuando se intenta registrar un email que ya existe en la plataforma.

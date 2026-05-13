@@ -3,19 +3,27 @@ Controlador HTTP: Usuarios.
 
 Endpoints:
     POST /usuarios/registro  → CA 4 (registro exitoso) y CA 5 (mail existente)
+    POST /usuarios/login     → Autenticación con email y contraseña (US 2U)
+    POST /usuarios/logout    → Finalización de sesión (US 3U)
 
 Responsabilidades de esta capa:
     1. Recibir y deserializar el payload HTTP.
     2. Inyectar la sesión de DB vía dependency injection de FastAPI.
-    3. Delegar la lógica de negocio al servicio `crear_usuario`.
-    4. Traducir excepciones de dominio (MailExistenteError) a respuestas HTTP.
-    5. Serializar la respuesta con UsuarioPublicoSchema (sin exponer datos sensibles).
+    3. Delegar la lógica de negocio a los servicios correspondientes.
+    4. Traducir excepciones de dominio a respuestas HTTP.
+    5. Serializar la respuesta con los schemas apropiados.
 
-Contrato HTTP (US 5U):
-    - 201 Created     → registro exitoso, body = UsuarioPublicoSchema
-    - 409 Conflict    → email ya registrado (CA 5)
-    - 422 Unprocessable Entity → validación Pydantic fallida (CA 1 / CA 2),
-                                 gestionado automáticamente por FastAPI.
+Contrato HTTP:
+    US 5U (Registro):
+        - 201 Created     → registro exitoso, body = UsuarioPublicoSchema
+        - 409 Conflict    → email ya registrado (CA 5)
+        - 422 Unprocessable Entity → validación Pydantic fallida (CA 1 / CA 2)
+    US 2U (Login):
+        - 200 OK           → login exitoso, body = LoginResponseSchema (con access_token)
+        - 401 Unauthorized → credenciales inválidas
+    US 3U (Logout):
+        - 200 OK           → sesión finalizada correctamente
+        - 401 Unauthorized → token ausente, inválido, expirado o ya invalidado
 
 Lenguaje Ubicuo (dominio_actores.md):
     - El prefijo de ruta es /usuarios (entidad base de autenticación).
@@ -24,12 +32,29 @@ Lenguaje Ubicuo (dominio_actores.md):
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.exceptions import MailExistenteError, MailInexistenteError, ContraseniaIncorrectaError, UsuarioNoEncontradoError
-from app.schemas.usuario import RegistroUsuarioSchema, UsuarioPublicoSchema, UsuarioLogin
-from app.services.usuario import crear_usuario, autenticar_usuario
+from app.exceptions import (
+    MailExistenteError,
+    MailInexistenteError,
+    ContraseniaIncorrectaError,
+    UsuarioNoEncontradoError,
+    TokenInvalidoError,
+)
+from app.schemas.usuario import (
+    RegistroUsuarioSchema,
+    UsuarioPublicoSchema,
+    UsuarioLogin,
+    LoginResponseSchema,
+)
+from app.services.usuario import crear_usuario, autenticar_usuario, cerrar_sesion
+from app.utils.security import crear_access_token
+
+# ── Esquema de seguridad para Bearer token ───────────────────────────────────
+# auto_error=False para manejar la ausencia de token manualmente (→ 401, no 403)
+security_scheme = HTTPBearer(auto_error=False)
 
 router = APIRouter(
     prefix="/usuarios",
@@ -122,10 +147,13 @@ def actualizar_usuario(
     return UsuarioPublicoSchema.model_validate(usuario)
 @router.post(
     "/login",
-    response_model=UsuarioPublicoSchema,
+    response_model=LoginResponseSchema,
     status_code=status.HTTP_200_OK,
     summary="Iniciar sesión con email y contraseña",
-    description="Autentica al usuario en el sistema usando su email y contraseña.",
+    description=(
+        "Autentica al usuario en el sistema usando su email y contraseña. "
+        "Devuelve un access_token JWT para autenticar requests posteriores."
+    ),
     responses={
         status.HTTP_200_OK: {
             "description": "Usuario autenticado exitosamente.",
@@ -146,13 +174,17 @@ def actualizar_usuario(
 def iniciar_sesion(
     payload: UsuarioLogin,
     db: Session = Depends(get_db),
-) -> UsuarioPublicoSchema:
+) -> LoginResponseSchema:
     """
     POST /usuarios/login
-    
-    Verifica las credenciales del usuario y otorga acceso al sistema.
-    Cumple con el criterio de seguridad de devolver un mensaje de error 
-    genérico para proteger la existencia de la cuenta.
+
+    Flujo:
+        1. Verifica credenciales delegando a `autenticar_usuario`.
+        2. Si son válidas, genera un JWT con `sub` = usuario.id.
+        3. Retorna LoginResponseSchema con access_token + datos públicos.
+
+    El token incluye `jti` (para logout/blacklist) y `exp` (expiración
+    automática por inactividad — CA2 de US 3U).
     """
     try:
         usuario = autenticar_usuario(db=db, credenciales=payload)
@@ -167,4 +199,70 @@ def iniciar_sesion(
             detail=str(exc),
         ) from exc
 
-    return UsuarioPublicoSchema.model_validate(usuario)
+    # ── Generar JWT (US 3U) ──────────────────────────────────────────────
+    access_token = crear_access_token(data={"sub": str(usuario.id)})
+
+    return LoginResponseSchema(
+        id=usuario.id,
+        email=usuario.email,
+        is_active=usuario.is_active,
+        access_token=access_token,
+    )
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Finalizar sesión del usuario (US 3U)",
+    description=(
+        "Invalida el token JWT del usuario insertando su identificador "
+        "único (jti) en la blacklist. El token no podrá reutilizarse."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Sesión finalizada correctamente.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Sesión finalizada correctamente"}
+                }
+            },
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o ya invalidado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Token inválido"}
+                }
+            },
+        },
+    },
+)
+def logout(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    POST /usuarios/logout
+
+    Flujo (CA1 — Logout manual):
+        1. Extrae el Bearer token del header Authorization.
+        2. Si no hay token → 401.
+        3. Delega a `cerrar_sesion` para validar e insertar en blacklist.
+        4. Si el token es inválido/expirado/ya invalidado → 401.
+        5. Si todo es correcto → 200 con mensaje de confirmación.
+    """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No autenticado",
+        )
+
+    try:
+        cerrar_sesion(db=db, token=credentials.credentials)
+    except TokenInvalidoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+
+    return {"detail": "Sesión finalizada correctamente"}
