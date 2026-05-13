@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { publicarVehiculo } from "../api/vehiculoService";
+import {
+  definirPrecioVehiculo,
+  publicarVehiculo,
+} from "../api/vehiculoService";
 // Ensure CSS styles are imported, assuming they are globally available or handled in main.jsx
 
 const CATALOGO = {
@@ -108,6 +111,8 @@ const PublicarVehiculoPage = () => {
     estacion: "",
     telefono: "",
     descripcion: "",
+
+    precio_por_dia: "",
     fotos: [],
   });
 
@@ -170,6 +175,7 @@ const PublicarVehiculoPage = () => {
     const anioParsed = parseInt(form.anio, 10);
     const capacidadParsed = parseInt(form.capacidad, 10);
     const petsParsed = form.pets_friendly === "true";
+    const precioParsed = Number(form.precio_por_dia);
 
     if (
       !form.marca ||
@@ -187,6 +193,11 @@ const PublicarVehiculoPage = () => {
       return;
     }
 
+    if (!precioParsed || precioParsed <= 0) {
+      mostrarFeedback("El precio por día debe ser mayor a cero.", "error");
+      return;
+    }
+
     if (form.fotos.length < 4) {
       mostrarFeedback(
         "Debes subir las 4 fotos del vehículo (Frente, Trasera, Lateral Izquierdo, Lateral Derecho).",
@@ -197,8 +208,10 @@ const PublicarVehiculoPage = () => {
 
     const propietarioId = getPropietarioId();
 
+    const { precio_por_dia: _precioPorDia, ...datosVehiculo } = form;
+
     const payload = {
-      ...form,
+      ...datosVehiculo,
       anio: anioParsed,
       capacidad: capacidadParsed,
       pets_friendly: petsParsed,
@@ -210,10 +223,13 @@ const PublicarVehiculoPage = () => {
     try {
       const data = await publicarVehiculo(propietarioId, payload);
 
+      await definirPrecioVehiculo(data.id, precioParsed);
+
       mostrarFeedback(
-        `✓ Vehículo registrado exitosamente. ID: ${data.id}`,
+        `✓ Vehículo registrado exitosamente con precio diario definido. ID: ${data.id}`,
         "success",
       );
+
       setTimeout(() => {
         navigate("/propietario/dashboard");
       }, 2000);
@@ -398,6 +414,20 @@ const PublicarVehiculoPage = () => {
                   <option value="true">Sí</option>
                   <option value="false">No</option>
                 </select>
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label htmlFor="precio_por_dia">Precio por día *</label>
+                <input
+                  id="precio_por_dia"
+                  name="precio_por_dia"
+                  className="input"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  placeholder="Ej. 35000"
+                  value={form.precio_por_dia}
+                  onChange={actualizarCampo}
+                />
               </div>
             </div>
 

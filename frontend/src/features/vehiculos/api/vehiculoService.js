@@ -8,3 +8,11 @@ export const publicarVehiculo = async (propietarioId, datosVehiculo) => {
 
   return response.data;
 };
+
+export const definirPrecioVehiculo = async (vehiculoId, precioPorDia) => {
+  const response = await httpClient.patch(`/vehiculos/${vehiculoId}/precio`, {
+    precio_por_dia: precioPorDia,
+  });
+
+  return response.data;
+};
