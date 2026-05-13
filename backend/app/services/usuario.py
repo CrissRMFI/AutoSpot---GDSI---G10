@@ -2,22 +2,34 @@
 Servicio de negocio: Usuario.
 
 Responsabilidades de esta capa:
-    1. Verificar unicidad del email antes de persistir (CA 5).
-    2. Delegar el hashing al módulo de seguridad (CA 4 - hashing).
+    1. Verificar unicidad del email antes de persistir (CA 5 — US 5U).
+    2. Delegar el hashing al módulo de seguridad (CA 4 — US 5U).
     3. Persistir el nuevo Usuario y retornarlo hidratado con su id.
+    4. Autenticar usuario con email y contraseña (US 2U).
+    5. Cerrar sesión invalidando el token JWT vía blacklist (CA1 — US 3U).
+    6. Validar tokens activos verificando firma, expiración y blacklist (US 3U).
 
 Esta capa NO valida formato de email ni longitud de contraseña;
 esa responsabilidad pertenece al schema Pydantic (RegistroUsuarioSchema).
 """
 import uuid
+from datetime import datetime, timezone
 
+import jwt
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.exceptions import MailExistenteError, MailInexistenteError, ContraseniaIncorrectaError, UsuarioNoEncontradoError
+from app.exceptions import (
+    MailExistenteError,
+    MailInexistenteError,
+    ContraseniaIncorrectaError,
+    UsuarioNoEncontradoError,
+    TokenInvalidoError,
+)
+from app.models.token_blacklist import TokenBlacklist
 from app.models.usuario import Usuario
 from app.schemas.usuario import RegistroUsuarioSchema, UsuarioLogin
-from app.utils.security import hash_password, verify_password
+from app.utils.security import hash_password, verify_password, verificar_access_token
 
 
 def crear_usuario(db: Session, schema: RegistroUsuarioSchema) -> Usuario:
@@ -122,3 +134,89 @@ def autenticar_usuario(db: Session, credenciales: UsuarioLogin) -> Usuario:
         raise ContraseniaIncorrectaError()
         
     return usuario
+
+
+# ── US 3U: Logout y validación de tokens ─────────────────────────────────────
+
+def cerrar_sesion(db: Session, token: str) -> None:
+    """
+    Invalida un token JWT insertando su `jti` en la blacklist.
+
+    Flujo (CA1 — Logout manual):
+        1. Decodifica el token para extraer `jti` y `exp`.
+        2. Verifica que el `jti` no esté ya en la blacklist.
+        3. Inserta el `jti` en la tabla `tokens_blacklist`.
+
+    Args:
+        db    : Sesión SQLAlchemy activa.
+        token : String JWT del header Authorization.
+
+    Raises:
+        TokenInvalidoError : Si el token es inválido, expirado o ya fue
+                             invalidado previamente.
+    """
+    # ── Decodificar y validar token ───────────────────────────────────────
+    try:
+        payload = verificar_access_token(token)
+    except jwt.ExpiredSignatureError:
+        raise TokenInvalidoError("Token expirado")
+    except jwt.InvalidTokenError:
+        raise TokenInvalidoError("Token inválido")
+
+    jti = payload.get("jti")
+    if not jti:
+        raise TokenInvalidoError("Token inválido")
+
+    # ── Verificar que no esté ya en la blacklist ─────────────────────────
+    ya_invalidado = (
+        db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+    )
+    if ya_invalidado:
+        raise TokenInvalidoError("Token inválido")
+
+    # ── Insertar en blacklist ────────────────────────────────────────────
+    registro = TokenBlacklist(
+        jti=jti,
+        expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+    )
+    db.add(registro)
+    db.commit()
+
+
+def validar_token_activo(db: Session, token: str) -> dict:
+    """
+    Valida que un token JWT sea válido Y no esté en la blacklist.
+
+    Flujo:
+        1. Decodifica el token (verifica firma + expiración).
+        2. Consulta la blacklist por `jti`.
+        3. Si todo es correcto, retorna el payload decodificado.
+
+    Args:
+        db    : Sesión SQLAlchemy activa.
+        token : String JWT del header Authorization.
+
+    Returns:
+        Diccionario con los claims del token (sub, exp, jti, etc.).
+
+    Raises:
+        TokenInvalidoError : Si el token es inválido, expirado o blacklisteado.
+    """
+    try:
+        payload = verificar_access_token(token)
+    except jwt.ExpiredSignatureError:
+        raise TokenInvalidoError("Token expirado")
+    except jwt.InvalidTokenError:
+        raise TokenInvalidoError("Token inválido")
+
+    jti = payload.get("jti")
+    if not jti:
+        raise TokenInvalidoError("Token inválido")
+
+    en_blacklist = (
+        db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+    )
+    if en_blacklist:
+        raise TokenInvalidoError("Token inválido")
+
+    return payload

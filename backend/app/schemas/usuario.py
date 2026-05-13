@@ -81,3 +81,18 @@ class UsuarioLogin(BaseModel):
     """
     email: str
     password: str
+
+
+class LoginResponseSchema(UsuarioPublicoSchema):
+    """
+    Respuesta del login exitoso (US 2U + US 3U).
+
+    Extiende UsuarioPublicoSchema con los campos de autenticación JWT:
+      - access_token : Token JWT firmado para autenticar requests posteriores.
+      - token_type   : Siempre "bearer" (estándar OAuth2).
+
+    Los campos heredados (id, email, is_active) mantienen compatibilidad
+    con los tests existentes del login.
+    """
+    access_token: str
+    token_type: str = "bearer"
