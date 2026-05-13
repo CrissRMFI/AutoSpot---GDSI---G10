@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { registrarDatosPersonales } from "../api/usuarioService";
+import {
+  actualizarDatosPersonales,
+  registrarDatosPersonales,
+} from "../api/usuarioService";
 
 const DatosPersonalesPage = () => {
   const navigate = useNavigate();
@@ -17,6 +20,8 @@ const DatosPersonalesPage = () => {
 
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState("");
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -31,6 +36,7 @@ const DatosPersonalesPage = () => {
     evento.preventDefault();
 
     setError("");
+    setMensajeExito("");
 
     if (!usuario?.id) {
       setError("No se encontró el usuario autenticado.");
@@ -40,15 +46,24 @@ const DatosPersonalesPage = () => {
     setCargando(true);
 
     try {
-      await registrarDatosPersonales(usuario.id, form);
-      navigate("/dashboard");
+      if (modoEdicion) {
+        await actualizarDatosPersonales(usuario.id, form);
+        setMensajeExito("Datos personales actualizados correctamente.");
+      } else {
+        await registrarDatosPersonales(usuario.id, form);
+        setMensajeExito("Datos personales registrados correctamente.");
+      }
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
     } catch (err) {
       const detalle = err.response?.data?.detail;
 
       if (Array.isArray(detalle)) {
         setError("Revise los datos ingresados.");
       } else {
-        setError(detalle || "No se pudieron registrar los datos personales.");
+        setError(detalle || "No se pudieron guardar los datos personales.");
       }
     } finally {
       setCargando(false);
@@ -68,8 +83,8 @@ const DatosPersonalesPage = () => {
           <div className="login-brand">
             <h1>Datos personales</h1>
             <p>
-              Complete su información personal para continuar utilizando
-              AutoSpot.
+              Complete o actualice su información personal para continuar
+              utilizando AutoSpot.
             </p>
 
             <div className="mt-10">
@@ -156,6 +171,27 @@ const DatosPersonalesPage = () => {
                 </small>
               </div>
 
+              <div className="field" style={{ marginBottom: "16px" }}>
+                <label
+                  style={{ display: "flex", gap: "8px", alignItems: "center" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={modoEdicion}
+                    onChange={(evento) => setModoEdicion(evento.target.checked)}
+                  />
+                  Actualizar datos personales ya registrados
+                </label>
+                <small className="help-text">
+                  Activá esta opción si ya habías cargado tus datos y querés
+                  modificarlos.
+                </small>
+              </div>
+
+              {mensajeExito && (
+                <div className="success-msg">{mensajeExito}</div>
+              )}
+
               {error && <div className="error-msg">{error}</div>}
 
               <button
@@ -163,7 +199,11 @@ const DatosPersonalesPage = () => {
                 className="btn btn-primary btn-full"
                 disabled={cargando}
               >
-                {cargando ? "Guardando..." : "Guardar datos personales"}
+                {cargando
+                  ? "Guardando..."
+                  : modoEdicion
+                    ? "Actualizar datos personales"
+                    : "Guardar datos personales"}
               </button>
             </form>
           </div>
