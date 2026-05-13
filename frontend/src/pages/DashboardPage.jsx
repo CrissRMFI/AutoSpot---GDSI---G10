@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
 const DashboardPage = () => {
@@ -51,9 +51,12 @@ const DashboardPage = () => {
               </div>
             </div>
 
+            <Link to="/datos-personales" className="btn btn-primary">
+              Completar datos personales
+            </Link>
+
             <p className="help-text">
-              Próximo paso: conectar datos personales, carga de vehículo y
-              precio diario.
+              Próximo paso: conectar carga de vehículo y precio diario.
             </p>
           </div>
         </section>
