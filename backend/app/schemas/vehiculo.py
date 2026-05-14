@@ -307,6 +307,7 @@ class VehiculoPublicoSchema(BaseModel):
     telefono: str | None = None
     descripcion: str | None = None
     fotos: list[FotoVehiculoPublicoSchema]
+    precio_por_dia: Decimal | None = None
 
     model_config = {"from_attributes": True}
 
