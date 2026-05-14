@@ -177,22 +177,12 @@ class VehiculoBaseSchema(BaseModel):
 
     @model_validator(mode="after")
     def validar_marca_modelo(self):
-        catalogo_marca_modelo = {
-            "Toyota": {"Corolla", "Hilux"},
-            "Ford": {"Fiesta", "Focus"},
-            "Volkswagen": {"Gol", "Vento"},
-            "Chevrolet": {"Onix", "Cruze"},
-            "Renault": {"Sandero", "Logan"},
-            "Fiat": {"Cronos", "Palio"},
-            "Peugeot": {"208", "308"},
-        }
+       modelos_validos = CATALOGO_MARCA_MODELO.get(self.marca)
+       
+       if modelos_validos is None or self.modelo not in modelos_validos:
+        raise ValueError("Combinacion marca modelo inexistente")
 
-        modelos_validos = catalogo_marca_modelo.get(self.marca)
-
-        if modelos_validos is None or self.modelo not in modelos_validos:
-            raise ValueError("Combinacion marca modelo inexistente")
-
-        return self
+       return self
 
 
 class RegistroVehiculoSchema(VehiculoBaseSchema):
@@ -210,27 +200,7 @@ class RegistroVehiculoPayloadSchema(VehiculoBaseSchema):
     No incluye propietario_id porque se recibe desde la URL del endpoint
     temporal POST /usuarios/{propietario_id}/vehiculos.
     """
-    
-class VehiculoPublicoSchema(BaseModel):
-    """
-    Respuesta pública del vehículo registrado.
-    """
-
-    id: uuid.UUID
-    propietario_id: uuid.UUID
-    marca: str
-    modelo: str
-    anio: int
-    tipo_transmision: str
-    capacidad: int
-    categoria: str
-    tipo_combustible: str
-    pets_friendly: bool
-    precio_por_dia: Decimal | None = None
-    estado_registro: str
-    fotos: list[FotoVehiculoPublicoSchema]
-
-    model_config = {"from_attributes": True}
+    pass
 
 class VehiculoPublicoSchema(BaseModel):
     """
