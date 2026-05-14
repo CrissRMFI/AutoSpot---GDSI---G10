@@ -7,37 +7,31 @@ const CAMPOS_DOCUMENTACION = [
     name: "patente",
     label: "Patente",
     placeholder: "Ej. ABC123",
-    required: true,
   },
   {
     name: "chasis",
     label: "Número de chasis",
     placeholder: "Ingresá el número de chasis",
-    required: true,
   },
   {
     name: "motor",
     label: "Número de motor",
     placeholder: "Ingresá el número de motor",
-    required: true,
   },
   {
     name: "titular",
     label: "Titular registral",
     placeholder: "Nombre del titular registral",
-    required: true,
   },
   {
     name: "estacion",
     label: "Estación asignada",
     placeholder: "Ej. Palermo",
-    required: true,
   },
   {
     name: "telefono",
     label: "Teléfono de contacto",
     placeholder: "Ej. 1122334455",
-    required: true,
   },
 ];
 
@@ -213,24 +207,20 @@ const DocumentacionVehiculoPage = () => {
                 gap: "16px",
               }}
             >
-              {CAMPOS_DOCUMENTACION.map(
-                ({ name, label, placeholder, required }) => (
-                  <div key={name} className="field" style={{ marginBottom: 0 }}>
-                    <label htmlFor={name}>
-                      {label} {required ? "*" : ""}
-                    </label>
+              {CAMPOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
+                <div key={name} className="field" style={{ marginBottom: 0 }}>
+                  <label htmlFor={name}>{label} *</label>
 
-                    <input
-                      id={name}
-                      name={name}
-                      className="input"
-                      placeholder={placeholder}
-                      value={form[name]}
-                      onChange={actualizarCampo}
-                    />
-                  </div>
-                ),
-              )}
+                  <input
+                    id={name}
+                    name={name}
+                    className="input"
+                    placeholder={placeholder}
+                    value={form[name]}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+              ))}
             </div>
 
             <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
