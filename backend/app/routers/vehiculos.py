@@ -15,14 +15,19 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
+
 from app.schemas.vehiculo import (
     DefinirPrecioVehiculoSchema,
+    DocumentacionVehiculoSchema,
     PrecioVehiculoResponseSchema,
     RegistroVehiculoPayloadSchema,
     RegistroVehiculoSchema,
+    VehiculoDocumentacionResponseSchema,
     VehiculoPublicoSchema,
 )
+
 from app.services.vehiculo import (
+    cargar_documentacion_vehiculo,
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
     registrar_vehiculo,
@@ -193,3 +198,111 @@ def definir_precio_diario_vehiculo(
         ) from exc
 
     return PrecioVehiculoResponseSchema.model_validate(vehiculo)
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/documentacion",
+    response_model=VehiculoPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Cargar documentación legal del vehículo",
+    description=(
+        "Carga la documentación legal y operativa de un vehículo existente. "
+        "Este flujo es posterior al alta inicial del vehículo."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Documentación legal cargada exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def cargar_documentacion_legal_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: DocumentacionVehiculoSchema,
+    db: Session = Depends(get_db),
+) -> VehiculoPublicoSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/documentacion
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Pydantic valida los campos documentales obligatorios.
+        3. El servicio verifica que el vehículo exista.
+        4. Se persiste la documentación legal del vehículo.
+    """
+    try:
+        vehiculo = cargar_documentacion_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            schema=payload,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return VehiculoPublicoSchema.model_validate(vehiculo)
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/documentacion",
+    response_model=VehiculoDocumentacionResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Cargar documentación legal del vehículo",
+    description=(
+        "Carga la documentación legal y operativa de un vehículo existente. "
+        "Este flujo es posterior al alta inicial del vehículo."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Documentación legal cargada exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def cargar_documentacion_legal_vehiculo(
+    vehiculo_id,
+    payload: DocumentacionVehiculoSchema,
+    db: Session = Depends(get_db),
+) -> VehiculoDocumentacionResponseSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/documentacion
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Pydantic valida los campos documentales obligatorios.
+        3. El servicio verifica que el vehículo exista.
+        4. Se persiste la documentación legal del vehículo.
+    """
+    try:
+        vehiculo = cargar_documentacion_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            schema=payload,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)

@@ -184,14 +184,12 @@ class VehiculoBaseSchema(BaseModel):
 
        return self
 
-
 class RegistroVehiculoSchema(VehiculoBaseSchema):
     """
     Payload de servicio para registrar un vehículo.
     """
 
     propietario_id: uuid.UUID
-
 
 class RegistroVehiculoPayloadSchema(VehiculoBaseSchema):
     """
@@ -223,6 +221,70 @@ class VehiculoPublicoSchema(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class DocumentacionVehiculoSchema(BaseModel):
+    """
+    Payload de entrada para cargar documentación legal del vehículo.
+
+    Este flujo es posterior al alta inicial del vehículo.
+    """
+
+    patente: str
+    chasis: str
+    motor: str
+    titular: str
+    cedula: str
+    poliza: str
+    vtv: str
+    estacion: str
+    telefono: str
+    descripcion: str | None = None
+
+    @field_validator(
+        "patente",
+        "chasis",
+        "motor",
+        "titular",
+        "cedula",
+        "poliza",
+        "vtv",
+        "estacion",
+        "telefono",
+    )
+    @classmethod
+    def validar_campo_obligatorio(cls, valor: str) -> str:
+        if not valor or not valor.strip():
+            raise ValueError("Campo obligatorio")
+
+        return valor.strip()
+
+    @field_validator("descripcion")
+    @classmethod
+    def normalizar_descripcion(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+
+        valor = valor.strip()
+        return valor or None
+
+class VehiculoDocumentacionResponseSchema(BaseModel):
+    """
+    Respuesta de documentación legal cargada para un vehículo.
+    """
+
+    id: uuid.UUID
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    cedula: str | None = None
+    poliza: str | None = None
+    vtv: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
+    estado_registro: str
+
+    model_config = {"from_attributes": True}
 
 class DefinirPrecioVehiculoSchema(BaseModel):
     """
@@ -246,7 +308,6 @@ class DefinirPrecioVehiculoSchema(BaseModel):
         if v <= 0:
             raise ValueError("Precio por dia invalido")
         return v
-
 
 class PrecioVehiculoResponseSchema(BaseModel):
     """

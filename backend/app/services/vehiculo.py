@@ -16,8 +16,10 @@ from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
 from app.models.foto_vehiculo import FotoVehiculo
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
-from app.schemas.vehiculo import RegistroVehiculoSchema
-
+from app.schemas.vehiculo import (
+    DocumentacionVehiculoSchema,
+    RegistroVehiculoSchema,
+)
 
 def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     """
@@ -143,3 +145,51 @@ def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehicu
         .filter(Vehiculo.propietario_id == propietario_id)
         .all()
     )
+
+def cargar_documentacion_vehiculo(
+    db: Session,
+    vehiculo_id,
+    schema: DocumentacionVehiculoSchema,
+) -> Vehiculo:
+    """
+    Carga la documentación legal y operativa de un vehículo existente.
+
+    Este flujo es posterior al alta inicial del vehículo. Cargar
+    documentación no implica aprobar automáticamente el vehículo; por eso
+    el estado_registro se mantiene sin cambios.
+
+    Args:
+        db          : Sesión SQLAlchemy activa.
+        vehiculo_id : Identificador del vehículo.
+        schema      : Payload documental validado por Pydantic.
+
+    Returns:
+        Vehiculo actualizado con documentación legal.
+
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    vehiculo.patente = schema.patente
+    vehiculo.chasis = schema.chasis
+    vehiculo.motor = schema.motor
+    vehiculo.titular = schema.titular
+    vehiculo.cedula = schema.cedula
+    vehiculo.poliza = schema.poliza
+    vehiculo.vtv = schema.vtv
+    vehiculo.estacion = schema.estacion
+    vehiculo.telefono = schema.telefono
+    vehiculo.descripcion = schema.descripcion
+
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
