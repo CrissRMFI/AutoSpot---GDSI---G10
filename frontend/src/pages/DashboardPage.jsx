@@ -28,7 +28,7 @@ const DashboardPage = () => {
       try {
         const data = await listarVehiculosDelPropietario(usuario.id);
         setVehiculos(data);
-      } catch (error) {
+      } catch {
         setErrorVehiculos("No se pudieron cargar tus vehículos publicados.");
       } finally {
         setCargandoVehiculos(false);
