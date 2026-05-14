@@ -48,15 +48,15 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
         raise UsuarioNoEncontradoError()
 
     vehiculo = Vehiculo(
-        propietario_id=schema.propietario_id,
-        marca=schema.marca,
-        modelo=schema.modelo,
-        anio=schema.anio,
-        tipo_transmision=schema.tipo_transmision,
-        capacidad=schema.capacidad,
-        categoria=schema.categoria,
-        tipo_combustible=schema.tipo_combustible,
-        pets_friendly=schema.pets_friendly,
+      propietario_id=schema.propietario_id,
+      marca=schema.marca,
+      modelo=schema.modelo,
+      anio=schema.anio,
+      tipo_transmision=schema.tipo_transmision,
+      capacidad=schema.capacidad,
+      categoria=schema.categoria,
+      tipo_combustible=schema.tipo_combustible,
+      pets_friendly=schema.pets_friendly,
     )
 
     vehiculo.fotos = [
