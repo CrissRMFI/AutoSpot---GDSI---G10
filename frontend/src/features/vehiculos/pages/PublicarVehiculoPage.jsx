@@ -1,32 +1,56 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
   definirPrecioVehiculo,
   publicarVehiculo,
 } from "../api/vehiculoService";
-// Ensure CSS styles are imported, assuming they are globally available or handled in main.jsx
 
 const CATALOGO = {
-  Toyota: ["Corolla", "Etios", "Hilux"],
-  Ford: ["Fiesta", "Focus", "Ranger"],
-  Volkswagen: ["Gol", "Polo", "Amarok"],
-  Chevrolet: ["Onix", "Cruze", "S10"],
-  Renault: ["Clio", "Sandero", "Kangoo"],
+  Toyota: ["Corolla", "Hilux"],
+  Ford: ["Fiesta", "Focus"],
+  Volkswagen: ["Gol", "Vento"],
+  Chevrolet: ["Onix", "Cruze"],
+  Renault: ["Sandero", "Logan"],
+  Fiat: ["Cronos", "Palio"],
+  Peugeot: ["208", "308"],
 };
 
-// Modal Component for Upload Simulation
+const LADOS_REQUERIDOS = [
+  {
+    codigo: "FRENTE",
+    label: "Frente",
+    tituloModal: "Foto Frente",
+  },
+  {
+    codigo: "TRASERA",
+    label: "Trasera",
+    tituloModal: "Foto Trasera",
+  },
+  {
+    codigo: "LATERAL_IZQUIERDO",
+    label: "Lateral Izquierdo",
+    tituloModal: "Foto Lateral Izquierdo",
+  },
+  {
+    codigo: "LATERAL_DERECHO",
+    label: "Lateral Derecho",
+    tituloModal: "Foto Lateral Derecho",
+  },
+];
+
 const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
   const [fileName, setFileName] = useState("");
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    if (!fileName) {
-      alert("Por favor ingresa un nombre de archivo para simular la carga.");
+    if (!fileName.trim()) {
+      alert("Por favor ingresá un nombre de archivo para simular la carga.");
       return;
     }
-    onConfirm(fileName);
+
+    onConfirm(fileName.trim());
     setFileName("");
     onClose();
   };
@@ -60,23 +84,27 @@ const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
         </p>
 
         <div className="field">
-          <label>Seleccionar archivo (Mock)</label>
+          <label>Seleccionar archivo mock</label>
           <input
             className="input"
-            placeholder="archivo.pdf o imagen.jpg"
+            placeholder="foto.jpg, foto.png o foto.webp"
             value={fileName}
             onChange={(e) => setFileName(e.target.value)}
           />
         </div>
+
         <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
           <button
+            type="button"
             className="btn btn-primary"
             style={{ flex: 1 }}
             onClick={handleConfirm}
           >
             Confirmar
           </button>
+
           <button
+            type="button"
             className="btn btn-secondary"
             style={{ flex: 1 }}
             onClick={onClose}
@@ -91,6 +119,7 @@ const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
 
 const PublicarVehiculoPage = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
 
   const [form, setForm] = useState({
     marca: "",
@@ -101,17 +130,6 @@ const PublicarVehiculoPage = () => {
     categoria: "",
     tipo_combustible: "",
     pets_friendly: "true",
-    patente: "",
-    chasis: "",
-    motor: "",
-    titular: "",
-    cedula: "",
-    poliza: "",
-    vtv: "",
-    estacion: "",
-    telefono: "",
-    descripcion: "",
-
     precio_por_dia: "",
     fotos: [],
   });
@@ -121,21 +139,23 @@ const PublicarVehiculoPage = () => {
     field: "",
     title: "",
   });
+
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
 
   const actualizarCampo = (e) => {
     const { name, value } = e.target;
+
     setForm((prev) => {
       const updated = { ...prev, [name]: value };
+
       if (name === "marca") {
-        updated.modelo = ""; // Reset model when brand changes
+        updated.modelo = "";
       }
+
       return updated;
     });
   };
-
-  const { usuario } = useAuth();
 
   const getPropietarioId = () => {
     return usuario?.id || "00000000-0000-0000-0000-000000000000";
@@ -147,68 +167,100 @@ const PublicarVehiculoPage = () => {
 
   const handleUploadConfirm = (fileName) => {
     const field = modalConfig.field;
-    if (
-      ["FRENTE", "TRASERA", "LATERAL_IZQUIERDO", "LATERAL_DERECHO"].includes(
-        field,
-      )
-    ) {
-      setForm((prev) => {
-        const fotos = prev.fotos.filter((f) => f.lado !== field);
-        fotos.push({
-          lado: field,
-          url: `uploads/vehiculos/mock/${fileName}`,
-          formato: fileName.split(".").pop().toLowerCase() || "jpg",
-          tamanio_bytes: 500000,
-        });
-        return { ...prev, fotos };
-      });
-    } else {
-      setForm((prev) => ({ ...prev, [field]: fileName }));
-    }
+    const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+
+    setForm((prev) => {
+      const fotosSinLadoActual = prev.fotos.filter(
+        (foto) => foto.lado !== field,
+      );
+
+      const nuevaFoto = {
+        lado: field,
+        url: `uploads/vehiculos/mock/${fileName}`,
+        formato: extension,
+        tamanio_bytes: 500000,
+      };
+
+      return {
+        ...prev,
+        fotos: [...fotosSinLadoActual, nuevaFoto],
+      };
+    });
   };
 
   const mostrarFeedback = (message, type) => {
     setFeedback({ message, type });
   };
 
-  const enviarFormulario = async () => {
-    const anioParsed = parseInt(form.anio, 10);
-    const capacidadParsed = parseInt(form.capacidad, 10);
-    const petsParsed = form.pets_friendly === "true";
-    const precioParsed = Number(form.precio_por_dia);
-
+  const validarFormulario = ({
+    datosVehiculo,
+    anioParsed,
+    capacidadParsed,
+    precioParsed,
+  }) => {
     if (
-      !form.marca ||
-      !form.modelo ||
+      !datosVehiculo.marca ||
+      !datosVehiculo.modelo ||
       !anioParsed ||
-      !form.tipo_transmision ||
+      !datosVehiculo.tipo_transmision ||
       !capacidadParsed ||
-      !form.categoria ||
-      !form.tipo_combustible
+      !datosVehiculo.categoria ||
+      !datosVehiculo.tipo_combustible
     ) {
       mostrarFeedback(
         "Por favor completá todos los campos obligatorios básicos.",
         "error",
       );
-      return;
+      return false;
     }
 
-    if (!precioParsed || precioParsed <= 0) {
+    if (precioParsed <= 0 || Number.isNaN(precioParsed)) {
       mostrarFeedback("El precio por día debe ser mayor a cero.", "error");
-      return;
+      return false;
     }
 
-    if (form.fotos.length < 4) {
+    if (datosVehiculo.fotos.length < 4) {
       mostrarFeedback(
-        "Debes subir las 4 fotos del vehículo (Frente, Trasera, Lateral Izquierdo, Lateral Derecho).",
+        "Debes subir las 4 fotos del vehículo: Frente, Trasera, Lateral Izquierdo y Lateral Derecho.",
         "error",
       );
-      return;
+      return false;
     }
 
-    const propietarioId = getPropietarioId();
+    const ladosCargados = new Set(datosVehiculo.fotos.map((foto) => foto.lado));
+    const faltanLados = LADOS_REQUERIDOS.some(
+      ({ codigo }) => !ladosCargados.has(codigo),
+    );
 
-    const { precio_por_dia: _precioPorDia, ...datosVehiculo } = form;
+    if (faltanLados) {
+      mostrarFeedback(
+        "Cada foto debe corresponder a un lado requerido del vehículo.",
+        "error",
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const enviarFormulario = async () => {
+    const { precio_por_dia, ...datosVehiculo } = form;
+
+    const anioParsed = parseInt(datosVehiculo.anio, 10);
+    const capacidadParsed = parseInt(datosVehiculo.capacidad, 10);
+    const petsParsed = datosVehiculo.pets_friendly === "true";
+    const precioParsed = Number(precio_por_dia);
+
+    const formularioValido = validarFormulario({
+      datosVehiculo,
+      anioParsed,
+      capacidadParsed,
+      precioParsed,
+    });
+
+    if (!formularioValido) return;
+
+    const propietarioId = getPropietarioId();
 
     const payload = {
       ...datosVehiculo,
@@ -256,7 +308,9 @@ const PublicarVehiculoPage = () => {
     }
   };
 
-  const isPhotoUploaded = (lado) => form.fotos.some((f) => f.lado === lado);
+  const isPhotoUploaded = (lado) => {
+    return form.fotos.some((foto) => foto.lado === lado);
+  };
 
   return (
     <div className="auth-shell">
@@ -264,6 +318,7 @@ const PublicarVehiculoPage = () => {
         <span className="logo">
           Auto<span>Spot</span>
         </span>
+
         <Link className="btn btn-secondary" to="/propietario/dashboard">
           Volver al panel
         </Link>
@@ -273,19 +328,19 @@ const PublicarVehiculoPage = () => {
         <div className="login-grid">
           <div className="login-brand">
             <h1>Publicar auto</h1>
-            <p>Formulario de alta con datos legales y documentación.</p>
+            <p>Formulario de alta inicial con características y fotos.</p>
+
             <div className="mt-10">
               <p className="muted-small">
-                Al subir las fotos y documentación, el vehículo pasará a
-                revisión por nuestros administradores para validar que esté en
-                regla.
+                Al cargar las características y fotos, el vehículo quedará
+                pendiente de documentación para su validación posterior.
               </p>
             </div>
           </div>
 
           <div className="login-panel" style={{ padding: "40px" }}>
             <h2 style={{ marginTop: 0, marginBottom: "24px" }}>
-              Datos Generales
+              Datos generales
             </h2>
 
             <div
@@ -305,13 +360,14 @@ const PublicarVehiculoPage = () => {
                   onChange={actualizarCampo}
                 >
                   <option value="">Seleccioná una marca</option>
-                  {Object.keys(CATALOGO).map((m) => (
-                    <option key={m} value={m}>
-                      {m}
+                  {Object.keys(CATALOGO).map((marca) => (
+                    <option key={marca} value={marca}>
+                      {marca}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="modelo">Modelo *</label>
                 <select
@@ -324,14 +380,15 @@ const PublicarVehiculoPage = () => {
                 >
                   <option value="">Seleccioná un modelo</option>
                   {form.marca
-                    ? CATALOGO[form.marca].map((m) => (
-                        <option key={m} value={m}>
-                          {m}
+                    ? CATALOGO[form.marca].map((modelo) => (
+                        <option key={modelo} value={modelo}>
+                          {modelo}
                         </option>
                       ))
                     : null}
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="anio">Año *</label>
                 <input
@@ -345,6 +402,7 @@ const PublicarVehiculoPage = () => {
                   onChange={actualizarCampo}
                 />
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="tipo_transmision">Transmisión *</label>
                 <select
@@ -359,6 +417,7 @@ const PublicarVehiculoPage = () => {
                   <option value="AUTOMATICA">Automática</option>
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="capacidad">Capacidad *</label>
                 <input
@@ -372,6 +431,7 @@ const PublicarVehiculoPage = () => {
                   onChange={actualizarCampo}
                 />
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="categoria">Categoría *</label>
                 <select
@@ -389,6 +449,7 @@ const PublicarVehiculoPage = () => {
                   <option value="COUPE">Coupé</option>
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="tipo_combustible">Combustible *</label>
                 <select
@@ -406,6 +467,7 @@ const PublicarVehiculoPage = () => {
                   <option value="GNC">GNC</option>
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="pets_friendly">Acepta mascotas *</label>
                 <select
@@ -419,6 +481,7 @@ const PublicarVehiculoPage = () => {
                   <option value="false">No</option>
                 </select>
               </div>
+
               <div className="field" style={{ marginBottom: 0 }}>
                 <label htmlFor="precio_por_dia">Precio por día *</label>
                 <input
@@ -436,7 +499,7 @@ const PublicarVehiculoPage = () => {
             </div>
 
             <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
-              Datos Legales
+              Fotos del vehículo *
             </h2>
 
             <div
@@ -446,286 +509,34 @@ const PublicarVehiculoPage = () => {
                 gap: "16px",
               }}
             >
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="patente">Patente</label>
-                <input
-                  id="patente"
-                  name="patente"
-                  className="input"
-                  placeholder="Ej. AA 456 BB"
-                  value={form.patente}
-                  onChange={actualizarCampo}
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="chasis">Número de chasis</label>
-                <input
-                  id="chasis"
-                  name="chasis"
-                  className="input"
-                  placeholder="Ingresá el chasis"
-                  value={form.chasis}
-                  onChange={actualizarCampo}
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="motor">Número de motor</label>
-                <input
-                  id="motor"
-                  name="motor"
-                  className="input"
-                  placeholder="Ingresá el motor"
-                  value={form.motor}
-                  onChange={actualizarCampo}
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="titular">Titular registral</label>
-                <input
-                  id="titular"
-                  name="titular"
-                  className="input"
-                  placeholder="Nombre del titular"
-                  value={form.titular}
-                  onChange={actualizarCampo}
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="estacion">Estación asignada</label>
-                <input
-                  id="estacion"
-                  name="estacion"
-                  className="input"
-                  placeholder="Ej. Belgrano"
-                  value={form.estacion}
-                  onChange={actualizarCampo}
-                />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="telefono">Teléfono de contacto</label>
-                <input
-                  id="telefono"
-                  name="telefono"
-                  className="input"
-                  placeholder="Ej. +54 11 5555 5555"
-                  value={form.telefono}
-                  onChange={actualizarCampo}
-                />
-              </div>
-            </div>
+              {LADOS_REQUERIDOS.map(({ codigo, label, tituloModal }) => (
+                <div
+                  key={codigo}
+                  className="field"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 0,
+                  }}
+                >
+                  <div>
+                    <label style={{ margin: 0 }}>{label}</label>
+                    <small className="help-text" style={{ marginTop: 2 }}>
+                      {isPhotoUploaded(codigo) ? "✓ Cargado" : "Pendiente"}
+                    </small>
+                  </div>
 
-            <div className="field" style={{ marginTop: "16px" }}>
-              <label htmlFor="descripcion">Descripción legal y operativa</label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                className="input"
-                style={{ minHeight: "80px" }}
-                placeholder="Describí observaciones legales y operativas"
-                value={form.descripcion}
-                onChange={actualizarCampo}
-              />
-            </div>
-
-            <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
-              Fotos del Vehículo *
-            </h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Frente</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {isPhotoUploaded("FRENTE") ? "✓ Cargado" : "Pendiente"}
-                  </small>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                    onClick={() => openUploadModal(codigo, tituloModal)}
+                  >
+                    {isPhotoUploaded(codigo) ? "Cambiar" : "Subir"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() => openUploadModal("FRENTE", "Foto Frente")}
-                >
-                  {isPhotoUploaded("FRENTE") ? "Cambiar" : "Subir"}
-                </button>
-              </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Trasera</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {isPhotoUploaded("TRASERA") ? "✓ Cargado" : "Pendiente"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() => openUploadModal("TRASERA", "Foto Trasera")}
-                >
-                  {isPhotoUploaded("TRASERA") ? "Cambiar" : "Subir"}
-                </button>
-              </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Lateral Izquierdo</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {isPhotoUploaded("LATERAL_IZQUIERDO")
-                      ? "✓ Cargado"
-                      : "Pendiente"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() =>
-                    openUploadModal(
-                      "LATERAL_IZQUIERDO",
-                      "Foto Lateral Izquierdo",
-                    )
-                  }
-                >
-                  {isPhotoUploaded("LATERAL_IZQUIERDO") ? "Cambiar" : "Subir"}
-                </button>
-              </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Lateral Derecho</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {isPhotoUploaded("LATERAL_DERECHO")
-                      ? "✓ Cargado"
-                      : "Pendiente"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() =>
-                    openUploadModal("LATERAL_DERECHO", "Foto Lateral Derecho")
-                  }
-                >
-                  {isPhotoUploaded("LATERAL_DERECHO") ? "Cambiar" : "Subir"}
-                </button>
-              </div>
-            </div>
-
-            <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
-              Documentación Legal
-            </h2>
-
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Título automotor (Cédula)</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {form.cedula ? "✓ " + form.cedula : "PDF o imagen"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() => openUploadModal("cedula", "Título / Cédula")}
-                >
-                  {form.cedula ? "Cambiar" : "Subir archivo"}
-                </button>
-              </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>Póliza de seguro</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {form.poliza ? "✓ " + form.poliza : "Comprobante vigente"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() => openUploadModal("poliza", "Póliza de seguro")}
-                >
-                  {form.poliza ? "Cambiar" : "Subir archivo"}
-                </button>
-              </div>
-              <div
-                className="field"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 0,
-                }}
-              >
-                <div>
-                  <label style={{ margin: 0 }}>VTV / revisión técnica</label>
-                  <small className="help-text" style={{ marginTop: 2 }}>
-                    {form.vtv ? "✓ " + form.vtv : "Constancia de vigencia"}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                  onClick={() => openUploadModal("vtv", "VTV / Revisión")}
-                >
-                  {form.vtv ? "Cambiar" : "Subir archivo"}
-                </button>
-              </div>
+              ))}
             </div>
 
             {feedback.message && (
@@ -753,6 +564,7 @@ const PublicarVehiculoPage = () => {
             )}
 
             <button
+              type="button"
               className="btn btn-primary btn-full"
               style={{ marginTop: "32px", padding: "16px", fontSize: "15px" }}
               onClick={enviarFormulario}

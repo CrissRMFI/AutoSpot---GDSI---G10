@@ -10,16 +10,35 @@ Cómo ejecutar en desarrollo:
     cd backend/
     uvicorn app.main:app --reload
 
-Documentación interactiva (generada automáticamente por FastAPI):
-    - Swagger UI : http://localhost:8000/docs
-    - ReDoc      : http://localhost:8000/redoc
 """
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import datos_personales_usuario as router_datos_personales
 from app.routers import usuarios as router_usuarios
 from app.routers import vehiculos as router_vehiculos
+
+
+def obtener_origenes_cors() -> list[str]:
+    """
+    Obtiene los orígenes permitidos para CORS.
+
+    En producción se usa CORS_ALLOW_ORIGINS con URLs separadas por coma.
+    En desarrollo local se permiten los orígenes habituales de Vite/React.
+    """
+    origenes = os.getenv(
+        "CORS_ALLOW_ORIGINS",
+        "http://localhost:5173,http://localhost:3000",
+    )
+
+    return [
+        origen.strip()
+        for origen in origenes.split(",")
+        if origen.strip()
+    ]
+
 
 app = FastAPI(
     title="AutoSpot API",
@@ -33,10 +52,7 @@ app = FastAPI(
 # ── Configuración CORS ────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ],
+    allow_origins=obtener_origenes_cors(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

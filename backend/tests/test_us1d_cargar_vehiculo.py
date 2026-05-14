@@ -11,7 +11,7 @@ Criterios de Aceptación cubiertos inicialmente:
   │ CA  │ Descripción                                                      │
   ├─────┼──────────────────────────────────────────────────────────────────┤
   │ CA1 │ Campos obligatorios omitidos → bloquea guardado                  │
-│ CA6 │ Campos obligatorios correctos → información del auto guardada    │
+  │ CA6 │ Campos obligatorios correctos → información del auto guardada    │
   └─────┴──────────────────────────────────────────────────────────────────┘
 
 """
@@ -83,12 +83,10 @@ class TestCA6_RegistroExitosoVehiculo:
                     url="uploads/vehiculos/corolla/lateral_derecho.jpg",
                     formato="jpg",
                     tamanio_bytes=500_000,
-                ),
-            ],
+                    ),
+                ],
         )
-
         vehiculo = registrar_vehiculo(db=db_session, schema=payload)
-
         assert vehiculo.id is not None
         assert vehiculo.propietario_id == propietario.id
         assert vehiculo.marca == "Toyota"

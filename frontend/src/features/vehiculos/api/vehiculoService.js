@@ -17,6 +17,18 @@ export const definirPrecioVehiculo = async (vehiculoId, precioPorDia) => {
   return response.data;
 };
 
+export const cargarDocumentacionVehiculo = async (
+  vehiculoId,
+  documentacion,
+) => {
+  const response = await httpClient.patch(
+    `/vehiculos/${vehiculoId}/documentacion`,
+    documentacion,
+  );
+
+  return response.data;
+};
+
 export const listarVehiculosDelPropietario = async (propietarioId) => {
   const response = await httpClient.get(`/usuarios/${propietarioId}/vehiculos`);
 
