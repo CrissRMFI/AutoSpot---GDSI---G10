@@ -1,18 +1,14 @@
 """
 Configuración de la base de datos para AutoSpot.
 
-Driver: psycopg2-binary (síncrono) con SQLAlchemy 2.0.
+Driver: psycopg2-binary con SQLAlchemy 2.0.
 
 Configuración:
-  - Las credenciales se leen de variables de entorno definidas en `.env`.
-  - `python-dotenv` carga el `.env` automáticamente al importar este módulo.
-  - `pool_pre_ping=True` habilita reconexión automática si PostgreSQL
+  - En producción se prioriza DATABASE_URL.
+  - En desarrollo local se construye la URL con DB_USER, DB_PASSWORD,
+    DB_HOST, DB_PORT y DB_NAME.
+  - pool_pre_ping=True habilita reconexión automática si PostgreSQL
     cierra conexiones inactivas.
-
-Uso:
-  - Desarrollo local:  DB_HOST=localhost (con `docker compose up db -d`)
-  - Docker Compose:    DB_HOST=db (inyectado por docker-compose.yml)
-  - Tests:             Se sobreescribe con `app.dependency_overrides` en conftest.py.
 """
 import os
 
@@ -21,23 +17,40 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # ── Cargar variables de entorno desde .env ───────────────────────────────────
-# Busca el .env en la raíz del proyecto (un nivel arriba de backend/)
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
-# ── Construcción dinámica de DATABASE_URL ────────────────────────────────────
-DB_USER: str = os.getenv("DB_USER", "autospot_user")
-DB_PASSWORD: str = os.getenv("DB_PASSWORD", "autospot_pass")
-DB_HOST: str = os.getenv("DB_HOST", "localhost")
-DB_PORT: str = os.getenv("DB_PORT", "5432")
-DB_NAME: str = os.getenv("DB_NAME", "autospot_db")
 
-DATABASE_URL: str = (
-    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
+def construir_database_url() -> str:
+    """
+    Construye la URL de conexión a PostgreSQL.
+
+    Prioridad:
+      1. DATABASE_URL, usada normalmente en deploy.
+      2. Variables separadas, usadas en desarrollo local o Docker Compose.
+    """
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+        # Algunos proveedores entregan postgres:// y SQLAlchemy espera postgresql://
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+        return database_url
+
+    db_user: str = os.getenv("DB_USER", "autospot_user")
+    db_password: str = os.getenv("DB_PASSWORD", "autospot_pass")
+    db_host: str = os.getenv("DB_HOST", "localhost")
+    db_port: str = os.getenv("DB_PORT", "5432")
+    db_name: str = os.getenv("DB_NAME", "autospot_db")
+
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+
+DATABASE_URL = construir_database_url()
 
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # Reconexión automática ante conexiones cerradas
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(
@@ -49,6 +62,7 @@ SessionLocal = sessionmaker(
 
 class Base(DeclarativeBase):
     """Base declarativa compartida por todos los modelos ORM."""
+
     pass
 
 
@@ -62,3 +76,4 @@ def get_db():
         yield db
     finally:
         db.close()
+        
