@@ -5,6 +5,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
 import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
+import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 
 const AppRoutes = () => {
   return (
@@ -17,6 +18,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       <Route path="/login" element={<LoginPage />} />
@@ -54,6 +56,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PublicarVehiculoPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/vehiculos/:vehiculoId/documentacion"
+        element={
+          <ProtectedRoute>
+            <DocumentacionVehiculoPage />
           </ProtectedRoute>
         }
       />
