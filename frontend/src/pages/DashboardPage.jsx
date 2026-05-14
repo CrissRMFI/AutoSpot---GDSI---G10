@@ -447,6 +447,31 @@ const DashboardPage = () => {
                       ? `$${vehiculo.precio_por_dia}`
                       : "No definido"}
                   </p>
+
+                  <p
+                    className="help-text"
+                    style={{
+                      marginTop: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Estado: {vehiculo.estado_registro}
+                  </p>
+
+                  {vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION" && (
+                    <Link
+                      className="btn btn-secondary"
+                      to={`/vehiculos/${vehiculo.id}/documentacion`}
+                      style={{
+                        display: "inline-flex",
+                        justifyContent: "center",
+                        marginTop: 8,
+                        width: "100%",
+                      }}
+                    >
+                      Cargar documentación legal
+                    </Link>
+                  )}
                 </article>
               ))}
             </div>
