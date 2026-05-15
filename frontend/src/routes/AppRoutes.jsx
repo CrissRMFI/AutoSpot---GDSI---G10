@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
+import LandingPage from "../features/landing/pages/LandingPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
@@ -10,6 +11,11 @@ import DocumentacionVehiculoPage from "../features/vehiculos/pages/Documentacion
 const AppRoutes = () => {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
+
       <Route
         path="/datos-personales"
         element={
@@ -18,11 +24,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      <Route path="/" element={<Navigate to="/login" replace />} />
-
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/registro" element={<RegisterPage />} />
 
       <Route
         path="/dashboard"
@@ -78,7 +79,7 @@ const AppRoutes = () => {
         }
       />
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
