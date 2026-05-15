@@ -92,7 +92,7 @@ router = APIRouter(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Payload inválido o campos obligatorios faltantes.",
         },
     },
@@ -183,7 +183,7 @@ def registrar_datos_personales_usuario(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Payload inválido o campos obligatorios faltantes.",
         },
     },

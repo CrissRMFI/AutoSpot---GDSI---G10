@@ -121,7 +121,7 @@ def validar_vehiculo_pertenece_a_usuario_autenticado(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Payload inválido.",
         },
     },
@@ -260,7 +260,7 @@ def listar_vehiculos_usuario(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Payload inválido.",
         },
     },
@@ -329,7 +329,7 @@ def definir_precio_diario_vehiculo(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Payload inválido.",
         },
     },

@@ -100,7 +100,7 @@ router = APIRouter(
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": (
                 "Payload inválido: email con formato incorrecto "
                 "o contraseña de menos de 8 caracteres."
@@ -167,7 +167,7 @@ def registrar_usuario(
         status.HTTP_409_CONFLICT: {
             "description": "El email ya está registrado en la plataforma.",
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": (
                 "Payload inválido: email con formato incorrecto "
                 "o contraseña de menos de 8 caracteres."
