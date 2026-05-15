@@ -53,6 +53,11 @@ const ARCHIVOS_DOCUMENTACION = [
   },
 ];
 
+const inputClassName =
+  "w-full rounded-xl border border-autospot-border bg-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]";
+
+const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
+
 const DocumentacionVehiculoPage = () => {
   const { vehiculoId } = useParams();
   const navigate = useNavigate();
@@ -73,11 +78,11 @@ const DocumentacionVehiculoPage = () => {
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
 
-  const actualizarCampo = (e) => {
-    const { name, value } = e.target;
+  const actualizarCampo = (evento) => {
+    const { name, value } = evento.target;
 
-    setForm((prev) => ({
-      ...prev,
+    setForm((estadoActual) => ({
+      ...estadoActual,
       [name]: value,
     }));
   };
@@ -110,8 +115,12 @@ const DocumentacionVehiculoPage = () => {
     return true;
   };
 
-  const enviarFormulario = async () => {
-    if (!validarFormulario()) return;
+  const enviarFormulario = async (evento) => {
+    evento.preventDefault();
+
+    if (!validarFormulario()) {
+      return;
+    }
 
     setCargando(true);
     setFeedback({ message: "", type: "" });
@@ -131,7 +140,7 @@ const DocumentacionVehiculoPage = () => {
       });
 
       setFeedback({
-        message: "✓ Documentación legal cargada correctamente.",
+        message: "Documentación legal cargada correctamente.",
         type: "success",
       });
 
@@ -142,20 +151,20 @@ const DocumentacionVehiculoPage = () => {
           },
         });
       }, 1500);
-    } catch (e) {
-      const detalle = e.response?.data?.detail;
+    } catch (error) {
+      const detalle = error.response?.data?.detail;
 
       let mensajeError = detalle;
 
       if (Array.isArray(detalle)) {
         mensajeError = detalle
-          .map((d) => `${d.loc?.join(".")}: ${d.msg}`)
+          .map((item) => `${item.loc?.join(".")}: ${item.msg}`)
           .join(", ");
       }
 
       setFeedback({
-        message: `✗ Error al cargar documentación: ${
-          mensajeError || e.message
+        message: `Error al cargar documentación: ${
+          mensajeError || error.message
         }`,
         type: "error",
       });
@@ -165,146 +174,189 @@ const DocumentacionVehiculoPage = () => {
   };
 
   return (
-    <div className="auth-shell">
-      <header className="auth-header">
-        <span className="logo">
-          Auto<span>Spot</span>
-        </span>
+    <main className="min-h-screen bg-autospot-cream text-autospot-black">
+      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+          <Link
+            to="/"
+            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
+          >
+            Auto<span className="!text-autospot-accent">Spot</span>
+          </Link>
 
-        <Link className="btn btn-secondary" to="/propietario/dashboard">
-          Volver al panel
-        </Link>
+          <Link
+            to="/propietario/dashboard"
+            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            Volver al panel
+          </Link>
+        </div>
       </header>
 
-      <div className="login-wrap" style={{ maxWidth: "1100px" }}>
-        <div className="login-grid">
-          <div className="login-brand">
-            <h1>Documentación legal</h1>
+      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
+        <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8 lg:sticky lg:top-28 lg:h-fit">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
+            Validación documental
+          </p>
 
-            <p>
-              Completá los datos legales del vehículo para continuar con la
-              validación documental.
+          <h1 className="font-display text-3xl font-black leading-[1.05] tracking-[-0.06em] !text-autospot-white sm:text-4xl">
+            Documentación legal
+          </h1>
+
+          <p className="mt-4 text-sm leading-7 !text-[#b8b8b8] sm:text-base">
+            Completá los datos legales del vehículo para continuar con la
+            validación documental.
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
+            <p className="text-sm font-bold !text-autospot-white">
+              Vehículo seleccionado
             </p>
 
-            <div className="mt-10">
-              <p className="muted-small">
-                Esta carga corresponde al flujo posterior al alta inicial. El
-                vehículo ya fue registrado con características y fotos, pero
-                todavía necesita documentación para ser revisado.
-              </p>
-            </div>
+            <p className="mt-2 break-words text-sm leading-6 !text-white/65">
+              ID: {vehiculoId}
+            </p>
           </div>
 
-          <div className="login-panel" style={{ padding: "40px" }}>
-            <h2 style={{ marginTop: 0, marginBottom: "24px" }}>
-              Datos legales del vehículo
-            </h2>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
+            <p className="text-sm font-bold !text-autospot-white">
+              Archivos requeridos
+            </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              {CAMPOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
-                <div key={name} className="field" style={{ marginBottom: 0 }}>
-                  <label htmlFor={name}>{label} *</label>
+            <p className="mt-2 text-sm leading-6 !text-white/65">
+              Cédula o título, póliza de seguro y VTV o revisión técnica.
+            </p>
+          </div>
+        </aside>
 
-                  <input
-                    id={name}
-                    name={name}
-                    className="input"
-                    placeholder={placeholder}
-                    value={form[name]}
-                    onChange={actualizarCampo}
-                  />
-                </div>
-              ))}
-            </div>
+        <section className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
+          <form onSubmit={enviarFormulario} className="space-y-8">
+            <section>
+              <div className="mb-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                  Datos legales
+                </p>
 
-            <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
-              Archivos de documentación
-            </h2>
+                <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black sm:text-3xl">
+                  Información del vehículo
+                </h2>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "16px",
-              }}
-            >
-              {ARCHIVOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
-                <div key={name} className="field" style={{ marginBottom: 0 }}>
-                  <label htmlFor={name}>{label} *</label>
+                <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                  Ingresá los datos tal como figuran en la documentación del
+                  vehículo.
+                </p>
+              </div>
 
-                  <input
-                    id={name}
-                    name={name}
-                    className="input"
-                    placeholder={placeholder}
-                    value={form[name]}
-                    onChange={actualizarCampo}
-                  />
+              <div className="grid gap-5 sm:grid-cols-2">
+                {CAMPOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
+                  <div key={name}>
+                    <label htmlFor={name} className={labelClassName}>
+                      {label} *
+                    </label>
 
-                  <small className="help-text">
-                    Por ahora se registra el nombre/ruta del archivo como mock.
-                  </small>
-                </div>
-              ))}
-            </div>
+                    <input
+                      id={name}
+                      name={name}
+                      className={inputClassName}
+                      placeholder={placeholder}
+                      value={form[name]}
+                      onChange={actualizarCampo}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
 
-            <div className="field" style={{ marginTop: "24px" }}>
-              <label htmlFor="descripcion">Descripción adicional</label>
+            <section>
+              <div className="mb-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                  Archivos
+                </p>
+
+                <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+                  Archivos de documentación
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                  Por ahora se registra el nombre o ruta del archivo como mock.
+                </p>
+              </div>
+
+              <div className="grid gap-5">
+                {ARCHIVOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
+                  <div
+                    key={name}
+                    className="rounded-2xl border border-autospot-border bg-white/70 p-4"
+                  >
+                    <label htmlFor={name} className={labelClassName}>
+                      {label} *
+                    </label>
+
+                    <input
+                      id={name}
+                      name={name}
+                      className={inputClassName}
+                      placeholder={placeholder}
+                      value={form[name]}
+                      onChange={actualizarCampo}
+                    />
+
+                    <p className="mt-2 text-xs leading-5 text-autospot-muted">
+                      Ingresá un nombre de archivo o una ruta simulada.
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <label htmlFor="descripcion" className={labelClassName}>
+                Descripción adicional
+              </label>
 
               <textarea
                 id="descripcion"
                 name="descripcion"
-                className="input"
+                className={`${inputClassName} min-h-32 resize-y`}
                 placeholder="Observaciones sobre la documentación o el estado legal del vehículo"
                 value={form.descripcion}
                 onChange={actualizarCampo}
                 rows={4}
               />
-            </div>
+            </section>
 
             {feedback.message && (
               <div
-                style={{
-                  display: "block",
-                  padding: "12px 16px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  marginTop: "24px",
-                  fontWeight: 500,
-                  background:
-                    feedback.type === "error"
-                      ? "rgba(239,68,68,0.15)"
-                      : "rgba(34,197,94,0.15)",
-                  color: feedback.type === "error" ? "#f87171" : "#4ade80",
-                  border:
-                    feedback.type === "error"
-                      ? "1px solid rgba(239,68,68,0.3)"
-                      : "1px solid rgba(34,197,94,0.3)",
-                }}
+                className={`rounded-xl px-4 py-3 text-sm font-bold ${
+                  feedback.type === "error"
+                    ? "border border-red-200 bg-red-50 text-[#b42318]"
+                    : "border border-[#bbf7d0] bg-[#e7f8ed] text-[#166534]"
+                }`}
               >
                 {feedback.message}
               </div>
             )}
 
-            <button
-              type="button"
-              className="btn btn-primary btn-full"
-              style={{ marginTop: "32px", padding: "16px", fontSize: "15px" }}
-              onClick={enviarFormulario}
-              disabled={cargando}
-            >
-              {cargando ? "Guardando…" : "Guardar documentación"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                to="/propietario/dashboard"
+                className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+              >
+                Cancelar
+              </Link>
+
+              <button
+                type="submit"
+                disabled={cargando}
+                className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
+              >
+                {cargando ? "Guardando..." : "Guardar documentación"}
+              </button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </main>
   );
 };
 
