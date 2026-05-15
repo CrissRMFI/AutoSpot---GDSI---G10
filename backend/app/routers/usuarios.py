@@ -36,6 +36,17 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies.auth import (
+    get_usuario_actual,
+    validar_usuario_autenticado_coincide_con_id,
+)
+from app.exceptions import (
+    MailExistenteError,
+    MailInexistenteError,
+    ContraseniaIncorrectaError,
+    UsuarioNoEncontradoError,
+    TokenInvalidoError,
+)
 from app.exceptions import (
     MailExistenteError,
     MailInexistenteError,
@@ -136,11 +147,19 @@ def registrar_usuario(
     summary="Actualizar datos de un usuario existente",
     description=(
         "Permite actualizar la información de un Usuario existente. "
-        "El email debe ser único y la contraseña se hashea antes de persistir."
+        "El email debe ser único y la contraseña se hashea antes de persistir. "
+        "Requiere autenticación JWT y solo permite que el usuario autenticado "
+        "actualice su propia cuenta."
     ),
     responses={
         status.HTTP_200_OK: {
             "description": "Usuario actualizado exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta operar sobre otro usuario.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Usuario no encontrado.",
@@ -156,14 +175,34 @@ def registrar_usuario(
         },
     },
 )
+
+
 def actualizar_usuario(
     usuario_id: uuid.UUID,
     payload: RegistroUsuarioSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> UsuarioPublicoSchema:
     """
     Actualiza los datos de un Usuario existente.
+
+    Seguridad:
+        - Requiere JWT válido.
+        - El `sub` del token debe coincidir con el `usuario_id` de la URL.
+        - Un usuario no puede actualizar la cuenta de otro usuario.
+
+    Flujo:
+        1. FastAPI valida el payload.
+        2. Se valida el token JWT mediante get_usuario_actual.
+        3. Se compara usuario_id del path contra sub del token.
+        4. Se delega la actualización al servicio de dominio.
+        5. Se traducen errores de dominio a HTTP.
     """
+    validar_usuario_autenticado_coincide_con_id(
+        usuario_id=usuario_id,
+        usuario_actual=usuario_actual,
+    )
+
     try:
         usuario = actualizar_usuario_service(
             db=db,
@@ -182,6 +221,7 @@ def actualizar_usuario(
         ) from exc
 
     return UsuarioPublicoSchema.model_validate(usuario)
+
 @router.post(
     "/login",
     response_model=LoginResponseSchema,
