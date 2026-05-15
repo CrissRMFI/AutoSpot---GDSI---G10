@@ -7,8 +7,9 @@ Metodología: TDD
 
 Estrategia:
   - Se usa TestClient de FastAPI.
-  - El fixture `client` (conftest.py) o `_make_test_engine` proveen PostgreSQL de test.
   - Cada test corre con una base limpia.
+  - Como el endpoint de datos personales está protegido, los tests HTTP
+    registran un usuario, hacen login y envían Authorization: Bearer <token>.
 
 Criterios de Aceptación cubiertos inicialmente:
   ┌─────┬──────────────────────────────────────────────────────────────────┐
@@ -22,6 +23,8 @@ Referencias:
   - Backlog Sprint 1 — US 1U Registro datos personales
   - docs/core_negocio/dominio_actores.md
 """
+import uuid
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
@@ -30,6 +33,7 @@ from app.main import app
 from tests.conftest import _make_test_engine
 
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
+from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 
 
@@ -47,7 +51,11 @@ def _override_get_db_factory(testing_session_local):
     return override_get_db
 
 
-def _registrar_usuario(client: TestClient) -> str:
+def _registrar_usuario(
+    client: TestClient,
+    email: str = "datos.http@autospot.com",
+    password: str = "password123",
+) -> str:
     """
     Helper: registra un Usuario base usando el endpoint existente de US 5U
     y retorna su id.
@@ -55,8 +63,8 @@ def _registrar_usuario(client: TestClient) -> str:
     response = client.post(
         "/usuarios/registro",
         json={
-            "email": "datos.http@autospot.com",
-            "password": "password123",
+            "email": email,
+            "password": password,
         },
     )
 
@@ -66,6 +74,63 @@ def _registrar_usuario(client: TestClient) -> str:
     )
 
     return response.json()["id"]
+
+
+def _login_usuario(
+    client: TestClient,
+    email: str = "datos.http@autospot.com",
+    password: str = "password123",
+) -> str:
+    """
+    Helper: autentica un Usuario y retorna su access token.
+    """
+    response = client.post(
+        "/usuarios/login",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert response.status_code == 200, (
+        f"No se pudo autenticar usuario de prueba. "
+        f"Status: {response.status_code}. Body: {response.text}"
+    )
+
+    return response.json()["access_token"]
+
+
+def _auth_headers(token: str) -> dict:
+    """
+    Helper: construye headers HTTP de autenticación.
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
+
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str = "datos.http@autospot.com",
+    password: str = "password123",
+) -> tuple[str, str]:
+    """
+    Helper: registra y autentica un usuario.
+
+    Returns:
+        tuple(usuario_id, access_token)
+    """
+    usuario_id = _registrar_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    token = _login_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    return usuario_id, token
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -78,7 +143,7 @@ class TestCA1CA2_RegistroDatosPersonalesHTTP:
 
     def test_registra_datos_personales_y_documentacion_devuelve_201(self):
         """
-        Dado un Usuario con cuenta creada,
+        Dado un Usuario con cuenta creada y autenticado,
         cuando envía DNI, nombre, apellido y fotos del DNI,
         entonces el backend responde 201 y devuelve los datos registrados.
         """
@@ -97,7 +162,7 @@ class TestCA1CA2_RegistroDatosPersonalesHTTP:
 
         try:
             with TestClient(app) as client:
-                usuario_id = _registrar_usuario(client)
+                usuario_id, token = _registrar_y_loguear_usuario(client)
 
                 payload = {
                     "dni": "00000001",
@@ -110,6 +175,7 @@ class TestCA1CA2_RegistroDatosPersonalesHTTP:
                 response = client.put(
                     f"/usuarios/{usuario_id}/datos-personales",
                     json=payload,
+                    headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 201, (
@@ -165,17 +231,60 @@ class TestErroresRegistroDatosPersonalesHTTP:
 
         return engine, TestClient(app)
 
-    def test_usuario_inexistente_devuelve_404(self):
+    def test_sin_token_devuelve_401(self):
         """
-        Si usuario_id no corresponde a una cuenta existente,
-        el endpoint debe responder 404.
+        Si no se envía token,
+        el endpoint debe responder 401 antes de ejecutar lógica de negocio.
         """
-        import uuid
-
         engine, client_context = self._crear_cliente()
 
         try:
             with client_context as client:
+                usuario_id = _registrar_usuario(
+                    client=client,
+                    email="datos.sin.token@autospot.com",
+                )
+
+                response = client.put(
+                    f"/usuarios/{usuario_id}/datos-personales",
+                    json={
+                        "dni": "00000001",
+                        "nombre": "Usuario",
+                        "apellido": "Prueba",
+                        "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
+                        "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
+                    },
+                )
+
+                assert response.status_code == 401, (
+                    f"Se esperaba 401, se recibió {response.status_code}. "
+                    f"Body: {response.text}"
+                )
+                assert response.json()["detail"] == "No autenticado"
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_usuario_inexistente_con_token_de_otro_usuario_devuelve_403(self):
+        """
+        Si el path apunta a otro usuario,
+        debe responder 403 antes de revelar si ese usuario existe o no.
+
+        Nota de seguridad:
+            Antes este test esperaba 404. Con autenticación correcta,
+            el sistema no debe permitir consultar/modificar recursos ajenos.
+        """
+        engine, client_context = self._crear_cliente()
+
+        try:
+            with client_context as client:
+                _, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="datos.owner@autospot.com",
+                )
+
                 usuario_id_inexistente = uuid.uuid4()
 
                 response = client.put(
@@ -187,13 +296,17 @@ class TestErroresRegistroDatosPersonalesHTTP:
                         "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
                         "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
                     },
+                    headers=_auth_headers(token),
                 )
 
-                assert response.status_code == 404, (
-                    f"Se esperaba 404, se recibió {response.status_code}. "
+                assert response.status_code == 403, (
+                    f"Se esperaba 403, se recibió {response.status_code}. "
                     f"Body: {response.text}"
                 )
-                assert response.json()["detail"] == "Usuario no encontrado"
+                assert (
+                    response.json()["detail"]
+                    == "No puede operar sobre otro usuario"
+                )
 
         finally:
             app.dependency_overrides.clear()
@@ -209,7 +322,10 @@ class TestErroresRegistroDatosPersonalesHTTP:
 
         try:
             with client_context as client:
-                usuario_id = _registrar_usuario(client)
+                usuario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="datos.duplicados@autospot.com",
+                )
 
                 payload = {
                     "dni": "00000001",
@@ -222,12 +338,14 @@ class TestErroresRegistroDatosPersonalesHTTP:
                 primera_respuesta = client.put(
                     f"/usuarios/{usuario_id}/datos-personales",
                     json=payload,
+                    headers=_auth_headers(token),
                 )
                 assert primera_respuesta.status_code == 201
 
                 segunda_respuesta = client.put(
                     f"/usuarios/{usuario_id}/datos-personales",
                     json=payload,
+                    headers=_auth_headers(token),
                 )
 
                 assert segunda_respuesta.status_code == 409, (
@@ -247,13 +365,19 @@ class TestErroresRegistroDatosPersonalesHTTP:
     def test_payload_con_campo_obligatorio_vacio_devuelve_422(self):
         """
         Si falta un campo obligatorio o viene vacío,
-        FastAPI/Pydantic debe responder 422 antes de llegar al servicio.
+        FastAPI/Pydantic debe responder 422.
+
+        Nota:
+            Se envía token válido porque el endpoint está protegido.
         """
         engine, client_context = self._crear_cliente()
 
         try:
             with client_context as client:
-                usuario_id = _registrar_usuario(client)
+                usuario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="datos.payload.invalido@autospot.com",
+                )
 
                 response = client.put(
                     f"/usuarios/{usuario_id}/datos-personales",
@@ -264,6 +388,7 @@ class TestErroresRegistroDatosPersonalesHTTP:
                         "foto_dni_frente_url": "uploads/dni/00000001/frente.jpg",
                         "foto_dni_dorso_url": "uploads/dni/00000001/dorso.jpg",
                     },
+                    headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 422, (
