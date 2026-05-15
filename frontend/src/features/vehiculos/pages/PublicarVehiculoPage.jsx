@@ -29,20 +29,27 @@ const LADOS_REQUERIDOS = [
   },
   {
     codigo: "LATERAL_IZQUIERDO",
-    label: "Lateral Izquierdo",
+    label: "Lateral izquierdo",
     tituloModal: "Foto Lateral Izquierdo",
   },
   {
     codigo: "LATERAL_DERECHO",
-    label: "Lateral Derecho",
+    label: "Lateral derecho",
     tituloModal: "Foto Lateral Derecho",
   },
 ];
 
+const inputClassName =
+  "w-full rounded-xl border border-autospot-border bg-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
+
+const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
+
 const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
   const [fileName, setFileName] = useState("");
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   const handleConfirm = () => {
     if (!fileName.trim()) {
@@ -55,49 +62,38 @@ const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
     onClose();
   };
 
+  const handleClose = () => {
+    setFileName("");
+    onClose();
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-    >
-      <div
-        className="login-panel"
-        style={{
-          width: "400px",
-          borderRadius: "24px",
-          boxShadow: "0 24px 80px rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        <h2 style={{ marginTop: 0, marginBottom: "8px" }}>Subir {title}</h2>
-        <p className="muted-small" style={{ marginBottom: "24px" }}>
-          Simulación de carga de archivo
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 py-6">
+      <div className="w-full max-w-md rounded-[24px] border border-autospot-border bg-autospot-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-7">
+        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+          Subir {title}
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-autospot-muted">
+          Simulación de carga de archivo. Ingresá el nombre del archivo para
+          generar una ruta mock.
         </p>
 
-        <div className="field">
-          <label>Seleccionar archivo mock</label>
+        <div className="mt-6">
+          <label className={labelClassName}>Seleccionar archivo mock</label>
+
           <input
-            className="input"
+            className={inputClassName}
             placeholder="foto.jpg, foto.png o foto.webp"
             value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
+            onChange={(evento) => setFileName(evento.target.value)}
           />
         </div>
 
-        <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            className="btn btn-primary"
-            style={{ flex: 1 }}
+            className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
             onClick={handleConfirm}
           >
             Confirmar
@@ -105,9 +101,8 @@ const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
 
           <button
             type="button"
-            className="btn btn-secondary"
-            style={{ flex: 1 }}
-            onClick={onClose}
+            className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+            onClick={handleClose}
           >
             Cancelar
           </button>
@@ -143,34 +138,34 @@ const PublicarVehiculoPage = () => {
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
 
-  const actualizarCampo = (e) => {
-    const { name, value } = e.target;
+  const actualizarCampo = (evento) => {
+    const { name, value } = evento.target;
 
-    setForm((prev) => {
-      const updated = { ...prev, [name]: value };
+    setForm((estadoActual) => {
+      const actualizado = { ...estadoActual, [name]: value };
 
       if (name === "marca") {
-        updated.modelo = "";
+        actualizado.modelo = "";
       }
 
-      return updated;
+      return actualizado;
     });
   };
 
-  const getPropietarioId = () => {
-    return usuario?.id || "00000000-0000-0000-0000-000000000000";
+  const abrirUploadModal = (field, title) => {
+    setModalConfig({ isOpen: true, field, title });
   };
 
-  const openUploadModal = (field, title) => {
-    setModalConfig({ isOpen: true, field, title });
+  const cerrarUploadModal = () => {
+    setModalConfig({ isOpen: false, field: "", title: "" });
   };
 
   const handleUploadConfirm = (fileName) => {
     const field = modalConfig.field;
     const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
 
-    setForm((prev) => {
-      const fotosSinLadoActual = prev.fotos.filter(
+    setForm((estadoActual) => {
+      const fotosSinLadoActual = estadoActual.fotos.filter(
         (foto) => foto.lado !== field,
       );
 
@@ -182,7 +177,7 @@ const PublicarVehiculoPage = () => {
       };
 
       return {
-        ...prev,
+        ...estadoActual,
         fotos: [...fotosSinLadoActual, nuevaFoto],
       };
     });
@@ -198,6 +193,11 @@ const PublicarVehiculoPage = () => {
     capacidadParsed,
     precioParsed,
   }) => {
+    if (!usuario?.id) {
+      mostrarFeedback("No se encontró el usuario autenticado.", "error");
+      return false;
+    }
+
     if (
       !datosVehiculo.marca ||
       !datosVehiculo.modelo ||
@@ -221,7 +221,7 @@ const PublicarVehiculoPage = () => {
 
     if (datosVehiculo.fotos.length < 4) {
       mostrarFeedback(
-        "Debes subir las 4 fotos del vehículo: Frente, Trasera, Lateral Izquierdo y Lateral Derecho.",
+        "Debés subir las 4 fotos del vehículo: frente, trasera, lateral izquierdo y lateral derecho.",
         "error",
       );
       return false;
@@ -243,7 +243,9 @@ const PublicarVehiculoPage = () => {
     return true;
   };
 
-  const enviarFormulario = async () => {
+  const enviarFormulario = async (evento) => {
+    evento.preventDefault();
+
     const { precio_por_dia, ...datosVehiculo } = form;
 
     const anioParsed = parseInt(datosVehiculo.anio, 10);
@@ -258,9 +260,9 @@ const PublicarVehiculoPage = () => {
       precioParsed,
     });
 
-    if (!formularioValido) return;
-
-    const propietarioId = getPropietarioId();
+    if (!formularioValido) {
+      return;
+    }
 
     const payload = {
       ...datosVehiculo,
@@ -273,12 +275,12 @@ const PublicarVehiculoPage = () => {
     setFeedback({ message: "", type: "" });
 
     try {
-      const data = await publicarVehiculo(propietarioId, payload);
+      const data = await publicarVehiculo(usuario.id, payload);
 
       await definirPrecioVehiculo(data.id, precioParsed);
 
       mostrarFeedback(
-        `✓ Vehículo registrado exitosamente con precio diario definido. ID: ${data.id}`,
+        `Vehículo registrado exitosamente con precio diario definido. ID: ${data.id}`,
         "success",
       );
 
@@ -289,19 +291,19 @@ const PublicarVehiculoPage = () => {
           },
         });
       }, 2000);
-    } catch (e) {
-      const detalle = e.response?.data?.detail;
+    } catch (error) {
+      const detalle = error.response?.data?.detail;
 
       let mensajeError = detalle;
 
       if (Array.isArray(detalle)) {
         mensajeError = detalle
-          .map((d) => `${d.loc?.join(".")}: ${d.msg}`)
+          .map((item) => `${item.loc?.join(".")}: ${item.msg}`)
           .join(", ");
       }
 
       mostrarFeedback(
-        `✗ Error al registrar: ${mensajeError || e.message}`,
+        `Error al registrar: ${mensajeError || error.message}`,
         "error",
       );
       setCargando(false);
@@ -312,277 +314,365 @@ const PublicarVehiculoPage = () => {
     return form.fotos.some((foto) => foto.lado === lado);
   };
 
-  return (
-    <div className="auth-shell">
-      <header className="auth-header">
-        <span className="logo">
-          Auto<span>Spot</span>
-        </span>
+  const obtenerNombreArchivo = (lado) => {
+    const foto = form.fotos.find((item) => item.lado === lado);
+    return foto?.url?.split("/").pop() || "";
+  };
 
-        <Link className="btn btn-secondary" to="/propietario/dashboard">
-          Volver al panel
-        </Link>
+  return (
+    <main className="min-h-screen bg-autospot-cream text-autospot-black">
+      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+          <Link
+            to="/"
+            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
+          >
+            Auto<span className="!text-autospot-accent">Spot</span>
+          </Link>
+
+          <Link
+            to="/propietario/dashboard"
+            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            Volver al panel
+          </Link>
+        </div>
       </header>
 
-      <div className="login-wrap" style={{ maxWidth: "1200px" }}>
-        <div className="login-grid">
-          <div className="login-brand">
-            <h1>Publicar auto</h1>
-            <p>Formulario de alta inicial con características y fotos.</p>
+      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
+        <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8 lg:sticky lg:top-28 lg:h-fit">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
+            Publicación
+          </p>
 
-            <div className="mt-10">
-              <p className="muted-small">
-                Al cargar las características y fotos, el vehículo quedará
-                pendiente de documentación para su validación posterior.
-              </p>
-            </div>
+          <h1 className="font-display text-3xl font-black leading-[1.05] tracking-[-0.06em] !text-autospot-white sm:text-4xl">
+            Publicar vehículo
+          </h1>
+
+          <p className="mt-4 text-sm leading-7 !text-[#b8b8b8] sm:text-base">
+            Cargá las características principales, las fotos obligatorias y el
+            precio diario para publicar tu vehículo en AutoSpot.
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
+            <p className="text-sm font-bold !text-autospot-white">
+              Estado inicial
+            </p>
+
+            <p className="mt-2 text-sm leading-6 !text-white/65">
+              Luego del alta, el vehículo quedará pendiente de documentación
+              para completar la validación.
+            </p>
           </div>
 
-          <div className="login-panel" style={{ padding: "40px" }}>
-            <h2 style={{ marginTop: 0, marginBottom: "24px" }}>
-              Datos generales
-            </h2>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
+            <p className="text-sm font-bold !text-autospot-white">
+              Fotos requeridas
+            </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="marca">Marca *</label>
-                <select
-                  id="marca"
-                  name="marca"
-                  className="input"
-                  value={form.marca}
-                  onChange={actualizarCampo}
-                >
-                  <option value="">Seleccioná una marca</option>
-                  {Object.keys(CATALOGO).map((marca) => (
-                    <option key={marca} value={marca}>
-                      {marca}
-                    </option>
-                  ))}
-                </select>
+            <p className="mt-2 text-sm leading-6 !text-white/65">
+              Frente, trasera, lateral izquierdo y lateral derecho.
+            </p>
+          </div>
+        </aside>
+
+        <section className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
+          <form onSubmit={enviarFormulario} className="space-y-8">
+            <section>
+              <div className="mb-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                  Datos generales
+                </p>
+
+                <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black sm:text-3xl">
+                  Características del auto
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                  Completá la información básica con valores válidos para el
+                  catálogo.
+                </p>
               </div>
 
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="modelo">Modelo *</label>
-                <select
-                  id="modelo"
-                  name="modelo"
-                  className="input"
-                  value={form.modelo}
-                  onChange={actualizarCampo}
-                  disabled={!form.marca}
-                >
-                  <option value="">Seleccioná un modelo</option>
-                  {form.marca
-                    ? CATALOGO[form.marca].map((modelo) => (
-                        <option key={modelo} value={modelo}>
-                          {modelo}
-                        </option>
-                      ))
-                    : null}
-                </select>
-              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="marca" className={labelClassName}>
+                    Marca *
+                  </label>
 
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="anio">Año *</label>
-                <input
-                  id="anio"
-                  name="anio"
-                  className="input"
-                  type="number"
-                  min="1990"
-                  placeholder="Ej. 2023"
-                  value={form.anio}
-                  onChange={actualizarCampo}
-                />
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="tipo_transmision">Transmisión *</label>
-                <select
-                  id="tipo_transmision"
-                  name="tipo_transmision"
-                  className="input"
-                  value={form.tipo_transmision}
-                  onChange={actualizarCampo}
-                >
-                  <option value="">Seleccioná</option>
-                  <option value="MANUAL">Manual</option>
-                  <option value="AUTOMATICA">Automática</option>
-                </select>
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="capacidad">Capacidad *</label>
-                <input
-                  id="capacidad"
-                  name="capacidad"
-                  className="input"
-                  type="number"
-                  min="1"
-                  placeholder="Ej. 5"
-                  value={form.capacidad}
-                  onChange={actualizarCampo}
-                />
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="categoria">Categoría *</label>
-                <select
-                  id="categoria"
-                  name="categoria"
-                  className="input"
-                  value={form.categoria}
-                  onChange={actualizarCampo}
-                >
-                  <option value="">Seleccioná</option>
-                  <option value="SEDAN">Sedán</option>
-                  <option value="SUV">SUV</option>
-                  <option value="HATCHBACK">Hatchback</option>
-                  <option value="PICKUP">Pickup</option>
-                  <option value="COUPE">Coupé</option>
-                </select>
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="tipo_combustible">Combustible *</label>
-                <select
-                  id="tipo_combustible"
-                  name="tipo_combustible"
-                  className="input"
-                  value={form.tipo_combustible}
-                  onChange={actualizarCampo}
-                >
-                  <option value="">Seleccioná</option>
-                  <option value="NAFTA">Nafta</option>
-                  <option value="DIESEL">Diesel</option>
-                  <option value="ELECTRICO">Eléctrico</option>
-                  <option value="HIBRIDO">Híbrido</option>
-                  <option value="GNC">GNC</option>
-                </select>
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="pets_friendly">Acepta mascotas *</label>
-                <select
-                  id="pets_friendly"
-                  name="pets_friendly"
-                  className="input"
-                  value={form.pets_friendly}
-                  onChange={actualizarCampo}
-                >
-                  <option value="true">Sí</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label htmlFor="precio_por_dia">Precio por día *</label>
-                <input
-                  id="precio_por_dia"
-                  name="precio_por_dia"
-                  className="input"
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="Ej. 35000"
-                  value={form.precio_por_dia}
-                  onChange={actualizarCampo}
-                />
-              </div>
-            </div>
-
-            <h2 style={{ marginTop: "32px", marginBottom: "24px" }}>
-              Fotos del vehículo *
-            </h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              {LADOS_REQUERIDOS.map(({ codigo, label, tituloModal }) => (
-                <div
-                  key={codigo}
-                  className="field"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 0,
-                  }}
-                >
-                  <div>
-                    <label style={{ margin: 0 }}>{label}</label>
-                    <small className="help-text" style={{ marginTop: 2 }}>
-                      {isPhotoUploaded(codigo) ? "✓ Cargado" : "Pendiente"}
-                    </small>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 12px", fontSize: "12px" }}
-                    onClick={() => openUploadModal(codigo, tituloModal)}
+                  <select
+                    id="marca"
+                    name="marca"
+                    className={inputClassName}
+                    value={form.marca}
+                    onChange={actualizarCampo}
                   >
-                    {isPhotoUploaded(codigo) ? "Cambiar" : "Subir"}
-                  </button>
+                    <option value="">Seleccioná una marca</option>
+                    {Object.keys(CATALOGO).map((marca) => (
+                      <option key={marca} value={marca}>
+                        {marca}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
-            </div>
+
+                <div>
+                  <label htmlFor="modelo" className={labelClassName}>
+                    Modelo *
+                  </label>
+
+                  <select
+                    id="modelo"
+                    name="modelo"
+                    className={inputClassName}
+                    value={form.modelo}
+                    onChange={actualizarCampo}
+                    disabled={!form.marca}
+                  >
+                    <option value="">Seleccioná un modelo</option>
+                    {form.marca
+                      ? CATALOGO[form.marca].map((modelo) => (
+                          <option key={modelo} value={modelo}>
+                            {modelo}
+                          </option>
+                        ))
+                      : null}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="anio" className={labelClassName}>
+                    Año *
+                  </label>
+
+                  <input
+                    id="anio"
+                    name="anio"
+                    className={inputClassName}
+                    type="number"
+                    min="1990"
+                    placeholder="Ej. 2023"
+                    value={form.anio}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="tipo_transmision" className={labelClassName}>
+                    Transmisión *
+                  </label>
+
+                  <select
+                    id="tipo_transmision"
+                    name="tipo_transmision"
+                    className={inputClassName}
+                    value={form.tipo_transmision}
+                    onChange={actualizarCampo}
+                  >
+                    <option value="">Seleccioná</option>
+                    <option value="MANUAL">Manual</option>
+                    <option value="AUTOMATICA">Automática</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="capacidad" className={labelClassName}>
+                    Capacidad *
+                  </label>
+
+                  <input
+                    id="capacidad"
+                    name="capacidad"
+                    className={inputClassName}
+                    type="number"
+                    min="1"
+                    placeholder="Ej. 5"
+                    value={form.capacidad}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="categoria" className={labelClassName}>
+                    Categoría *
+                  </label>
+
+                  <select
+                    id="categoria"
+                    name="categoria"
+                    className={inputClassName}
+                    value={form.categoria}
+                    onChange={actualizarCampo}
+                  >
+                    <option value="">Seleccioná</option>
+                    <option value="SEDAN">Sedán</option>
+                    <option value="SUV">SUV</option>
+                    <option value="HATCHBACK">Hatchback</option>
+                    <option value="PICKUP">Pickup</option>
+                    <option value="COUPE">Coupé</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="tipo_combustible" className={labelClassName}>
+                    Combustible *
+                  </label>
+
+                  <select
+                    id="tipo_combustible"
+                    name="tipo_combustible"
+                    className={inputClassName}
+                    value={form.tipo_combustible}
+                    onChange={actualizarCampo}
+                  >
+                    <option value="">Seleccioná</option>
+                    <option value="NAFTA">Nafta</option>
+                    <option value="DIESEL">Diesel</option>
+                    <option value="ELECTRICO">Eléctrico</option>
+                    <option value="HIBRIDO">Híbrido</option>
+                    <option value="GNC">GNC</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="pets_friendly" className={labelClassName}>
+                    Acepta mascotas *
+                  </label>
+
+                  <select
+                    id="pets_friendly"
+                    name="pets_friendly"
+                    className={inputClassName}
+                    value={form.pets_friendly}
+                    onChange={actualizarCampo}
+                  >
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="precio_por_dia" className={labelClassName}>
+                    Precio por día *
+                  </label>
+
+                  <input
+                    id="precio_por_dia"
+                    name="precio_por_dia"
+                    className={inputClassName}
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    placeholder="Ej. 35000"
+                    value={form.precio_por_dia}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                  Fotos
+                </p>
+
+                <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+                  Fotos del vehículo
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                  Cargá una imagen mock para cada lado requerido.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {LADOS_REQUERIDOS.map(({ codigo, label, tituloModal }) => {
+                  const cargada = isPhotoUploaded(codigo);
+
+                  return (
+                    <article
+                      key={codigo}
+                      className={`rounded-2xl border p-4 transition ${
+                        cargada
+                          ? "border-[#bbf7d0] bg-[#f0fdf4]"
+                          : "border-autospot-border bg-white"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-autospot-black">
+                            {label}
+                          </p>
+
+                          <p
+                            className={`mt-1 text-xs leading-5 ${
+                              cargada ? "text-[#166534]" : "text-autospot-muted"
+                            }`}
+                          >
+                            {cargada
+                              ? obtenerNombreArchivo(codigo)
+                              : "Foto pendiente"}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition ${
+                            cargada
+                              ? "border border-[#bbf7d0] bg-white !text-[#166534] hover:border-[#16a34a]"
+                              : "bg-autospot-accent !text-white hover:bg-[#5a1420]"
+                          }`}
+                          onClick={() => abrirUploadModal(codigo, tituloModal)}
+                        >
+                          {cargada ? "Cambiar" : "Subir"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
 
             {feedback.message && (
               <div
-                style={{
-                  display: "block",
-                  padding: "12px 16px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  marginTop: "24px",
-                  fontWeight: 500,
-                  background:
-                    feedback.type === "error"
-                      ? "rgba(239,68,68,0.15)"
-                      : "rgba(34,197,94,0.15)",
-                  color: feedback.type === "error" ? "#f87171" : "#4ade80",
-                  border:
-                    feedback.type === "error"
-                      ? "1px solid rgba(239,68,68,0.3)"
-                      : "1px solid rgba(34,197,94,0.3)",
-                }}
+                className={`rounded-xl px-4 py-3 text-sm font-bold ${
+                  feedback.type === "success"
+                    ? "bg-[#e7f8ed] text-[#166534]"
+                    : "bg-red-50 text-[#b42318]"
+                }`}
               >
                 {feedback.message}
               </div>
             )}
 
-            <button
-              type="button"
-              className="btn btn-primary btn-full"
-              style={{ marginTop: "32px", padding: "16px", fontSize: "15px" }}
-              onClick={enviarFormulario}
-              disabled={cargando}
-            >
-              {cargando ? "Enviando…" : "Enviar vehículo a revisión"}
-            </button>
-          </div>
-        </div>
-      </div>
+            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                to="/propietario/dashboard"
+                className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+              >
+                Cancelar
+              </Link>
+
+              <button
+                type="submit"
+                disabled={cargando}
+                className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
+              >
+                {cargando ? "Publicando..." : "Publicar vehículo"}
+              </button>
+            </div>
+          </form>
+        </section>
+      </section>
 
       <UploadModal
         isOpen={modalConfig.isOpen}
-        onClose={() => setModalConfig({ isOpen: false, field: "", title: "" })}
         title={modalConfig.title}
+        onClose={cerrarUploadModal}
         onConfirm={handleUploadConfirm}
       />
-    </div>
+    </main>
   );
 };
 
