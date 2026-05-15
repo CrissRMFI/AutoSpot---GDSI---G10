@@ -60,45 +60,80 @@ const LoginPage = () => {
 
   return (
     <AuthLayout
-      title="Iniciar Sesión"
-      description="Bienvenido de nuevo a AutoSpot."
-      asideText="¿No tienes cuenta?"
+      title="Iniciar sesión"
+      description="Bienvenido de nuevo a AutoSpot. Accedé a tu cuenta para continuar con la gestión de tus vehículos, datos personales o alquileres."
+      asideText="¿No tenés cuenta?"
       asideLinkText="Registrarme"
       asideLinkTo="/registro"
     >
-      <form onSubmit={enviarFormulario}>
-        <div className="field">
-          <label htmlFor="email">Email</label>
+      <div className="mb-6">
+        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black sm:text-3xl">
+          Acceso a la plataforma
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-autospot-muted">
+          Ingresá tus credenciales para continuar.
+        </p>
+      </div>
+
+      <form onSubmit={enviarFormulario} className="space-y-5">
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-bold text-autospot-black"
+          >
+            Email
+          </label>
+
           <input
             type="email"
             id="email"
             name="email"
-            className="input"
             value={form.email}
             onChange={actualizarCampo}
             required
+            autoComplete="email"
+            placeholder="tuemail@ejemplo.com"
+            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
           />
         </div>
 
-        <div className="field" style={{ marginBottom: "24px" }}>
-          <label htmlFor="password">Contraseña</label>
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-2 block text-sm font-bold text-autospot-black"
+          >
+            Contraseña
+          </label>
+
           <input
             type="password"
             id="password"
             name="password"
-            className="input"
             value={form.password}
             onChange={actualizarCampo}
             required
+            autoComplete="current-password"
+            placeholder="Ingresá tu contraseña"
+            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
           />
         </div>
-        {mensaje && <div className="success-msg">{mensaje}</div>}
-        {error && <div className="error-msg">{error}</div>}
+
+        {mensaje && (
+          <div className="rounded-xl bg-[#e7f8ed] px-4 py-3 text-sm font-medium text-[#166534]">
+            {mensaje}
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
-          className="btn btn-primary btn-full"
           disabled={cargando}
+          className="flex w-full items-center justify-center rounded-full bg-autospot-accent px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
         >
           {cargando ? "Ingresando..." : "Ingresar"}
         </button>
