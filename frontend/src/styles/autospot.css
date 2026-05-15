@@ -1,36 +1,67 @@
-:root {
-  --bg: #f5f2ed;
-  --panel: #ffffff;
-  --panel-2: #f8f6f2;
-  --text: #0a0a0a;
-  --muted: #6b6560;
-  --accent: #7a0020;
-  --accent-dark: #5b0017;
-  --border: #e8e4de;
-  --ok: #1a7a4a;
-  --warn: #b85c00;
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Unbounded", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+
+  --color-autospot-black: #0a0a0a;
+  --color-autospot-white: #f5f2ed;
+  --color-autospot-cream: #f0ebe2;
+  --color-autospot-accent: #7b1c2e;
+  --color-autospot-accent-2: #b5304a;
+  --color-autospot-mid: #1c1c1c;
+  --color-autospot-muted: #6b6560;
+  --color-autospot-border: #d4cec6;
+
+  --shadow-autospot-soft: 0 8px 40px rgba(0, 0, 0, 0.08);
+  --shadow-autospot-large: 0 24px 80px rgba(0, 0, 0, 0.15);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: #f0ebe2;
+  color: #0a0a0a;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 300;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  min-height: 100%;
+@keyframes autospot-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
-  font-family:
-    "DM Sans",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+@keyframes autospot-underline {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@utility animate-autospot-fade-up {
+  animation: autospot-fade-up 0.7s ease both;
+}
+
+@utility animate-autospot-underline {
+  animation: autospot-underline 1s 0.8s ease forwards;
+}
+
+@utility autospot-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 button,
