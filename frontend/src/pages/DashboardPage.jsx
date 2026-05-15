@@ -1,12 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { useEffect, useState } from "react";
 import { listarVehiculosDelPropietario } from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario, logout } = useAuth();
+
   const [vehiculos, setVehiculos] = useState([]);
   const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
   const [errorVehiculos, setErrorVehiculos] = useState("");
@@ -44,441 +45,247 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="auth-shell">
-      <header className="auth-header">
-        <span className="logo">
-          Auto<span>Spot</span>
-        </span>
+    <main className="min-h-screen bg-autospot-cream text-autospot-black">
+      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+          <Link
+            to="/"
+            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
+          >
+            Auto<span className="!text-autospot-accent">Spot</span>
+          </Link>
 
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={cerrarSesion}
-        >
-          Cerrar sesión
-        </button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Link
+              to="/"
+              className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+            >
+              Inicio
+            </Link>
+
+            <button
+              type="button"
+              className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+              onClick={cerrarSesion}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
       </header>
 
-      <main
-        style={{
-          width: "100%",
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "48px 24px",
-        }}
-      >
+      <section className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
         {mensaje && (
-          <div
-            style={{
-              marginBottom: 24,
-              padding: "14px 18px",
-              borderRadius: 14,
-              border: "1px solid #bbf7d0",
-              backgroundColor: "#f0fdf4",
-              color: "#166534",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
+          <div className="mb-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-semibold text-[#166534]">
             {mensaje}
           </div>
         )}
 
-        <section
-          style={{
-            marginBottom: 28,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 24,
-          }}
-        >
-          <div>
-            <p
-              style={{
-                margin: "0 0 8px",
-                color: "#6b7280",
-                fontSize: 14,
-                fontWeight: 600,
-              }}
-            >
-              Panel principal
-            </p>
+        <section className="mb-8 rounded-[28px] border border-autospot-border bg-white/70 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.07)] sm:p-8">
+          <p className="mb-2 text-sm font-bold uppercase tracking-[0.08em] text-autospot-accent">
+            Panel principal
+          </p>
 
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 36,
-                lineHeight: 1.1,
-                color: "#111827",
-              }}
-            >
-              Bienvenido, {nombreUsuario}
-            </h1>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
+                Bienvenido, {nombreUsuario}
+              </h1>
 
-            <p
-              style={{
-                margin: "12px 0 0",
-                maxWidth: 720,
-                color: "#6b7280",
-                fontSize: 16,
-                lineHeight: 1.6,
-              }}
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-autospot-muted sm:text-base">
+                Gestioná tu perfil, publicá vehículos y consultá el estado de
+                tus publicaciones desde un solo lugar.
+              </p>
+            </div>
+
+            <Link
+              to="/propietario/publicar"
+              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
             >
-              Sprint 1: completar tus datos personales y publicar un vehículo
-              con precio diario.
-            </p>
+              Publicar vehículo
+            </Link>
           </div>
         </section>
 
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 20,
-            marginBottom: 28,
-          }}
-        >
-          <article
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 22,
-              padding: 24,
-              boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
-            }}
-          >
-            <p
-              style={{
-                margin: "0 0 8px",
-                color: "#6b7280",
-                fontSize: 13,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
+        <section className="mb-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
               Cuenta
             </p>
 
-            <h2 style={{ margin: "0 0 10px", fontSize: 22 }}>Sesión activa</h2>
+            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+              Sesión activa
+            </h2>
 
-            <p
-              style={{
-                margin: 0,
-                color: "#6b7280",
-                fontSize: 14,
-                lineHeight: 1.5,
-                wordBreak: "break-word",
-              }}
-            >
+            <p className="break-words text-sm leading-6 text-autospot-muted">
               {usuario?.email || "Email no disponible"}
             </p>
           </article>
 
-          <article
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 22,
-              padding: 24,
-              boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
-            }}
-          >
-            <p
-              style={{
-                margin: "0 0 8px",
-                color: "#6b7280",
-                fontSize: 13,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
+          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
               Perfil
             </p>
 
-            <h2 style={{ margin: "0 0 10px", fontSize: 22 }}>
+            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
               Datos personales
             </h2>
 
-            <p
-              style={{
-                margin: "0 0 18px",
-                color: "#6b7280",
-                fontSize: 14,
-                lineHeight: 1.5,
-              }}
-            >
+            <p className="mb-5 text-sm leading-6 text-autospot-muted">
               Completá o actualizá la información asociada a tu cuenta.
             </p>
 
-            <Link to="/datos-personales" className="btn btn-primary">
+            <Link
+              to="/datos-personales"
+              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+            >
               Actualizar datos
             </Link>
           </article>
 
-          <article
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 22,
-              padding: 24,
-              boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
-            }}
-          >
-            <p
-              style={{
-                margin: "0 0 8px",
-                color: "#6b7280",
-                fontSize: 13,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
+          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:col-span-2 xl:col-span-1">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
               Vehículos
             </p>
 
-            <h2 style={{ margin: "0 0 10px", fontSize: 22 }}>Publicación</h2>
+            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+              Publicaciones
+            </h2>
 
-            <p
-              style={{
-                margin: "0 0 18px",
-                color: "#6b7280",
-                fontSize: 14,
-                lineHeight: 1.5,
-              }}
-            >
-              Registrá un vehículo, cargá fotos y definí su precio diario.
+            <p className="mb-5 text-sm leading-6 text-autospot-muted">
+              Registrá vehículos, cargá fotos y definí su precio diario.
             </p>
 
-            <Link to="/propietario/publicar" className="btn btn-primary">
+            <Link
+              to="/propietario/publicar"
+              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+            >
               Publicar vehículo
             </Link>
           </article>
         </section>
 
-        <section
-          style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 22,
-            padding: 24,
-            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
-          }}
-        >
-          <h2 style={{ margin: "0 0 16px", fontSize: 24 }}>
-            Estado del Sprint 1
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gap: 16,
-            }}
-          >
-            <div
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 16,
-                padding: 16,
-                backgroundColor: "#f9fafb",
-              }}
-            >
-              <strong>Registro e inicio de sesión</strong>
-              <p className="help-text" style={{ marginBottom: 0 }}>
-                El usuario puede crear una cuenta, iniciar sesión y cerrar
-                sesión.
-              </p>
-            </div>
-
-            <div
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 16,
-                padding: 16,
-                backgroundColor: "#f9fafb",
-              }}
-            >
-              <strong>Datos personales</strong>
-              <p className="help-text" style={{ marginBottom: 0 }}>
-                El usuario puede completar o actualizar la información de su
-                perfil.
-              </p>
-            </div>
-
-            <div
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 16,
-                padding: 16,
-                backgroundColor: "#f9fafb",
-              }}
-            >
-              <strong>Publicación de vehículo</strong>
-              <p className="help-text" style={{ marginBottom: 0 }}>
-                El propietario puede cargar un vehículo con fotos y precio
-                diario.
-              </p>
-            </div>
-          </div>
-        </section>
-        <section
-          style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 22,
-            padding: 24,
-            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
-            marginTop: 28,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 16,
-              marginBottom: 20,
-            }}
-          >
+        <section className="rounded-[22px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 style={{ margin: "0 0 6px", fontSize: 24 }}>
-                Mis vehículos publicados
-              </h2>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#6b7280",
-                  fontSize: 14,
-                }}
-              >
-                Vehículos registrados por tu cuenta durante el flujo de
-                publicación.
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                Mis vehículos
               </p>
+
+              <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+                Vehículos publicados
+              </h2>
             </div>
 
-            <Link to="/propietario/publicar" className="btn btn-primary">
-              Publicar otro vehículo
+            <Link
+              to="/propietario/publicar"
+              className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+            >
+              Agregar vehículo
             </Link>
           </div>
 
           {cargandoVehiculos && (
-            <p className="help-text">Cargando vehículos publicados...</p>
+            <div className="rounded-2xl border border-autospot-border bg-white px-4 py-4 text-sm text-autospot-muted">
+              Cargando vehículos...
+            </div>
           )}
 
           {errorVehiculos && (
-            <p className="help-text" style={{ color: "#b91c1c" }}>
+            <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
               {errorVehiculos}
-            </p>
+            </div>
           )}
 
           {!cargandoVehiculos && !errorVehiculos && vehiculos.length === 0 && (
-            <div
-              style={{
-                border: "1px dashed #d1d5db",
-                borderRadius: 18,
-                padding: 24,
-                backgroundColor: "#f9fafb",
-              }}
-            >
-              <strong>Todavía no publicaste vehículos.</strong>
+            <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
+              <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                Todavía no publicaste vehículos
+              </h3>
 
-              <p className="help-text" style={{ marginBottom: 16 }}>
-                Cuando registres un vehículo, aparecerá listado en esta sección.
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-autospot-muted">
+                Cuando registres tu primer vehículo, vas a poder verlo acá y
+                continuar con la carga de documentación.
               </p>
 
-              <Link to="/propietario/publicar" className="btn btn-secondary">
-                Publicar vehículo
+              <Link
+                to="/propietario/publicar"
+                className="mt-5 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+              >
+                Publicar mi primer vehículo
               </Link>
             </div>
           )}
 
           {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 16,
-              }}
-            >
+            <div className="grid gap-4 md:grid-cols-2">
               {vehiculos.map((vehiculo) => (
                 <article
                   key={vehiculo.id}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 18,
-                    padding: 18,
-                    backgroundColor: "#f9fafb",
-                  }}
+                  className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
                 >
-                  <h3 style={{ margin: "0 0 8px", fontSize: 18 }}>
-                    {vehiculo.marca} {vehiculo.modelo}
-                  </h3>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                        {vehiculo.marca} {vehiculo.modelo}
+                      </h3>
 
-                  <p className="help-text" style={{ marginBottom: 8 }}>
-                    Año: {vehiculo.anio}
-                  </p>
+                      <p className="mt-1 text-sm text-autospot-muted">
+                        {vehiculo.anio} · {vehiculo.categoria}
+                      </p>
+                    </div>
 
-                  <p className="help-text" style={{ marginBottom: 8 }}>
-                    Categoría: {vehiculo.categoria}
-                  </p>
+                    <span className="w-fit rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151]">
+                      {vehiculo.estado_registro || "Sin estado"}
+                    </span>
+                  </div>
 
-                  <p className="help-text" style={{ marginBottom: 8 }}>
-                    Transmisión: {vehiculo.tipo_transmision}
-                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl bg-[#f9fafb] p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Precio diario
+                      </p>
 
-                  <p className="help-text" style={{ marginBottom: 8 }}>
-                    Combustible: {vehiculo.tipo_combustible}
-                  </p>
+                      <p className="mt-1 font-display text-lg font-bold text-autospot-black">
+                        {vehiculo.precio_por_dia
+                          ? `$${vehiculo.precio_por_dia}`
+                          : "Sin definir"}
+                      </p>
+                    </div>
 
-                  <p
-                    style={{
-                      margin: "12px 0 0",
-                      fontWeight: 700,
-                      color: "#111827",
-                    }}
-                  >
-                    Precio diario:{" "}
-                    {vehiculo.precio_por_dia
-                      ? `$${vehiculo.precio_por_dia}`
-                      : "No definido"}
-                  </p>
+                    <div className="rounded-xl bg-[#f9fafb] p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Transmisión
+                      </p>
 
-                  <p
-                    className="help-text"
-                    style={{
-                      marginTop: 8,
-                      marginBottom: 12,
-                    }}
-                  >
-                    Estado: {vehiculo.estado_registro}
-                  </p>
+                      <p className="mt-1 font-display text-lg font-bold text-autospot-black">
+                        {vehiculo.tipo_transmision || "No informada"}
+                      </p>
+                    </div>
+                  </div>
 
-                  {vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION" && (
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                     <Link
-                      className="btn btn-secondary"
                       to={`/vehiculos/${vehiculo.id}/documentacion`}
-                      style={{
-                        display: "inline-flex",
-                        justifyContent: "center",
-                        marginTop: 8,
-                        width: "100%",
-                      }}
+                      className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
                     >
-                      Cargar documentación legal
+                      Cargar documentación
                     </Link>
-                  )}
+
+                    <Link
+                      to="/propietario/publicar"
+                      className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+                    >
+                      Publicar otro
+                    </Link>
+                  </div>
                 </article>
               ))}
             </div>
           )}
         </section>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 };
 
