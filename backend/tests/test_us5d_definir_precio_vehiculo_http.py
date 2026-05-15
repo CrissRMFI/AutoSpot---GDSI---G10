@@ -1,24 +1,13 @@
 """
 Tests de Integración HTTP — US 5D: PATCH /vehiculos/{vehiculo_id}/precio.
 
-Historia de Usuario:
-  Como dueño de un auto recién registrado y habilitado,
-  quiero establecer el valor de la tarifa de alquiler por día,
-  para que mi auto pueda empezar a generar ingresos.
-
 Endpoint:
   PATCH /vehiculos/{vehiculo_id}/precio
 
-Alcance de esta iteración:
-  - solo precio por día
-  - sin descuentos
-  - sin comisión
-  - sin precio dinámico
-  - sin moneda múltiple
-  - sin precio semanal/mensual
-
-Criterios cubiertos inicialmente:
-  CA1 → precio mayor a cero permite guardar la tarifa diaria.
+Contrato actual:
+  - El endpoint requiere JWT.
+  - Solo el propietario del vehículo puede definir su precio.
+  - Si el vehículo no existe, responde 404.
 """
 from decimal import Decimal
 import uuid
@@ -30,9 +19,9 @@ from app.database import Base, get_db
 from app.main import app
 from tests.conftest import _make_test_engine
 
-# Imports necesarios para que Base.metadata conozca los modelos en tests.
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
 
@@ -49,16 +38,39 @@ def _override_get_db_factory(testing_session_local):
     return override_get_db
 
 
-def _registrar_usuario(client: TestClient) -> str:
+def _crear_cliente():
     """
-    Helper: registra un Usuario base usando el endpoint existente de US 5U
-    y retorna su id.
+    Helper: crea engine, sesión de test y TestClient configurado.
+    """
+    engine = _make_test_engine()
+    Base.metadata.create_all(engine)
+
+    TestingSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+
+    app.dependency_overrides[get_db] = _override_get_db_factory(
+        TestingSessionLocal
+    )
+
+    return engine, TestClient(app)
+
+
+def _registrar_usuario(
+    client: TestClient,
+    email: str = "propietario.us5d.http@autospot.com",
+    password: str = "password123",
+) -> str:
+    """
+    Helper: registra un Usuario base y retorna su id.
     """
     response = client.post(
         "/usuarios/registro",
         json={
-            "email": "propietario.us5d.http@autospot.com",
-            "password": "password123",
+            "email": email,
+            "password": password,
         },
     )
 
@@ -68,6 +80,63 @@ def _registrar_usuario(client: TestClient) -> str:
     )
 
     return response.json()["id"]
+
+
+def _login_usuario(
+    client: TestClient,
+    email: str = "propietario.us5d.http@autospot.com",
+    password: str = "password123",
+) -> str:
+    """
+    Helper: autentica un Usuario y retorna access token.
+    """
+    response = client.post(
+        "/usuarios/login",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert response.status_code == 200, (
+        f"No se pudo autenticar usuario de prueba. "
+        f"Status: {response.status_code}. Body: {response.text}"
+    )
+
+    return response.json()["access_token"]
+
+
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str = "propietario.us5d.http@autospot.com",
+    password: str = "password123",
+) -> tuple[str, str]:
+    """
+    Helper: registra y autentica un usuario.
+
+    Returns:
+        tuple(usuario_id, access_token)
+    """
+    usuario_id = _registrar_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    token = _login_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    return usuario_id, token
+
+
+def _auth_headers(token: str) -> dict:
+    """
+    Helper: construye headers HTTP de autenticación.
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+    }
 
 
 def _payload_vehiculo_valido():
@@ -110,35 +179,16 @@ def _payload_vehiculo_valido():
     }
 
 
-def _crear_cliente():
+def _registrar_vehiculo(client: TestClient) -> tuple[dict, str]:
     """
-    Helper: crea engine, sesión de test y TestClient configurado.
+    Helper: registra usuario + vehículo y devuelve body del vehículo + token.
     """
-    engine = _make_test_engine()
-    Base.metadata.create_all(engine)
-
-    TestingSessionLocal = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine,
-    )
-
-    app.dependency_overrides[get_db] = _override_get_db_factory(
-        TestingSessionLocal
-    )
-
-    return engine, TestClient(app)
-
-
-def _registrar_vehiculo(client: TestClient) -> dict:
-    """
-    Helper: registra usuario + vehículo y devuelve el body del vehículo.
-    """
-    propietario_id = _registrar_usuario(client)
+    propietario_id, token = _registrar_y_loguear_usuario(client)
 
     response = client.post(
         f"/usuarios/{propietario_id}/vehiculos",
         json=_payload_vehiculo_valido(),
+        headers=_auth_headers(token),
     )
 
     assert response.status_code == 201, (
@@ -146,12 +196,9 @@ def _registrar_vehiculo(client: TestClient) -> dict:
         f"Status: {response.status_code}. Body: {response.text}"
     )
 
-    return response.json()
+    return response.json(), token
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  CA1 — Definir precio válido vía HTTP
-# ══════════════════════════════════════════════════════════════════════════════
 class TestCA1_DefinirPrecioVehiculoHTTP:
     """
     Verifica el happy path HTTP de la US 5D.
@@ -159,7 +206,7 @@ class TestCA1_DefinirPrecioVehiculoHTTP:
 
     def test_define_precio_por_dia_valido_devuelve_200(self):
         """
-        Dado un vehículo existente,
+        Dado un vehículo existente y token del propietario,
         cuando se envía un precio por día mayor a cero,
         entonces el backend responde 200 y devuelve el precio actualizado.
         """
@@ -167,11 +214,12 @@ class TestCA1_DefinirPrecioVehiculoHTTP:
 
         try:
             with client_context as client:
-                vehiculo = _registrar_vehiculo(client)
+                vehiculo, token = _registrar_vehiculo(client)
 
                 response = client.patch(
                     f"/vehiculos/{vehiculo['id']}/precio",
                     json={"precio_por_dia": "35000.00"},
+                    headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 200, (
@@ -183,6 +231,7 @@ class TestCA1_DefinirPrecioVehiculoHTTP:
 
                 assert body["id"] == vehiculo["id"]
                 assert Decimal(str(body["precio_por_dia"])) == Decimal("35000.00")
+
                 TestingSessionLocal = sessionmaker(
                     autocommit=False,
                     autoflush=False,
@@ -198,37 +247,62 @@ class TestCA1_DefinirPrecioVehiculoHTTP:
 
                     assert vehiculo_reconsultado is not None
                     assert vehiculo_reconsultado.precio_por_dia == Decimal("35000.00")
+
         finally:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
 
-    
-# ══════════════════════════════════════════════════════════════════════════════
-#  Error HTTP — Vehículo inexistente
-# ══════════════════════════════════════════════════════════════════════════════
+
 class TestErroresDefinirPrecioVehiculoHTTP:
     """
-    Verifica que el endpoint traduzca correctamente errores de dominio
-    y validaciones de payload a respuestas HTTP.
+    Verifica errores HTTP de precio.
     """
+
+    def test_sin_token_devuelve_401(self):
+        """
+        Si no se envía token,
+        el endpoint debe responder 401.
+        """
+        engine, client_context = _crear_cliente()
+
+        try:
+            with client_context as client:
+                vehiculo, _ = _registrar_vehiculo(client)
+
+                response = client.patch(
+                    f"/vehiculos/{vehiculo['id']}/precio",
+                    json={"precio_por_dia": "35000.00"},
+                )
+
+                assert response.status_code == 401
+                assert response.json()["detail"] == "No autenticado"
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
 
     def test_vehiculo_inexistente_devuelve_404(self):
         """
         Si vehiculo_id no corresponde a un vehículo existente,
         el endpoint debe responder 404.
         """
-        import uuid
-
         engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
+                _, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="precio.vehiculo.inexistente@autospot.com",
+                )
+
                 vehiculo_id_inexistente = uuid.uuid4()
 
                 response = client.patch(
                     f"/vehiculos/{vehiculo_id_inexistente}/precio",
                     json={"precio_por_dia": "35000.00"},
+                    headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 404, (
@@ -252,12 +326,13 @@ class TestErroresDefinirPrecioVehiculoHTTP:
 
         try:
             with client_context as client:
-                vehiculo = _registrar_vehiculo(client)
+                vehiculo, token = _registrar_vehiculo(client)
 
                 for precio_invalido in ["0.00", "-1.00"]:
                     response = client.patch(
                         f"/vehiculos/{vehiculo['id']}/precio",
                         json={"precio_por_dia": precio_invalido},
+                        headers=_auth_headers(token),
                     )
 
                     assert response.status_code == 422, (

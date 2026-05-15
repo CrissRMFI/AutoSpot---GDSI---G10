@@ -1,35 +1,29 @@
 """
 Tests de Integración HTTP — US 1D: POST /usuarios/{propietario_id}/vehiculos.
 
-Historia de Usuario:
-  Como dueño de auto,
-  quiero agregar las características detalladas y subir fotos de mi auto,
-  para el registro del auto en la plataforma.
-
-Endpoint temporal:
+Endpoint:
   POST /usuarios/{propietario_id}/vehiculos
 
-Nota:
-  Se usa propietario_id explícito porque todavía no existe autenticación/JWT
-  ni especialización formal del rol Propietario (US2 y US3 aun no las implementan).
-
-Criterios cubiertos inicialmente:
-  CA6 → si completo todo correctamente y guardo, la información del auto
-        se guarda exitosamente.
+Contrato actual:
+  - El endpoint requiere JWT.
+  - El propietario_id de la URL debe coincidir con el sub del token.
+  - Un usuario no puede registrar vehículos para otro propietario.
 """
+import uuid
+from datetime import datetime
+
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
 from app.main import app
 from tests.conftest import _make_test_engine
 
-# Imports necesarios para que Base.metadata conozca los modelos en tests
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
-
-from sqlalchemy.orm import sessionmaker
 
 
 def _override_get_db_factory(testing_session_local):
@@ -44,7 +38,31 @@ def _override_get_db_factory(testing_session_local):
     return override_get_db
 
 
-def _registrar_usuario(client: TestClient) -> str:
+def _crear_cliente():
+    """
+    Helper: crea engine, sesión de test y TestClient configurado.
+    """
+    engine = _make_test_engine()
+    Base.metadata.create_all(engine)
+
+    TestingSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+
+    app.dependency_overrides[get_db] = _override_get_db_factory(
+        TestingSessionLocal
+    )
+
+    return engine, TestClient(app)
+
+
+def _registrar_usuario(
+    client: TestClient,
+    email: str = "propietario.vehiculo.http@autospot.com",
+    password: str = "password123",
+) -> str:
     """
     Helper: registra un Usuario base usando el endpoint existente de US 5U
     y retorna su id.
@@ -52,8 +70,8 @@ def _registrar_usuario(client: TestClient) -> str:
     response = client.post(
         "/usuarios/registro",
         json={
-            "email": "propietario.vehiculo.http@autospot.com",
-            "password": "password123",
+            "email": email,
+            "password": password,
         },
     )
 
@@ -63,6 +81,63 @@ def _registrar_usuario(client: TestClient) -> str:
     )
 
     return response.json()["id"]
+
+
+def _login_usuario(
+    client: TestClient,
+    email: str = "propietario.vehiculo.http@autospot.com",
+    password: str = "password123",
+) -> str:
+    """
+    Helper: autentica un usuario y retorna su access token.
+    """
+    response = client.post(
+        "/usuarios/login",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert response.status_code == 200, (
+        f"No se pudo autenticar usuario de prueba. "
+        f"Status: {response.status_code}. Body: {response.text}"
+    )
+
+    return response.json()["access_token"]
+
+
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str = "propietario.vehiculo.http@autospot.com",
+    password: str = "password123",
+) -> tuple[str, str]:
+    """
+    Helper: registra y autentica un usuario.
+
+    Returns:
+        tuple(propietario_id, access_token)
+    """
+    propietario_id = _registrar_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    token = _login_usuario(
+        client=client,
+        email=email,
+        password=password,
+    )
+    return propietario_id, token
+
+
+def _auth_headers(token: str) -> dict:
+    """
+    Helper: construye headers HTTP de autenticación.
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+    }
 
 
 def _payload_vehiculo_valido():
@@ -112,30 +187,20 @@ class TestCA6_RegistroVehiculoHTTP:
 
     def test_registra_vehiculo_con_caracteristicas_y_fotos_devuelve_201(self):
         """
-        Dado un propietario existente,
+        Dado un propietario existente y autenticado,
         cuando envía características y fotos válidas,
         entonces el backend responde 201 y devuelve el vehículo registrado.
         """
-        engine = _make_test_engine()
-        Base.metadata.create_all(engine)
-
-        TestingSessionLocal = sessionmaker(
-            autocommit=False,
-            autoflush=False,
-            bind=engine,
-        )
-
-        app.dependency_overrides[get_db] = _override_get_db_factory(
-            TestingSessionLocal
-        )
+        engine, client_context = _crear_cliente()
 
         try:
-            with TestClient(app) as client:
-                propietario_id = _registrar_usuario(client)
+            with client_context as client:
+                propietario_id, token = _registrar_y_loguear_usuario(client)
 
                 response = client.post(
                     f"/usuarios/{propietario_id}/vehiculos",
                     json=_payload_vehiculo_valido(),
+                    headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 201, (
@@ -172,38 +237,17 @@ class TestCA6_RegistroVehiculoHTTP:
             engine.dispose()
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  Errores HTTP — US 1D
-# ══════════════════════════════════════════════════════════════════════════════
 class TestErroresRegistroVehiculoHTTP:
     """
-    Verifica que el endpoint traduzca correctamente errores de dominio
-    y validaciones de payload a respuestas HTTP.
+    Verifica que el endpoint traduzca correctamente errores de seguridad,
+    dominio y validaciones de payload a respuestas HTTP.
     """
-
-    def _crear_cliente(self):
-        """
-        Helper: crea engine, sesión de test y TestClient configurado.
-        """
-        engine = _make_test_engine()
-        Base.metadata.create_all(engine)
-
-        TestingSessionLocal = sessionmaker(
-            autocommit=False,
-            autoflush=False,
-            bind=engine,
-        )
-
-        app.dependency_overrides[get_db] = _override_get_db_factory(
-            TestingSessionLocal
-        )
-
-        return engine, TestClient(app)
 
     def _assert_422_con_mensaje(
         self,
         client: TestClient,
         propietario_id: str,
+        token: str,
         payload: dict,
         mensaje_esperado: str,
     ) -> None:
@@ -214,6 +258,7 @@ class TestErroresRegistroVehiculoHTTP:
         response = client.post(
             f"/usuarios/{propietario_id}/vehiculos",
             json=payload,
+            headers=_auth_headers(token),
         )
 
         assert response.status_code == 422, (
@@ -228,29 +273,63 @@ class TestErroresRegistroVehiculoHTTP:
             f"Se esperaba '{mensaje_esperado}', pero se recibió: {mensajes}"
         )
 
-    def test_propietario_inexistente_devuelve_404(self):
+    def test_sin_token_devuelve_401(self):
         """
-        Si propietario_id no corresponde a un Usuario existente,
-        el endpoint debe responder 404.
+        Si no se envía token,
+        el endpoint debe responder 401.
         """
-        import uuid
-
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
+                propietario_id = _registrar_usuario(
+                    client=client,
+                    email="vehiculo.sin.token@autospot.com",
+                )
+
+                response = client.post(
+                    f"/usuarios/{propietario_id}/vehiculos",
+                    json=_payload_vehiculo_valido(),
+                )
+
+                assert response.status_code == 401
+                assert response.json()["detail"] == "No autenticado"
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_propietario_inexistente_con_token_de_otro_usuario_devuelve_403(self):
+        """
+        Si el path apunta a otro propietario,
+        debe responder 403 antes de revelar si ese usuario existe o no.
+        """
+        engine, client_context = _crear_cliente()
+
+        try:
+            with client_context as client:
+                _, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.owner@autospot.com",
+                )
+
                 propietario_id_inexistente = uuid.uuid4()
 
                 response = client.post(
                     f"/usuarios/{propietario_id_inexistente}/vehiculos",
                     json=_payload_vehiculo_valido(),
+                    headers=_auth_headers(token),
                 )
 
-                assert response.status_code == 404, (
-                    f"Se esperaba 404, se recibió {response.status_code}. "
+                assert response.status_code == 403, (
+                    f"Se esperaba 403, se recibió {response.status_code}. "
                     f"Body: {response.text}"
                 )
-                assert response.json()["detail"] == "Usuario no encontrado"
+                assert (
+                    response.json()["detail"]
+                    == "No puede operar sobre otro usuario"
+                )
 
         finally:
             app.dependency_overrides.clear()
@@ -261,11 +340,14 @@ class TestErroresRegistroVehiculoHTTP:
         """
         Si falta una característica obligatoria, el endpoint debe responder 422.
         """
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
-                propietario_id = _registrar_usuario(client)
+                propietario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.marca.vacia@autospot.com",
+                )
 
                 payload = {
                     **_payload_vehiculo_valido(),
@@ -275,6 +357,7 @@ class TestErroresRegistroVehiculoHTTP:
                 self._assert_422_con_mensaje(
                     client=client,
                     propietario_id=propietario_id,
+                    token=token,
                     payload=payload,
                     mensaje_esperado="Campo obligatorio",
                 )
@@ -288,13 +371,14 @@ class TestErroresRegistroVehiculoHTTP:
         """
         Si el año del auto es mayor al actual, el endpoint debe responder 422.
         """
-        from datetime import datetime
-
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
-                propietario_id = _registrar_usuario(client)
+                propietario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.anio.invalido@autospot.com",
+                )
 
                 payload = {
                     **_payload_vehiculo_valido(),
@@ -304,6 +388,7 @@ class TestErroresRegistroVehiculoHTTP:
                 self._assert_422_con_mensaje(
                     client=client,
                     propietario_id=propietario_id,
+                    token=token,
                     payload=payload,
                     mensaje_esperado="Anio del auto invalido",
                 )
@@ -317,21 +402,22 @@ class TestErroresRegistroVehiculoHTTP:
         """
         Si una foto tiene formato inválido, el endpoint debe responder 422.
         """
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
-                propietario_id = _registrar_usuario(client)
-                payload = _payload_vehiculo_valido()
+                propietario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.foto.invalida@autospot.com",
+                )
 
-                payload["fotos"][0] = {
-                    **payload["fotos"][0],
-                    "formato": "gif",
-                }
+                payload = _payload_vehiculo_valido()
+                payload["fotos"][0]["formato"] = "gif"
 
                 self._assert_422_con_mensaje(
                     client=client,
                     propietario_id=propietario_id,
+                    token=token,
                     payload=payload,
                     mensaje_esperado="Formato de foto invalido",
                 )
@@ -343,23 +429,28 @@ class TestErroresRegistroVehiculoHTTP:
 
     def test_marca_modelo_inexistente_devuelve_422(self):
         """
-        Si la combinación marca/modelo no existe, el endpoint debe responder 422.
+        Si marca/modelo no existen en el catálogo permitido,
+        el endpoint debe responder 422.
         """
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
-                propietario_id = _registrar_usuario(client)
+                propietario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.catalogo.invalido@autospot.com",
+                )
 
                 payload = {
                     **_payload_vehiculo_valido(),
-                    "marca": "Toyota",
-                    "modelo": "Fiesta",
+                    "marca": "MarcaInexistente",
+                    "modelo": "ModeloInexistente",
                 }
 
                 self._assert_422_con_mensaje(
                     client=client,
                     propietario_id=propietario_id,
+                    token=token,
                     payload=payload,
                     mensaje_esperado="Combinacion marca modelo inexistente",
                 )
@@ -373,17 +464,22 @@ class TestErroresRegistroVehiculoHTTP:
         """
         Si no se cargan cuatro fotos mínimas, el endpoint debe responder 422.
         """
-        engine, client_context = self._crear_cliente()
+        engine, client_context = _crear_cliente()
 
         try:
             with client_context as client:
-                propietario_id = _registrar_usuario(client)
+                propietario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="vehiculo.pocas.fotos@autospot.com",
+                )
+
                 payload = _payload_vehiculo_valido()
                 payload["fotos"] = payload["fotos"][:3]
 
                 self._assert_422_con_mensaje(
                     client=client,
                     propietario_id=propietario_id,
+                    token=token,
                     payload=payload,
                     mensaje_esperado="Cantidad minima de fotos requerida",
                 )

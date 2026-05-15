@@ -1,21 +1,38 @@
 """
-Controlador HTTP — US 1D: Cargar características y fotos del auto.
+Controlador HTTP — Vehículos.
 
-Endpoint temporal:
-    POST /usuarios/{propietario_id}/vehiculos
+Endpoints:
+    POST  /usuarios/{propietario_id}/vehiculos
+    GET   /usuarios/{propietario_id}/vehiculos
+    PATCH /vehiculos/{vehiculo_id}/precio
+    PATCH /vehiculos/{vehiculo_id}/documentacion
 
-Nota técnica:
-    Este endpoint recibe propietario_id explícito porque todavía no existe
-    autenticación/JWT ni especialización formal del rol Propietario.
+Responsabilidades:
+    1. Recibir y validar payloads HTTP.
+    2. Exigir autenticación JWT en rutas sensibles.
+    3. Verificar que el usuario autenticado opere solo sobre sus propios recursos.
+    4. Delegar lógica de negocio a servicios.
+    5. Traducir excepciones de dominio a respuestas HTTP.
+
+Seguridad:
+    - Para rutas con propietario_id:
+        el claim `sub` del JWT debe coincidir con el propietario_id de la URL.
+    - Para rutas con vehiculo_id:
+        se verifica que el vehículo exista y que pertenezca al usuario autenticado.
 """
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies.auth import (
+    get_usuario_actual,
+    validar_usuario_autenticado_coincide_con_id,
+)
 from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
-
+from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
     DefinirPrecioVehiculoSchema,
     DocumentacionVehiculoSchema,
@@ -25,7 +42,6 @@ from app.schemas.vehiculo import (
     VehiculoDocumentacionResponseSchema,
     VehiculoPublicoSchema,
 )
-
 from app.services.vehiculo import (
     cargar_documentacion_vehiculo,
     definir_precio_vehiculo,
@@ -33,9 +49,48 @@ from app.services.vehiculo import (
     registrar_vehiculo,
 )
 
+
 router = APIRouter(
     tags=["vehiculos"],
 )
+
+
+def validar_vehiculo_pertenece_a_usuario_autenticado(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict,
+) -> None:
+    """
+    Verifica que un vehículo exista y pertenezca al usuario autenticado.
+
+    Args:
+        db: Sesión SQLAlchemy activa.
+        vehiculo_id: UUID del vehículo recibido por path parameter.
+        usuario_actual: Payload JWT validado.
+
+    Raises:
+        HTTPException 404:
+            Si el vehículo no existe.
+        HTTPException 403:
+            Si el vehículo existe, pero pertenece a otro usuario.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(VehiculoNoEncontradoError()),
+        )
+
+    if str(vehiculo.propietario_id) != str(usuario_actual.get("sub")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No puede operar sobre un vehículo de otro usuario",
+        )
 
 
 @router.post(
@@ -45,11 +100,18 @@ router = APIRouter(
     summary="Registrar vehículo con características y fotos",
     description=(
         "Registra características obligatorias y fotos del vehículo. "
-        "Endpoint temporal hasta implementar autenticación/JWT y rol Propietario."
+        "Requiere autenticación JWT y solo permite que el usuario autenticado "
+        "registre vehículos para sí mismo."
     ),
     responses={
         status.HTTP_201_CREATED: {
             "description": "Vehículo registrado exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta operar sobre otro propietario.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Propietario no encontrado.",
@@ -67,6 +129,7 @@ router = APIRouter(
 def registrar_vehiculo_usuario(
     propietario_id: uuid.UUID,
     payload: RegistroVehiculoPayloadSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> VehiculoPublicoSchema:
     """
@@ -75,9 +138,16 @@ def registrar_vehiculo_usuario(
     Flujo:
         1. FastAPI valida propietario_id como UUID.
         2. FastAPI/Pydantic valida el payload.
-        3. Se construye el schema de servicio incorporando propietario_id.
-        4. El servicio verifica que el propietario exista y persiste el vehículo.
+        3. Se valida el JWT.
+        4. Se verifica que propietario_id coincida con el `sub` del JWT.
+        5. Se construye el schema de servicio incorporando propietario_id.
+        6. El servicio verifica que el propietario exista y persiste el vehículo.
     """
+    validar_usuario_autenticado_coincide_con_id(
+        usuario_id=propietario_id,
+        usuario_actual=usuario_actual,
+    )
+
     schema = RegistroVehiculoSchema(
         propietario_id=propietario_id,
         **payload.model_dump(),
@@ -101,11 +171,18 @@ def registrar_vehiculo_usuario(
     summary="Listar vehículos publicados por un propietario",
     description=(
         "Lista los vehículos registrados por un usuario propietario. "
-        "Endpoint temporal hasta implementar autenticación/JWT y rol Propietario."
+        "Requiere autenticación JWT y solo permite listar los vehículos "
+        "del usuario autenticado."
     ),
     responses={
         status.HTTP_200_OK: {
             "description": "Vehículos del propietario obtenidos exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta listar vehículos de otro usuario.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Propietario no encontrado.",
@@ -119,6 +196,7 @@ def registrar_vehiculo_usuario(
 )
 def listar_vehiculos_usuario(
     propietario_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> list[VehiculoPublicoSchema]:
     """
@@ -126,9 +204,16 @@ def listar_vehiculos_usuario(
 
     Flujo:
         1. FastAPI valida propietario_id como UUID.
-        2. El servicio verifica que el propietario exista.
-        3. Se devuelven los vehículos registrados por ese propietario.
+        2. Se valida el JWT.
+        3. Se verifica que propietario_id coincida con el `sub` del JWT.
+        4. El servicio verifica que el propietario exista.
+        5. Se devuelven los vehículos registrados por ese propietario.
     """
+    validar_usuario_autenticado_coincide_con_id(
+        usuario_id=propietario_id,
+        usuario_actual=usuario_actual,
+    )
+
     try:
         vehiculos = listar_vehiculos_por_propietario(
             db=db,
@@ -145,6 +230,7 @@ def listar_vehiculos_usuario(
         for vehiculo in vehiculos
     ]
 
+
 @router.patch(
     "/vehiculos/{vehiculo_id}/precio",
     response_model=PrecioVehiculoResponseSchema,
@@ -152,11 +238,19 @@ def listar_vehiculos_usuario(
     summary="Definir precio diario del vehículo",
     description=(
         "Define la tarifa diaria de alquiler para un vehículo existente. "
-        "US 5D: solo precio por día, sin descuentos, comisión ni precio dinámico."
+        "Requiere autenticación JWT y solo permite modificar vehículos "
+        "propios. US 5D: solo precio por día, sin descuentos, comisión "
+        "ni precio dinámico."
     ),
     responses={
         status.HTTP_200_OK: {
             "description": "Precio diario definido exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Vehículo no encontrado.",
@@ -174,6 +268,7 @@ def listar_vehiculos_usuario(
 def definir_precio_diario_vehiculo(
     vehiculo_id: uuid.UUID,
     payload: DefinirPrecioVehiculoSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> PrecioVehiculoResponseSchema:
     """
@@ -182,9 +277,16 @@ def definir_precio_diario_vehiculo(
     Flujo:
         1. FastAPI valida vehiculo_id como UUID.
         2. Pydantic valida que precio_por_dia sea mayor a cero.
-        3. El servicio verifica que el vehículo exista.
-        4. Se persiste la tarifa diaria.
+        3. Se valida el JWT.
+        4. Se verifica que el vehículo exista y pertenezca al usuario autenticado.
+        5. El servicio persiste la tarifa diaria.
     """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
     try:
         vehiculo = definir_precio_vehiculo(
             db=db,
@@ -207,11 +309,17 @@ def definir_precio_diario_vehiculo(
     summary="Cargar documentación legal del vehículo",
     description=(
         "Carga la documentación legal y operativa de un vehículo existente. "
-        "Este flujo es posterior al alta inicial del vehículo."
+        "Requiere autenticación JWT y solo permite modificar vehículos propios."
     ),
     responses={
         status.HTTP_200_OK: {
             "description": "Documentación legal cargada exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Vehículo no encontrado.",
@@ -227,8 +335,9 @@ def definir_precio_diario_vehiculo(
     },
 )
 def cargar_documentacion_legal_vehiculo(
-    vehiculo_id,
+    vehiculo_id: uuid.UUID,
     payload: DocumentacionVehiculoSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> VehiculoDocumentacionResponseSchema:
     """
@@ -237,9 +346,16 @@ def cargar_documentacion_legal_vehiculo(
     Flujo:
         1. FastAPI valida vehiculo_id como UUID.
         2. Pydantic valida los campos documentales obligatorios.
-        3. El servicio verifica que el vehículo exista.
-        4. Se persiste la documentación legal del vehículo.
+        3. Se valida el JWT.
+        4. Se verifica que el vehículo exista y pertenezca al usuario autenticado.
+        5. El servicio persiste la documentación legal del vehículo.
     """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
     try:
         vehiculo = cargar_documentacion_vehiculo(
             db=db,

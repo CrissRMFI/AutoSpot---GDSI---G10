@@ -3,6 +3,10 @@ Tests HTTP — Cargar documentación legal del vehículo.
 
 Endpoint:
     PATCH /vehiculos/{vehiculo_id}/documentacion
+
+Contrato actual:
+    - Requiere JWT.
+    - Solo el propietario del vehículo puede cargar documentación.
 """
 import uuid
 
@@ -10,6 +14,7 @@ from app.schemas.usuario import RegistroUsuarioSchema
 from app.schemas.vehiculo import FotoVehiculoSchema, RegistroVehiculoSchema
 from app.services.usuario import crear_usuario
 from app.services.vehiculo import registrar_vehiculo
+from app.utils.security import crear_access_token
 
 
 def crear_vehiculo_base(db_session):
@@ -24,7 +29,7 @@ def crear_vehiculo_base(db_session):
         ),
     )
 
-    return registrar_vehiculo(
+    vehiculo = registrar_vehiculo(
         db=db_session,
         schema=RegistroVehiculoSchema(
             propietario_id=propietario.id,
@@ -65,6 +70,19 @@ def crear_vehiculo_base(db_session):
         ),
     )
 
+    token = crear_access_token({"sub": str(propietario.id)})
+
+    return vehiculo, token
+
+
+def auth_headers(token: str) -> dict:
+    """
+    Helper para construir headers HTTP con Bearer token.
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
 
 def payload_documentacion_valido():
     return {
@@ -91,11 +109,12 @@ class TestCargaDocumentacionVehiculoHTTP:
         client,
         db_session,
     ):
-        vehiculo = crear_vehiculo_base(db_session)
+        vehiculo, token = crear_vehiculo_base(db_session)
 
         response = client.patch(
             f"/vehiculos/{vehiculo.id}/documentacion",
             json=payload_documentacion_valido(),
+            headers=auth_headers(token),
         )
 
         assert response.status_code == 200
@@ -121,10 +140,24 @@ class TestErroresDocumentacionVehiculoHTTP:
     Verifica errores HTTP del endpoint documental.
     """
 
-    def test_vehiculo_inexistente_devuelve_404(self, client):
+    def test_sin_token_devuelve_401(self, client, db_session):
+        vehiculo, _ = crear_vehiculo_base(db_session)
+
+        response = client.patch(
+            f"/vehiculos/{vehiculo.id}/documentacion",
+            json=payload_documentacion_valido(),
+        )
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "No autenticado"
+
+    def test_vehiculo_inexistente_devuelve_404(self, client, db_session):
+        _, token = crear_vehiculo_base(db_session)
+
         response = client.patch(
             f"/vehiculos/{uuid.uuid4()}/documentacion",
             json=payload_documentacion_valido(),
+            headers=auth_headers(token),
         )
 
         assert response.status_code == 404
@@ -135,13 +168,14 @@ class TestErroresDocumentacionVehiculoHTTP:
         client,
         db_session,
     ):
-        vehiculo = crear_vehiculo_base(db_session)
+        vehiculo, token = crear_vehiculo_base(db_session)
         payload = payload_documentacion_valido()
         payload["patente"] = ""
 
         response = client.patch(
             f"/vehiculos/{vehiculo.id}/documentacion",
             json=payload,
+            headers=auth_headers(token),
         )
 
         assert response.status_code == 422
@@ -152,13 +186,14 @@ class TestErroresDocumentacionVehiculoHTTP:
         client,
         db_session,
     ):
-        vehiculo = crear_vehiculo_base(db_session)
+        vehiculo, token = crear_vehiculo_base(db_session)
         payload = payload_documentacion_valido()
         payload.pop("poliza")
 
         response = client.patch(
             f"/vehiculos/{vehiculo.id}/documentacion",
             json=payload,
+            headers=auth_headers(token),
         )
 
         assert response.status_code == 422
