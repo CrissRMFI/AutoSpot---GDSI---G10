@@ -103,3 +103,21 @@ class VehiculoNoEncontradoError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Vehiculo no encontrado")
 
+
+class VehiculoNoHabilitadoError(AutoSpotError):
+    """
+    Se lanza cuando se intenta cambiar la disponibilidad de un auto que
+    todavía no fue habilitado.
+    """
+    def __init__(self) -> None:
+        super().__init__("El auto aún no fue habilitado")
+
+
+class VehiculoConReservaActivaError(AutoSpotError):
+    """
+    Se lanza cuando se intenta deshabilitar un auto que tiene alquileres
+    o reservas en curso.
+    """
+    def __init__(self) -> None:
+        super().__init__("No es posible deshabilitar el auto mientras haya una reserva o alquiler en curso")
+
