@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import datos_personales_usuario as router_datos_personales
+from app.routers import upload as router_upload
 from app.routers import usuarios as router_usuarios
 from app.routers import vehiculos as router_vehiculos
 
@@ -62,3 +63,4 @@ app.add_middleware(
 app.include_router(router_usuarios.router)
 app.include_router(router_vehiculos.router)
 app.include_router(router_datos_personales.router)
+app.include_router(router_upload.router)
