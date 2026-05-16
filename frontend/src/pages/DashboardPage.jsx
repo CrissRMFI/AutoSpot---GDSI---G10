@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { listarVehiculosDelPropietario } from "../features/vehiculos/api/vehiculoService";
+import { 
+  listarVehiculosDelPropietario, 
+  toggleEstadoVehiculo 
+} from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -11,6 +14,8 @@ const DashboardPage = () => {
   const [vehiculos, setVehiculos] = useState([]);
   const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
   const [errorVehiculos, setErrorVehiculos] = useState("");
+  const [togglingVehiculoId, setTogglingVehiculoId] = useState(null);
+  const [toast, setToast] = useState({ visible: false, message: "", type: "error" });
 
   const mensaje = location.state?.message;
 
@@ -39,6 +44,37 @@ const DashboardPage = () => {
     cargarVehiculos();
   }, [usuario?.id]);
 
+  const mostrarToast = (message, type = "error") => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 3500);
+  };
+
+  const handleToggleEstado = async (vehiculoId, estadoActual) => {
+    setTogglingVehiculoId(vehiculoId);
+    try {
+      const nuevoEstado = !estadoActual;
+      await toggleEstadoVehiculo(vehiculoId, nuevoEstado);
+      
+      setVehiculos((prev) =>
+        prev.map((v) =>
+          v.id === vehiculoId ? { ...v, disponible: nuevoEstado } : v
+        )
+      );
+
+      mostrarToast(`Vehículo marcado como ${nuevoEstado ? "Disponible" : "No Disponible"}.`, "success");
+    } catch (error) {
+      mostrarToast(
+        error.response?.data?.detail ||
+          "No se pudo cambiar la disponibilidad del vehículo.",
+        "error"
+      );
+    } finally {
+      setTogglingVehiculoId(null);
+    }
+  };
+
   const cerrarSesion = async () => {
     await logout();
     navigate("/login");
@@ -46,6 +82,19 @@ const DashboardPage = () => {
 
   return (
     <main className="min-h-screen bg-autospot-cream text-autospot-black">
+      {/* Toast Flotante */}
+      <div
+        className={`fixed left-1/2 top-6 z-50 flex -translate-x-1/2 transform items-center justify-center rounded-full px-6 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ease-in-out ${
+          toast.visible ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-0 pointer-events-none"
+        } ${
+          toast.type === "success"
+            ? "border border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]"
+            : "border border-red-200 bg-red-50 text-[#b42318]"
+        }`}
+      >
+        <p className="text-sm font-bold">{toast.message}</p>
+      </div>
+
       <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
           <Link
@@ -235,9 +284,26 @@ const DashboardPage = () => {
                       </p>
                     </div>
 
-                    <span className="w-fit rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151]">
-                      {vehiculo.estado_registro || "Sin estado"}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="w-fit rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151]">
+                        {vehiculo.estado_registro || "Sin estado"}
+                      </span>
+                      <button
+                        onClick={() => handleToggleEstado(vehiculo.id, vehiculo.disponible)}
+                        disabled={togglingVehiculoId === vehiculo.id}
+                        className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 ${
+                          vehiculo.disponible
+                            ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
+                            : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
+                        }`}
+                      >
+                        {togglingVehiculoId === vehiculo.id
+                          ? "Cambiando..."
+                          : vehiculo.disponible
+                            ? "Disponible"
+                            : "No Disponible"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">

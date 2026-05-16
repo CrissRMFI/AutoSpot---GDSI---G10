@@ -360,10 +360,10 @@ const PublicarVehiculoPage = () => {
                     <option value="">Seleccioná un modelo</option>
                     {form.marca
                       ? CATALOGO[form.marca].map((modelo) => (
-                          <option key={modelo} value={modelo}>
-                            {modelo}
-                          </option>
-                        ))
+                        <option key={modelo} value={modelo}>
+                          {modelo}
+                        </option>
+                      ))
                       : null}
                   </select>
                 </div>
@@ -522,11 +522,10 @@ const PublicarVehiculoPage = () => {
                   return (
                     <article
                       key={codigo}
-                      className={`rounded-2xl border p-4 transition ${
-                        cargada
+                      className={`rounded-2xl border p-4 transition ${cargada
                           ? "border-[#bbf7d0] bg-[#f0fdf4]"
                           : "border-autospot-border bg-white"
-                      }`}
+                        }`}
                     >
                       <input
                         ref={(el) => { fileInputRefs.current[codigo] = el; }}
@@ -543,13 +542,12 @@ const PublicarVehiculoPage = () => {
                           </p>
 
                           <p
-                            className={`mt-1 text-xs leading-5 ${
-                              subiendo
+                            className={`mt-1 text-xs leading-5 ${subiendo
                                 ? "text-autospot-muted"
                                 : cargada
                                   ? "text-[#166534]"
                                   : "text-autospot-muted"
-                            }`}
+                              }`}
                           >
                             {subiendo
                               ? "Subiendo..."
@@ -562,11 +560,10 @@ const PublicarVehiculoPage = () => {
                         <button
                           type="button"
                           disabled={subiendo}
-                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                            cargada
+                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${cargada
                               ? "border border-[#bbf7d0] bg-white !text-[#166534] hover:border-[#16a34a]"
                               : "bg-autospot-accent !text-white hover:bg-[#5a1420]"
-                          }`}
+                            }`}
                           onClick={() => handleSeleccionarArchivo(codigo)}
                         >
                           {subiendo ? "Subiendo..." : cargada ? "Cambiar" : "Subir"}
@@ -580,11 +577,10 @@ const PublicarVehiculoPage = () => {
 
             {feedback.message && (
               <div
-                className={`rounded-xl px-4 py-3 text-sm font-bold ${
-                  feedback.type === "success"
+                className={`rounded-xl px-4 py-3 text-sm font-bold ${feedback.type === "success"
                     ? "bg-[#e7f8ed] text-[#166534]"
                     : "bg-red-50 text-[#b42318]"
-                }`}
+                  }`}
               >
                 {feedback.message}
               </div>

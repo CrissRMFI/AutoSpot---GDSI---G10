@@ -47,3 +47,12 @@ export const listarVehiculosDelPropietario = async (propietarioId) => {
 
   return response.data;
 };
+
+export const toggleEstadoVehiculo = async (vehiculoId, disponible) => {
+  const response = await httpClient.patch(
+    `/vehiculos/${vehiculoId}/disponibilidad`,
+    { disponible }
+  );
+
+  return response.data;
+};
