@@ -14,6 +14,10 @@ pydantic[email]>=2.7.0      # Incluye email-validator para EmailStr
 bcrypt>=4.0.0               # Hashing bcrypt directamente (passlib no soporta bcrypt>=4)
 PyJWT>=2.8.0                # Tokens JWT para autenticación y logout (US 3U)
 
+# ── Almacenamiento de archivos ──────────────────────────────────────────────
+cloudinary>=1.40.0          # SDK Cloudinary para subida de imágenes
+python-multipart>=0.0.9     # Requerido por FastAPI para recibir multipart/form-data
+
 # ── Configuración ──────────────────────────────────────────────────────────
 python-dotenv>=1.0.0        # Carga .env automáticamente
 

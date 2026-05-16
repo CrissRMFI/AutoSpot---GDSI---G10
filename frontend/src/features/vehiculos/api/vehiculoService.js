@@ -1,5 +1,18 @@
 import httpClient from "../../../api/httpClient";
 
+export const subirFotoVehiculo = async (archivo, lado) => {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+
+  const response = await httpClient.post(
+    `/upload/foto-vehiculo?lado=${encodeURIComponent(lado)}`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+
+  return response.data;
+};
+
 export const publicarVehiculo = async (propietarioId, datosVehiculo) => {
   const response = await httpClient.post(
     `/usuarios/${propietarioId}/vehiculos`,
