@@ -55,6 +55,7 @@ from app.services.vehiculo import (
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
     registrar_vehiculo,
+    obtener_vehiculo,
 )
 
 
@@ -237,6 +238,67 @@ def listar_vehiculos_usuario(
         VehiculoPublicoSchema.model_validate(vehiculo)
         for vehiculo in vehiculos
     ]
+
+
+@router.get(
+    "/vehiculos/{vehiculo_id}",
+    response_model=VehiculoPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener detalle de un vehículo",
+    description=(
+        "Obtiene el detalle de un vehículo, incluyendo su estado de registro "
+        "y motivo de rechazo (si aplica). "
+        "Requiere autenticación JWT y solo permite acceder a vehículos propios."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Detalle del vehículo obtenido exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta acceder a un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehículo no encontrado"}
+                }
+            },
+        },
+    },
+)
+def obtener_detalle_vehiculo(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> VehiculoPublicoSchema:
+    """
+    GET /vehiculos/{vehiculo_id}
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Se valida el JWT.
+        3. Se verifica que el vehículo exista y pertenezca al usuario autenticado.
+        4. Se devuelve el detalle del vehículo.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        vehiculo = obtener_vehiculo(db=db, vehiculo_id=vehiculo_id)
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return VehiculoPublicoSchema.model_validate(vehiculo)
 
 
 @router.patch(
