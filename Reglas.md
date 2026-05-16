@@ -58,7 +58,7 @@ git checkout -b chore/readme
 Antes de abrir un **Pull Request** hacia **develop**, correr en la raiz:
 
 ```bash
-docker compose down -v
+docker compose down
 docker compose up --build -d
 docker compose ps
 curl -I http://localhost:8000/docs
