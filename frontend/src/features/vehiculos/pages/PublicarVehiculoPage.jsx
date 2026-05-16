@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
   definirPrecioVehiculo,
   publicarVehiculo,
+  subirFotoVehiculo,
 } from "../api/vehiculoService";
 
 const CATALOGO = {
@@ -17,26 +18,10 @@ const CATALOGO = {
 };
 
 const LADOS_REQUERIDOS = [
-  {
-    codigo: "FRENTE",
-    label: "Frente",
-    tituloModal: "Foto Frente",
-  },
-  {
-    codigo: "TRASERA",
-    label: "Trasera",
-    tituloModal: "Foto Trasera",
-  },
-  {
-    codigo: "LATERAL_IZQUIERDO",
-    label: "Lateral izquierdo",
-    tituloModal: "Foto Lateral Izquierdo",
-  },
-  {
-    codigo: "LATERAL_DERECHO",
-    label: "Lateral derecho",
-    tituloModal: "Foto Lateral Derecho",
-  },
+  { codigo: "FRENTE", label: "Frente" },
+  { codigo: "TRASERA", label: "Trasera" },
+  { codigo: "LATERAL_IZQUIERDO", label: "Lateral izquierdo" },
+  { codigo: "LATERAL_DERECHO", label: "Lateral derecho" },
 ];
 
 const inputClassName =
@@ -44,77 +29,11 @@ const inputClassName =
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
-const UploadModal = ({ isOpen, onClose, title, onConfirm }) => {
-  const [fileName, setFileName] = useState("");
-
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleConfirm = () => {
-    if (!fileName.trim()) {
-      alert("Por favor ingresá un nombre de archivo para simular la carga.");
-      return;
-    }
-
-    onConfirm(fileName.trim());
-    setFileName("");
-    onClose();
-  };
-
-  const handleClose = () => {
-    setFileName("");
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 py-6">
-      <div className="w-full max-w-md rounded-[24px] border border-autospot-border bg-autospot-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-7">
-        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
-          Subir {title}
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-autospot-muted">
-          Simulación de carga de archivo. Ingresá el nombre del archivo para
-          generar una ruta mock.
-        </p>
-
-        <div className="mt-6">
-          <label className={labelClassName}>Seleccionar archivo mock</label>
-
-          <input
-            className={inputClassName}
-            placeholder="foto.jpg, foto.png o foto.webp"
-            value={fileName}
-            onChange={(evento) => setFileName(evento.target.value)}
-          />
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-            onClick={handleConfirm}
-          >
-            Confirmar
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-            onClick={handleClose}
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const PublicarVehiculoPage = () => {
   const navigate = useNavigate();
   const { usuario } = useAuth();
+
+  const fileInputRefs = useRef({});
 
   const [form, setForm] = useState({
     marca: "",
@@ -129,12 +48,7 @@ const PublicarVehiculoPage = () => {
     fotos: [],
   });
 
-  const [modalConfig, setModalConfig] = useState({
-    isOpen: false,
-    field: "",
-    title: "",
-  });
-
+  const [fotosSubiendo, setFotosSubiendo] = useState(new Set());
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
 
@@ -152,35 +66,47 @@ const PublicarVehiculoPage = () => {
     });
   };
 
-  const abrirUploadModal = (field, title) => {
-    setModalConfig({ isOpen: true, field, title });
+  const handleSeleccionarArchivo = (lado) => {
+    fileInputRefs.current[lado]?.click();
   };
 
-  const cerrarUploadModal = () => {
-    setModalConfig({ isOpen: false, field: "", title: "" });
-  };
+  const handleArchivoSeleccionado = async (lado, evento) => {
+    const archivo = evento.target.files?.[0];
+    if (!archivo) return;
 
-  const handleUploadConfirm = (fileName) => {
-    const field = modalConfig.field;
-    const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+    setFotosSubiendo((prev) => new Set(prev).add(lado));
+    setFeedback({ message: "", type: "" });
 
-    setForm((estadoActual) => {
-      const fotosSinLadoActual = estadoActual.fotos.filter(
-        (foto) => foto.lado !== field,
+    try {
+      const resultado = await subirFotoVehiculo(archivo, lado);
+
+      setForm((estadoActual) => {
+        const fotosSinLadoActual = estadoActual.fotos.filter(
+          (foto) => foto.lado !== lado,
+        );
+
+        return {
+          ...estadoActual,
+          fotos: [
+            ...fotosSinLadoActual,
+            { lado, url: resultado.url, formato: resultado.formato, tamanio_bytes: resultado.tamanio_bytes },
+          ],
+        };
+      });
+    } catch (error) {
+      const detalle = error.response?.data?.detail;
+      mostrarFeedback(
+        `Error al subir foto (${lado}): ${detalle || error.message}`,
+        "error",
       );
-
-      const nuevaFoto = {
-        lado: field,
-        url: `uploads/vehiculos/mock/${fileName}`,
-        formato: extension,
-        tamanio_bytes: 500000,
-      };
-
-      return {
-        ...estadoActual,
-        fotos: [...fotosSinLadoActual, nuevaFoto],
-      };
-    });
+    } finally {
+      setFotosSubiendo((prev) => {
+        const siguiente = new Set(prev);
+        siguiente.delete(lado);
+        return siguiente;
+      });
+      evento.target.value = "";
+    }
   };
 
   const mostrarFeedback = (message, type) => {
@@ -316,7 +242,9 @@ const PublicarVehiculoPage = () => {
 
   const obtenerNombreArchivo = (lado) => {
     const foto = form.fotos.find((item) => item.lado === lado);
-    return foto?.url?.split("/").pop() || "";
+    if (!foto) return "";
+    const partes = foto.url.split("/");
+    return partes[partes.length - 1] || "";
   };
 
   return (
@@ -582,13 +510,14 @@ const PublicarVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Cargá una imagen mock para cada lado requerido.
+                  Subí una foto real por cada lado requerido (jpg, jpeg, png o webp, máx. 5 MB).
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                {LADOS_REQUERIDOS.map(({ codigo, label, tituloModal }) => {
+                {LADOS_REQUERIDOS.map(({ codigo, label }) => {
                   const cargada = isPhotoUploaded(codigo);
+                  const subiendo = fotosSubiendo.has(codigo);
 
                   return (
                     <article
@@ -599,6 +528,14 @@ const PublicarVehiculoPage = () => {
                           : "border-autospot-border bg-white"
                       }`}
                     >
+                      <input
+                        ref={(el) => { fileInputRefs.current[codigo] = el; }}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(e) => handleArchivoSeleccionado(codigo, e)}
+                      />
+
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm font-bold text-autospot-black">
@@ -607,25 +544,32 @@ const PublicarVehiculoPage = () => {
 
                           <p
                             className={`mt-1 text-xs leading-5 ${
-                              cargada ? "text-[#166534]" : "text-autospot-muted"
+                              subiendo
+                                ? "text-autospot-muted"
+                                : cargada
+                                  ? "text-[#166534]"
+                                  : "text-autospot-muted"
                             }`}
                           >
-                            {cargada
-                              ? obtenerNombreArchivo(codigo)
-                              : "Foto pendiente"}
+                            {subiendo
+                              ? "Subiendo..."
+                              : cargada
+                                ? obtenerNombreArchivo(codigo)
+                                : "Foto pendiente"}
                           </p>
                         </div>
 
                         <button
                           type="button"
-                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition ${
+                          disabled={subiendo}
+                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                             cargada
                               ? "border border-[#bbf7d0] bg-white !text-[#166534] hover:border-[#16a34a]"
                               : "bg-autospot-accent !text-white hover:bg-[#5a1420]"
                           }`}
-                          onClick={() => abrirUploadModal(codigo, tituloModal)}
+                          onClick={() => handleSeleccionarArchivo(codigo)}
                         >
-                          {cargada ? "Cambiar" : "Subir"}
+                          {subiendo ? "Subiendo..." : cargada ? "Cambiar" : "Subir"}
                         </button>
                       </div>
                     </article>
@@ -666,12 +610,6 @@ const PublicarVehiculoPage = () => {
         </section>
       </section>
 
-      <UploadModal
-        isOpen={modalConfig.isOpen}
-        title={modalConfig.title}
-        onClose={cerrarUploadModal}
-        onConfirm={handleUploadConfirm}
-      />
     </main>
   );
 };
