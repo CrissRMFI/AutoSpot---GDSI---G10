@@ -31,10 +31,17 @@ from app.dependencies.auth import (
     get_usuario_actual,
     validar_usuario_autenticado_coincide_con_id,
 )
-from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
+from app.exceptions import (
+    UsuarioNoEncontradoError,
+    VehiculoConReservaActivaError,
+    VehiculoNoEncontradoError,
+    VehiculoNoHabilitadoError,
+)
 from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
+    CambiarDisponibilidadSchema,
     DefinirPrecioVehiculoSchema,
+    DisponibilidadVehiculoResponseSchema,
     DocumentacionVehiculoSchema,
     PrecioVehiculoResponseSchema,
     RegistroVehiculoPayloadSchema,
@@ -43,6 +50,7 @@ from app.schemas.vehiculo import (
     VehiculoPublicoSchema,
 )
 from app.services.vehiculo import (
+    cambiar_disponibilidad_vehiculo,
     cargar_documentacion_vehiculo,
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
@@ -369,3 +377,80 @@ def cargar_documentacion_legal_vehiculo(
         ) from exc
 
     return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
+
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/disponibilidad",
+    response_model=DisponibilidadVehiculoResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Cambiar disponibilidad del vehículo",
+    description=(
+        "Cambia el estado de disponibilidad de un vehículo para alquiler. "
+        "Requiere autenticación JWT y solo permite modificar vehículos propios. "
+        "El vehículo debe estar habilitado."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Disponibilidad cambiada exitosamente.",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "El vehículo no está habilitado o tiene reservas activas.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def cambiar_disponibilidad_de_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: CambiarDisponibilidadSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> DisponibilidadVehiculoResponseSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/disponibilidad
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID y el payload.
+        2. Se valida el JWT y que el vehículo pertenezca al usuario.
+        3. El servicio verifica el estado_registro y si hay alquileres activos.
+        4. Se actualiza el estado de disponibilidad.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        vehiculo = cambiar_disponibilidad_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            disponible=payload.disponible,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except (VehiculoNoHabilitadoError, VehiculoConReservaActivaError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return DisponibilidadVehiculoResponseSchema.model_validate(vehiculo)

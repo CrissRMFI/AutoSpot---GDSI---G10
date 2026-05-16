@@ -218,6 +218,7 @@ class VehiculoPublicoSchema(BaseModel):
     estado_registro: str
     fotos: list[FotoVehiculoPublicoSchema]
     precio_por_dia: Decimal | None = None
+    disponible: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -316,6 +317,23 @@ class PrecioVehiculoResponseSchema(BaseModel):
 
     id: uuid.UUID
     precio_por_dia: Decimal
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+class CambiarDisponibilidadSchema(BaseModel):
+    """
+    Payload de entrada para cambiar la disponibilidad del vehículo (US 9D).
+    """
+    disponible: bool
+
+class DisponibilidadVehiculoResponseSchema(BaseModel):
+    """
+    Respuesta pública de la US 9D luego de cambiar la disponibilidad.
+    """
+    id: uuid.UUID
+    disponible: bool
 
     model_config = {
         "from_attributes": True,

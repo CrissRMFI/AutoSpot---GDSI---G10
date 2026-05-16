@@ -147,6 +147,13 @@ class Vehiculo(Base):
         doc="Estado inicial tras cargar características y fotos.",
     )
 
+    disponible: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        doc="Disponibilidad para alquiler.",
+    )
+
     # ── Relación con fotos ───────────────────────────────────────────────────
     fotos: Mapped[list["FotoVehiculo"]] = relationship(
         "FotoVehiculo",

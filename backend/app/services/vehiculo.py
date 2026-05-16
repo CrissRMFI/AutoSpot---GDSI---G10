@@ -10,9 +10,15 @@ Responsabilidades de esta capa:
 Esta capa NO valida campos obligatorios, año, formato o cantidad de fotos;
 esas responsabilidades pertenecen al schema Pydantic.
 """
+import uuid
 from sqlalchemy.orm import Session
 
-from app.exceptions import UsuarioNoEncontradoError, VehiculoNoEncontradoError
+from app.exceptions import (
+    UsuarioNoEncontradoError,
+    VehiculoNoEncontradoError,
+    VehiculoNoHabilitadoError,
+    VehiculoConReservaActivaError,
+)
 from app.models.foto_vehiculo import FotoVehiculo
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
@@ -193,3 +199,56 @@ def cargar_documentacion_vehiculo(
     db.refresh(vehiculo)
 
     return vehiculo
+
+
+def verificar_alquileres_activos(vehiculo_id: uuid.UUID) -> bool:
+    """
+    Stub temporal para verificar si un vehículo tiene alquileres o reservas
+    en curso. En un futuro, delegará al servicio correspondiente de alquileres.
+    """
+    # TODO: Implementar lógica real cuando exista el módulo de alquileres
+    return False
+
+
+def cambiar_disponibilidad_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    disponible: bool,
+) -> Vehiculo:
+    """
+    Cambia el estado de disponibilidad del vehículo para alquiler.
+
+    Args:
+        db: Sesión SQLAlchemy.
+        vehiculo_id: UUID del vehículo.
+        disponible: Nuevo estado de disponibilidad (True/False).
+
+    Returns:
+        Vehiculo actualizado.
+
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+        VehiculoNoHabilitadoError: Si el auto no está HABILITADO.
+        VehiculoConReservaActivaError: Si se intenta deshabilitar y tiene alquileres.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    if vehiculo.estado_registro != "HABILITADO":
+        raise VehiculoNoHabilitadoError()
+
+    if not disponible and verificar_alquileres_activos(vehiculo_id):
+        raise VehiculoConReservaActivaError()
+
+    vehiculo.disponible = disponible
+
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
