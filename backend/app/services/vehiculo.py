@@ -127,6 +127,31 @@ def definir_precio_vehiculo(
 
     return vehiculo
 
+def obtener_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> Vehiculo:
+    """
+    Obtiene un vehículo por su ID.
+
+    Args:
+        db: Sesión SQLAlchemy.
+        vehiculo_id: UUID del vehículo.
+
+    Returns:
+        Vehiculo: El vehículo si existe.
+
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    return vehiculo
+
 def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehiculo]:
     """
     Lista los vehículos registrados por un propietario.
@@ -160,9 +185,10 @@ def cargar_documentacion_vehiculo(
     """
     Carga la documentación legal y operativa de un vehículo existente.
 
-    Este flujo es posterior al alta inicial del vehículo. Cargar
-    documentación no implica aprobar automáticamente el vehículo; por eso
-    el estado_registro se mantiene sin cambios.
+    Carga la documentación legal y operativa de un vehículo existente.
+
+    Este flujo actualiza el estado de la solicitud para que un administrador
+    lo revise (US 4D).
 
     Args:
         db          : Sesión SQLAlchemy activa.
@@ -194,6 +220,11 @@ def cargar_documentacion_vehiculo(
     vehiculo.estacion = schema.estacion
     vehiculo.telefono = schema.telefono
     vehiculo.descripcion = schema.descripcion
+    
+    # Cambia a estado EN_REVISION para la US 4D
+    vehiculo.estado_registro = "EN_REVISION"
+    # Si estaba rechazado, limpiamos el motivo
+    vehiculo.motivo_rechazo = None
 
     db.commit()
     db.refresh(vehiculo)

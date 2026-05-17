@@ -147,6 +147,12 @@ class Vehiculo(Base):
         doc="Estado inicial tras cargar características y fotos.",
     )
 
+    motivo_rechazo: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        doc="Motivo de rechazo de la solicitud de habilitación.",
+    )
+
     disponible: Mapped[bool] = mapped_column(
         Boolean,
         default=False,

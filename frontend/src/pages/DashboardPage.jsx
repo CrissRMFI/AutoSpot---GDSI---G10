@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { 
   listarVehiculosDelPropietario, 
-  toggleEstadoVehiculo 
+  toggleEstadoVehiculo,
+  getStatusSolicitud
 } from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
@@ -33,7 +34,17 @@ const DashboardPage = () => {
 
       try {
         const data = await listarVehiculosDelPropietario(usuario.id);
-        setVehiculos(data);
+        const vehiculosConEstado = await Promise.all(
+          data.map(async (v) => {
+            try {
+              const status = await getStatusSolicitud(v.id);
+              return { ...v, estado_registro: status.estado_registro, motivo_rechazo: status.motivo_rechazo };
+            } catch (err) {
+              return v;
+            }
+          })
+        );
+        setVehiculos(vehiculosConEstado);
       } catch {
         setErrorVehiculos("No se pudieron cargar tus vehículos publicados.");
       } finally {
@@ -43,6 +54,22 @@ const DashboardPage = () => {
 
     cargarVehiculos();
   }, [usuario?.id]);
+
+  const formatEstado = (estado) => {
+    switch (estado) {
+      case "PENDIENTE_DOCUMENTACION":
+        return { label: "Pendiente Doc.", className: "bg-[#f1f5f9] text-[#475569] border border-[#e2e8f0]" };
+      case "EN_REVISION":
+        return { label: "En Revisión", className: "bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]" };
+      case "HABILITADO":
+      case "APROBADO":
+        return { label: "Aprobado", className: "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]" };
+      case "RECHAZADO":
+        return { label: "Rechazado", className: "bg-[#fef2f2] text-[#b42318] border border-[#fecaca]" };
+      default:
+        return { label: estado || "Sin estado", className: "bg-[#f3f4f6] text-[#374151]" };
+    }
+  };
 
   const mostrarToast = (message, type = "error") => {
     setToast({ visible: true, message, type });
@@ -235,8 +262,18 @@ const DashboardPage = () => {
           </div>
 
           {cargandoVehiculos && (
-            <div className="rounded-2xl border border-autospot-border bg-white px-4 py-4 text-sm text-autospot-muted">
-              Cargando vehículos...
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2].map((skeleton) => (
+                <div key={skeleton} className="animate-pulse rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                  <div className="h-6 w-3/4 rounded bg-gray-200 mb-2"></div>
+                  <div className="h-4 w-1/2 rounded bg-gray-200 mb-6"></div>
+                  <div className="flex gap-4">
+                    <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
+                    <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
+                  </div>
+                  <div className="h-10 mt-5 w-full rounded-full bg-gray-200"></div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -268,7 +305,11 @@ const DashboardPage = () => {
 
           {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
             <div className="grid gap-4 md:grid-cols-2">
-              {vehiculos.map((vehiculo) => (
+              {vehiculos.map((vehiculo) => {
+                const estadoInfo = formatEstado(vehiculo.estado_registro);
+                const isDisponibilidadInactiva = vehiculo.estado_registro === "EN_REVISION" || vehiculo.estado_registro === "RECHAZADO" || vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION";
+                
+                return (
                 <article
                   key={vehiculo.id}
                   className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
@@ -285,13 +326,14 @@ const DashboardPage = () => {
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      <span className="w-fit rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151]">
-                        {vehiculo.estado_registro || "Sin estado"}
+                      <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${estadoInfo.className}`}>
+                        {estadoInfo.label}
                       </span>
                       <button
                         onClick={() => handleToggleEstado(vehiculo.id, vehiculo.disponible)}
-                        disabled={togglingVehiculoId === vehiculo.id}
-                        className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 ${
+                        disabled={togglingVehiculoId === vehiculo.id || isDisponibilidadInactiva}
+                        title={isDisponibilidadInactiva ? "El vehículo debe estar Aprobado para definir disponibilidad" : ""}
+                        className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                           vehiculo.disponible
                             ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
                             : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
@@ -330,13 +372,29 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
+                  {vehiculo.estado_registro === "RECHAZADO" && vehiculo.motivo_rechazo && (
+                    <div className="mt-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b42318]">
+                      <p className="font-bold">Motivo de rechazo:</p>
+                      <p className="mt-1">{vehiculo.motivo_rechazo}</p>
+                    </div>
+                  )}
+
                   <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                    <Link
-                      to={`/vehiculos/${vehiculo.id}/documentacion`}
-                      className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-                    >
-                      Cargar documentación
-                    </Link>
+                    {vehiculo.estado_registro === "RECHAZADO" ? (
+                      <Link
+                        to={`/vehiculos/${vehiculo.id}/documentacion`}
+                        className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700"
+                      >
+                        Re-subir documentación
+                      </Link>
+                    ) : (
+                      <Link
+                        to={`/vehiculos/${vehiculo.id}/documentacion`}
+                        className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                      >
+                        Cargar documentación
+                      </Link>
+                    )}
 
                     <Link
                       to="/propietario/publicar"
@@ -346,7 +404,7 @@ const DashboardPage = () => {
                     </Link>
                   </div>
                 </article>
-              ))}
+              )})}
             </div>
           )}
         </section>
