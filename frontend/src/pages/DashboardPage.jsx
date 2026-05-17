@@ -5,6 +5,7 @@ import {
   listarVehiculosDelPropietario,
   toggleEstadoVehiculo,
   definirPrecioVehiculo,
+  getStatusSolicitud,
 } from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
@@ -50,7 +51,7 @@ const DashboardPage = () => {
                 estado_registro: status.estado_registro,
                 motivo_rechazo: status.motivo_rechazo,
               };
-            } catch (err) {
+            } catch {
               return v;
             }
           }),
