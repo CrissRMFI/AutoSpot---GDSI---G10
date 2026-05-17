@@ -1,5 +1,10 @@
 import httpClient from "../../../api/httpClient";
 
+export const obtenerDatosPersonales = async (usuarioId) => {
+  const response = await httpClient.get(`/usuarios/${usuarioId}/datos-personales`);
+  return response.data;
+};
+
 export const registrarDatosPersonales = async (usuarioId, datosPersonales) => {
   const response = await httpClient.put(
     `/usuarios/${usuarioId}/datos-personales`,

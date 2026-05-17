@@ -129,7 +129,11 @@ const DashboardPage = () => {
   };
 
   const cerrarSesion = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch {
+      // logout's finally block already cleared localStorage and React state
+    }
     navigate("/login");
   };
 
