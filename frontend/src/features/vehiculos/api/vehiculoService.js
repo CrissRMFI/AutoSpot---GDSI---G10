@@ -56,3 +56,11 @@ export const toggleEstadoVehiculo = async (vehiculoId, disponible) => {
 
   return response.data;
 };
+
+export const getStatusSolicitud = async (vehiculoId) => {
+  const response = await httpClient.get(`/vehiculos/${vehiculoId}`);
+  return {
+    estado_registro: response.data.estado_registro,
+    motivo_rechazo: response.data.motivo_rechazo,
+  };
+};
