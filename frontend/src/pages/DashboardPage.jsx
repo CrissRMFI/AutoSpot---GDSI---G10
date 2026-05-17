@@ -4,6 +4,7 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import {
   listarVehiculosDelPropietario,
   toggleEstadoVehiculo,
+  definirPrecioVehiculo,
   getStatusSolicitud,
 } from "../features/vehiculos/api/vehiculoService";
 
@@ -16,6 +17,9 @@ const DashboardPage = () => {
   const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
   const [errorVehiculos, setErrorVehiculos] = useState("");
   const [togglingVehiculoId, setTogglingVehiculoId] = useState(null);
+  const [editandoPrecioId, setEditandoPrecioId] = useState(null);
+  const [inputPrecio, setInputPrecio] = useState("");
+  const [guardandoPrecioId, setGuardandoPrecioId] = useState(null);
   const [toast, setToast] = useState({
     visible: false,
     message: "",
@@ -125,6 +129,32 @@ const DashboardPage = () => {
       );
     } finally {
       setTogglingVehiculoId(null);
+    }
+  };
+
+  const handleActualizarPrecio = async (vehiculoId) => {
+    const precio = Number(inputPrecio);
+    if (!precio || precio <= 0 || Number.isNaN(precio)) {
+      mostrarToast("El precio debe ser mayor a cero.", "error");
+      return;
+    }
+    setGuardandoPrecioId(vehiculoId);
+    try {
+      await definirPrecioVehiculo(vehiculoId, precio);
+      setVehiculos((prev) =>
+        prev.map((v) =>
+          v.id === vehiculoId ? { ...v, precio_por_dia: precio } : v,
+        ),
+      );
+      setEditandoPrecioId(null);
+      mostrarToast("Precio actualizado correctamente.", "success");
+    } catch (error) {
+      mostrarToast(
+        error.response?.data?.detail || "No se pudo actualizar el precio.",
+        "error",
+      );
+    } finally {
+      setGuardandoPrecioId(null);
     }
   };
 
@@ -403,11 +433,57 @@ const DashboardPage = () => {
                           Precio diario
                         </p>
 
-                        <p className="mt-1 font-display text-lg font-bold text-autospot-black">
-                          {vehiculo.precio_por_dia
-                            ? `$${vehiculo.precio_por_dia}`
-                            : "Sin definir"}
-                        </p>
+                        {editandoPrecioId === vehiculo.id ? (
+                          <div className="mt-2 flex gap-1.5">
+                            <input
+                              type="number"
+                              value={inputPrecio}
+                              onChange={(e) => setInputPrecio(e.target.value)}
+                              className="w-full rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
+                              min="1"
+                              step="100"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  handleActualizarPrecio(vehiculo.id);
+                                if (e.key === "Escape")
+                                  setEditandoPrecioId(null);
+                              }}
+                            />
+                            <button
+                              onClick={() =>
+                                handleActualizarPrecio(vehiculo.id)
+                              }
+                              disabled={guardandoPrecioId === vehiculo.id}
+                              className="rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                            >
+                              {guardandoPrecioId === vehiculo.id ? "..." : "✓"}
+                            </button>
+                            <button
+                              onClick={() => setEditandoPrecioId(null)}
+                              className="rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <p className="font-display text-lg font-bold text-autospot-black">
+                              {vehiculo.precio_por_dia
+                                ? `$${vehiculo.precio_por_dia}`
+                                : "Sin definir"}
+                            </p>
+                            <button
+                              onClick={() => {
+                                setEditandoPrecioId(vehiculo.id);
+                                setInputPrecio(vehiculo.precio_por_dia || "");
+                              }}
+                              className="text-xs font-bold text-autospot-muted transition hover:text-autospot-accent"
+                            >
+                              Actualizar
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="rounded-xl bg-[#f9fafb] p-3">
