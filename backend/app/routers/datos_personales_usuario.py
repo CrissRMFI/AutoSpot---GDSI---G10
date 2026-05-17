@@ -40,6 +40,7 @@ from app.schemas.datos_personales_usuario import (
 from app.services.datos_personales_usuario import (
     registrar_datos_personales,
     actualizar_datos_personales,
+    obtener_datos_personales,
 )
 
 
@@ -47,6 +48,42 @@ router = APIRouter(
     prefix="/usuarios",
     tags=["usuarios"],
 )
+
+
+@router.get(
+    "/{usuario_id}/datos-personales",
+    response_model=DatosPersonalesUsuarioPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener datos personales del usuario",
+    description=(
+        "Retorna los datos personales del usuario si ya fueron registrados. "
+        "Responde 404 si el usuario aún no los cargó."
+    ),
+    responses={
+        status.HTTP_200_OK: {"description": "Datos personales obtenidos exitosamente."},
+        status.HTTP_401_UNAUTHORIZED: {"description": "Token ausente, inválido o expirado."},
+        status.HTTP_403_FORBIDDEN: {"description": "El usuario intenta acceder a datos de otro usuario."},
+        status.HTTP_404_NOT_FOUND: {"description": "Usuario no encontrado o datos personales no registrados."},
+    },
+)
+def obtener_datos_personales_usuario(
+    usuario_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> DatosPersonalesUsuarioPublicoSchema:
+    """GET /usuarios/{usuario_id}/datos-personales"""
+    validar_usuario_autenticado_coincide_con_id(
+        usuario_id=usuario_id,
+        usuario_actual=usuario_actual,
+    )
+    try:
+        datos_personales = obtener_datos_personales(db=db, usuario_id=usuario_id)
+    except UsuarioNoEncontradoError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except DatosPersonalesNoRegistradosError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return DatosPersonalesUsuarioPublicoSchema.model_validate(datos_personales)
 
 
 @router.put(
