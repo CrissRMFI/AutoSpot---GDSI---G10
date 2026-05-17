@@ -81,6 +81,32 @@ def registrar_datos_personales(
 
     return datos_personales
 
+def obtener_datos_personales(
+    db: Session,
+    usuario_id: uuid.UUID,
+) -> DatosPersonalesUsuario:
+    """
+    Retorna los datos personales de un Usuario existente.
+
+    Raises:
+        UsuarioNoEncontradoError: Si el Usuario no existe.
+        DatosPersonalesNoRegistradosError: Si el Usuario no ha cargado datos aún.
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario is None:
+        raise UsuarioNoEncontradoError()
+
+    datos_personales = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == usuario_id)
+        .first()
+    )
+    if datos_personales is None:
+        raise DatosPersonalesNoRegistradosError("Datos personales no registrados")
+
+    return datos_personales
+
+
 def actualizar_datos_personales(
     db: Session,
     usuario_id: uuid.UUID,
