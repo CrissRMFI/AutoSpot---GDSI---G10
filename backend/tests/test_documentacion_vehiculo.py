@@ -127,7 +127,7 @@ class TestCargaDocumentacionVehiculo:
             == "Documentación cargada para revisión."
         )
 
-        assert vehiculo_actualizado.estado_registro == "PENDIENTE_DOCUMENTACION"
+        assert vehiculo_actualizado.estado_registro == "EN_REVISION"
 
 
 class TestErroresDocumentacionVehiculo:

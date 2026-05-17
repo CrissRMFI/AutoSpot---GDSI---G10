@@ -132,7 +132,7 @@ class TestCargaDocumentacionVehiculoHTTP:
         assert body["estacion"] == "Palermo"
         assert body["telefono"] == "1122334455"
         assert body["descripcion"] == "Documentación cargada para revisión."
-        assert body["estado_registro"] == "PENDIENTE_DOCUMENTACION"
+        assert body["estado_registro"] == "EN_REVISION"
 
 
 class TestErroresDocumentacionVehiculoHTTP:

@@ -216,6 +216,7 @@ class VehiculoPublicoSchema(BaseModel):
     tipo_combustible: str
     pets_friendly: bool
     estado_registro: str
+    motivo_rechazo: str | None = None
     fotos: list[FotoVehiculoPublicoSchema]
     precio_por_dia: Decimal | None = None
     disponible: bool = False
