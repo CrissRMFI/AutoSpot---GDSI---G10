@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { 
-  listarVehiculosDelPropietario, 
+import {
+  listarVehiculosDelPropietario,
   toggleEstadoVehiculo,
-  getStatusSolicitud
+  definirPrecioVehiculo,
 } from "../features/vehiculos/api/vehiculoService";
 
 const DashboardPage = () => {
@@ -16,7 +16,14 @@ const DashboardPage = () => {
   const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
   const [errorVehiculos, setErrorVehiculos] = useState("");
   const [togglingVehiculoId, setTogglingVehiculoId] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: "", type: "error" });
+  const [editandoPrecioId, setEditandoPrecioId] = useState(null);
+  const [inputPrecio, setInputPrecio] = useState("");
+  const [guardandoPrecioId, setGuardandoPrecioId] = useState(null);
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "error",
+  });
 
   const mensaje = location.state?.message;
 
@@ -38,11 +45,15 @@ const DashboardPage = () => {
           data.map(async (v) => {
             try {
               const status = await getStatusSolicitud(v.id);
-              return { ...v, estado_registro: status.estado_registro, motivo_rechazo: status.motivo_rechazo };
+              return {
+                ...v,
+                estado_registro: status.estado_registro,
+                motivo_rechazo: status.motivo_rechazo,
+              };
             } catch (err) {
               return v;
             }
-          })
+          }),
         );
         setVehiculos(vehiculosConEstado);
       } catch {
@@ -58,16 +69,31 @@ const DashboardPage = () => {
   const formatEstado = (estado) => {
     switch (estado) {
       case "PENDIENTE_DOCUMENTACION":
-        return { label: "Pendiente Doc.", className: "bg-[#f1f5f9] text-[#475569] border border-[#e2e8f0]" };
+        return {
+          label: "Pendiente Doc.",
+          className: "bg-[#f1f5f9] text-[#475569] border border-[#e2e8f0]",
+        };
       case "EN_REVISION":
-        return { label: "En Revisión", className: "bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]" };
+        return {
+          label: "En Revisión",
+          className: "bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]",
+        };
       case "HABILITADO":
       case "APROBADO":
-        return { label: "Aprobado", className: "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]" };
+        return {
+          label: "Aprobado",
+          className: "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]",
+        };
       case "RECHAZADO":
-        return { label: "Rechazado", className: "bg-[#fef2f2] text-[#b42318] border border-[#fecaca]" };
+        return {
+          label: "Rechazado",
+          className: "bg-[#fef2f2] text-[#b42318] border border-[#fecaca]",
+        };
       default:
-        return { label: estado || "Sin estado", className: "bg-[#f3f4f6] text-[#374151]" };
+        return {
+          label: estado || "Sin estado",
+          className: "bg-[#f3f4f6] text-[#374151]",
+        };
     }
   };
 
@@ -83,22 +109,51 @@ const DashboardPage = () => {
     try {
       const nuevoEstado = !estadoActual;
       await toggleEstadoVehiculo(vehiculoId, nuevoEstado);
-      
+
       setVehiculos((prev) =>
         prev.map((v) =>
-          v.id === vehiculoId ? { ...v, disponible: nuevoEstado } : v
-        )
+          v.id === vehiculoId ? { ...v, disponible: nuevoEstado } : v,
+        ),
       );
 
-      mostrarToast(`Vehículo marcado como ${nuevoEstado ? "Disponible" : "No Disponible"}.`, "success");
+      mostrarToast(
+        `Vehículo marcado como ${nuevoEstado ? "Disponible" : "No Disponible"}.`,
+        "success",
+      );
     } catch (error) {
       mostrarToast(
         error.response?.data?.detail ||
           "No se pudo cambiar la disponibilidad del vehículo.",
-        "error"
+        "error",
       );
     } finally {
       setTogglingVehiculoId(null);
+    }
+  };
+
+  const handleActualizarPrecio = async (vehiculoId) => {
+    const precio = Number(inputPrecio);
+    if (!precio || precio <= 0 || Number.isNaN(precio)) {
+      mostrarToast("El precio debe ser mayor a cero.", "error");
+      return;
+    }
+    setGuardandoPrecioId(vehiculoId);
+    try {
+      await definirPrecioVehiculo(vehiculoId, precio);
+      setVehiculos((prev) =>
+        prev.map((v) =>
+          v.id === vehiculoId ? { ...v, precio_por_dia: precio } : v,
+        ),
+      );
+      setEditandoPrecioId(null);
+      mostrarToast("Precio actualizado correctamente.", "success");
+    } catch (error) {
+      mostrarToast(
+        error.response?.data?.detail || "No se pudo actualizar el precio.",
+        "error",
+      );
+    } finally {
+      setGuardandoPrecioId(null);
     }
   };
 
@@ -116,7 +171,9 @@ const DashboardPage = () => {
       {/* Toast Flotante */}
       <div
         className={`fixed left-1/2 top-6 z-50 flex -translate-x-1/2 transform items-center justify-center rounded-full px-6 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ease-in-out ${
-          toast.visible ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-0 pointer-events-none"
+          toast.visible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-6 opacity-0 pointer-events-none"
         } ${
           toast.type === "success"
             ? "border border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]"
@@ -268,7 +325,10 @@ const DashboardPage = () => {
           {cargandoVehiculos && (
             <div className="grid gap-4 md:grid-cols-2">
               {[1, 2].map((skeleton) => (
-                <div key={skeleton} className="animate-pulse rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                <div
+                  key={skeleton}
+                  className="animate-pulse rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+                >
                   <div className="h-6 w-3/4 rounded bg-gray-200 mb-2"></div>
                   <div className="h-4 w-1/2 rounded bg-gray-200 mb-6"></div>
                   <div className="flex gap-4">
@@ -311,104 +371,166 @@ const DashboardPage = () => {
             <div className="grid gap-4 md:grid-cols-2">
               {vehiculos.map((vehiculo) => {
                 const estadoInfo = formatEstado(vehiculo.estado_registro);
-                const isDisponibilidadInactiva = vehiculo.estado_registro === "EN_REVISION" || vehiculo.estado_registro === "RECHAZADO" || vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION";
-                
+                const isDisponibilidadInactiva =
+                  vehiculo.estado_registro === "EN_REVISION" ||
+                  vehiculo.estado_registro === "RECHAZADO" ||
+                  vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION";
+
                 return (
-                <article
-                  key={vehiculo.id}
-                  className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
-                        {vehiculo.marca} {vehiculo.modelo}
-                      </h3>
+                  <article
+                    key={vehiculo.id}
+                    className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                          {vehiculo.marca} {vehiculo.modelo}
+                        </h3>
 
-                      <p className="mt-1 text-sm text-autospot-muted">
-                        {vehiculo.anio} · {vehiculo.categoria}
-                      </p>
+                        <p className="mt-1 text-sm text-autospot-muted">
+                          {vehiculo.anio} · {vehiculo.categoria}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2">
+                        <span
+                          className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${estadoInfo.className}`}
+                        >
+                          {estadoInfo.label}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleToggleEstado(vehiculo.id, vehiculo.disponible)
+                          }
+                          disabled={
+                            togglingVehiculoId === vehiculo.id ||
+                            isDisponibilidadInactiva
+                          }
+                          title={
+                            isDisponibilidadInactiva
+                              ? "El vehículo debe estar Aprobado para definir disponibilidad"
+                              : ""
+                          }
+                          className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                            vehiculo.disponible
+                              ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
+                              : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
+                          }`}
+                        >
+                          {togglingVehiculoId === vehiculo.id
+                            ? "Cambiando..."
+                            : vehiculo.disponible
+                              ? "Disponible"
+                              : "No Disponible"}
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${estadoInfo.className}`}>
-                        {estadoInfo.label}
-                      </span>
-                      <button
-                        onClick={() => handleToggleEstado(vehiculo.id, vehiculo.disponible)}
-                        disabled={togglingVehiculoId === vehiculo.id || isDisponibilidadInactiva}
-                        title={isDisponibilidadInactiva ? "El vehículo debe estar Aprobado para definir disponibilidad" : ""}
-                        className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                          vehiculo.disponible
-                            ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
-                            : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
-                        }`}
-                      >
-                        {togglingVehiculoId === vehiculo.id
-                          ? "Cambiando..."
-                          : vehiculo.disponible
-                            ? "Disponible"
-                            : "No Disponible"}
-                      </button>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-[#f9fafb] p-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                          Precio diario
+                        </p>
+
+                        {editandoPrecioId === vehiculo.id ? (
+                          <div className="mt-2 flex gap-1.5">
+                            <input
+                              type="number"
+                              value={inputPrecio}
+                              onChange={(e) => setInputPrecio(e.target.value)}
+                              className="w-full rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
+                              min="1"
+                              step="100"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  handleActualizarPrecio(vehiculo.id);
+                                if (e.key === "Escape")
+                                  setEditandoPrecioId(null);
+                              }}
+                            />
+                            <button
+                              onClick={() =>
+                                handleActualizarPrecio(vehiculo.id)
+                              }
+                              disabled={guardandoPrecioId === vehiculo.id}
+                              className="rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                            >
+                              {guardandoPrecioId === vehiculo.id ? "..." : "✓"}
+                            </button>
+                            <button
+                              onClick={() => setEditandoPrecioId(null)}
+                              className="rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <p className="font-display text-lg font-bold text-autospot-black">
+                              {vehiculo.precio_por_dia
+                                ? `$${vehiculo.precio_por_dia}`
+                                : "Sin definir"}
+                            </p>
+                            <button
+                              onClick={() => {
+                                setEditandoPrecioId(vehiculo.id);
+                                setInputPrecio(vehiculo.precio_por_dia || "");
+                              }}
+                              className="text-xs font-bold text-autospot-muted transition hover:text-autospot-accent"
+                            >
+                              Actualizar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl bg-[#f9fafb] p-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                          Transmisión
+                        </p>
+
+                        <p className="mt-1 font-display text-lg font-bold text-autospot-black">
+                          {vehiculo.tipo_transmision || "No informada"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl bg-[#f9fafb] p-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                        Precio diario
-                      </p>
+                    {vehiculo.estado_registro === "RECHAZADO" &&
+                      vehiculo.motivo_rechazo && (
+                        <div className="mt-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b42318]">
+                          <p className="font-bold">Motivo de rechazo:</p>
+                          <p className="mt-1">{vehiculo.motivo_rechazo}</p>
+                        </div>
+                      )}
 
-                      <p className="mt-1 font-display text-lg font-bold text-autospot-black">
-                        {vehiculo.precio_por_dia
-                          ? `$${vehiculo.precio_por_dia}`
-                          : "Sin definir"}
-                      </p>
-                    </div>
+                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                      {vehiculo.estado_registro === "RECHAZADO" ? (
+                        <Link
+                          to={`/vehiculos/${vehiculo.id}/documentacion`}
+                          className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700"
+                        >
+                          Re-subir documentación
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/vehiculos/${vehiculo.id}/documentacion`}
+                          className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                        >
+                          Cargar documentación
+                        </Link>
+                      )}
 
-                    <div className="rounded-xl bg-[#f9fafb] p-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                        Transmisión
-                      </p>
-
-                      <p className="mt-1 font-display text-lg font-bold text-autospot-black">
-                        {vehiculo.tipo_transmision || "No informada"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {vehiculo.estado_registro === "RECHAZADO" && vehiculo.motivo_rechazo && (
-                    <div className="mt-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b42318]">
-                      <p className="font-bold">Motivo de rechazo:</p>
-                      <p className="mt-1">{vehiculo.motivo_rechazo}</p>
-                    </div>
-                  )}
-
-                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                    {vehiculo.estado_registro === "RECHAZADO" ? (
                       <Link
-                        to={`/vehiculos/${vehiculo.id}/documentacion`}
-                        className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700"
+                        to="/propietario/publicar"
+                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
                       >
-                        Re-subir documentación
+                        Publicar otro
                       </Link>
-                    ) : (
-                      <Link
-                        to={`/vehiculos/${vehiculo.id}/documentacion`}
-                        className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-                      >
-                        Cargar documentación
-                      </Link>
-                    )}
-
-                    <Link
-                      to="/propietario/publicar"
-                      className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-                    >
-                      Publicar otro
-                    </Link>
-                  </div>
-                </article>
-              )})}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
