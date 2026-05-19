@@ -1,18 +1,19 @@
-import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
   definirPrecioVehiculo,
-  publicarVehiculo,
+  actualizarVehiculo,
   subirFotoVehiculo,
+  getDetalleVehiculo,
 } from "../api/vehiculoService";
 
 const CATALOGO = {
   Toyota: ["Corolla", "Hilux"],
   Ford: ["Fiesta", "Focus"],
-  Volkswagen: ["Gol", "Vento"],
-  Chevrolet: ["Onix", "Cruze"],
-  Renault: ["Sandero", "Logan"],
+  Volkswagen: ["Gol", "Vento", "Polo", "Amarok"],
+  Chevrolet: ["Onix", "Cruze", "S10"],
+  Renault: ["Sandero", "Logan", "Clio", "Kangoo"],
   Fiat: ["Cronos", "Palio"],
   Peugeot: ["208", "308"],
 };
@@ -29,8 +30,9 @@ const inputClassName =
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
-const PublicarVehiculoPage = () => {
+const ModificarVehiculoPage = () => {
   const navigate = useNavigate();
+  const { vehiculoId } = useParams();
   const { usuario } = useAuth();
 
   const fileInputRefs = useRef({});
@@ -46,22 +48,70 @@ const PublicarVehiculoPage = () => {
     pets_friendly: "true",
     precio_por_dia: "",
     fotos: [],
+    patente: "",
+    chasis: "",
+    motor: "",
+    titular: "",
+    estacion: "",
+    telefono: "",
   });
 
+  const [originalData, setOriginalData] = useState({});
+  const [estadoRegistro, setEstadoRegistro] = useState("");
   const [fotosSubiendo, setFotosSubiendo] = useState(new Set());
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
+  const [cargandoInicial, setCargandoInicial] = useState(true);
+
+  const mostrarFeedback = (message, type) => {
+    setFeedback({ message, type });
+  };
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const datos = await getDetalleVehiculo(vehiculoId);
+        setEstadoRegistro(datos.estado_registro || "");
+        setOriginalData({
+          patente: datos.patente || "",
+          chasis: datos.chasis || "",
+          motor: datos.motor || "",
+        });
+        setForm({
+          marca: datos.marca || "",
+          modelo: datos.modelo || "",
+          anio: datos.anio?.toString() || "",
+          tipo_transmision: datos.tipo_transmision || "",
+          capacidad: datos.capacidad?.toString() || "",
+          categoria: datos.categoria || "",
+          tipo_combustible: datos.tipo_combustible || "",
+          pets_friendly: datos.pets_friendly ? "true" : "false",
+          precio_por_dia: datos.precio_por_dia?.toString() || "",
+          fotos: datos.fotos || [],
+          patente: datos.patente || "",
+          chasis: datos.chasis || "",
+          motor: datos.motor || "",
+          titular: datos.titular || "",
+          estacion: datos.estacion || "",
+          telefono: datos.telefono || "",
+        });
+      } catch (error) {
+        console.error("Error al cargar los datos del vehículo:", error);
+        mostrarFeedback("Error al cargar los datos del vehículo.", "error");
+      } finally {
+        setCargandoInicial(false);
+      }
+    };
+    if (vehiculoId) {
+      cargarDatos();
+    }
+  }, [vehiculoId]);
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
 
     setForm((estadoActual) => {
       const actualizado = { ...estadoActual, [name]: value };
-
-      if (name === "marca") {
-        actualizado.modelo = "";
-      }
-
       return actualizado;
     });
   };
@@ -109,9 +159,6 @@ const PublicarVehiculoPage = () => {
     }
   };
 
-  const mostrarFeedback = (message, type) => {
-    setFeedback({ message, type });
-  };
 
   const validarFormulario = ({
     datosVehiculo,
@@ -124,17 +171,18 @@ const PublicarVehiculoPage = () => {
       return false;
     }
 
-    if (
-      !datosVehiculo.marca ||
-      !datosVehiculo.modelo ||
-      !anioParsed ||
-      !datosVehiculo.tipo_transmision ||
-      !capacidadParsed ||
-      !datosVehiculo.categoria ||
-      !datosVehiculo.tipo_combustible
-    ) {
+    const camposFaltantes = [];
+    if (!datosVehiculo.marca) camposFaltantes.push("Marca");
+    if (!datosVehiculo.modelo) camposFaltantes.push("Modelo");
+    if (!anioParsed) camposFaltantes.push("Año");
+    if (!datosVehiculo.tipo_transmision) camposFaltantes.push("Transmisión");
+    if (!capacidadParsed) camposFaltantes.push("Capacidad");
+    if (!datosVehiculo.categoria) camposFaltantes.push("Categoría");
+    if (!datosVehiculo.tipo_combustible) camposFaltantes.push("Combustible");
+
+    if (camposFaltantes.length > 0) {
       mostrarFeedback(
-        "Por favor completá todos los campos obligatorios básicos.",
+        `Por favor completá los siguientes campos obligatorios: ${camposFaltantes.join(", ")}.`,
         "error",
       );
       return false;
@@ -147,7 +195,7 @@ const PublicarVehiculoPage = () => {
 
     if (datosVehiculo.fotos.length < 4) {
       mostrarFeedback(
-        "Debés subir las 4 fotos del vehículo: frente, trasera, lateral izquierdo y lateral derecho.",
+        "Debés tener las 4 fotos del vehículo: frente, trasera, lateral izquierdo y lateral derecho.",
         "error",
       );
       return false;
@@ -190,8 +238,30 @@ const PublicarVehiculoPage = () => {
       return;
     }
 
+    const docsChanged =
+      datosVehiculo.patente !== originalData.patente ||
+      datosVehiculo.chasis !== originalData.chasis ||
+      datosVehiculo.motor !== originalData.motor;
+
+    if (docsChanged && estadoRegistro !== "EN_REVISION") {
+      mostrarFeedback(
+        "Para modificar la patente, chasis o número de motor, debés contactar a un administrador.",
+        "error"
+      );
+      return;
+    }
+
+    // Remapear id de fotos para la actualizacion, aunque backend solo necesita url, lado, etc.
+    const fotosMapped = datosVehiculo.fotos.map(({ lado, url, formato, tamanio_bytes }) => ({
+        lado,
+        url,
+        formato,
+        tamanio_bytes
+    }));
+
     const payload = {
       ...datosVehiculo,
+      fotos: fotosMapped,
       anio: anioParsed,
       capacidad: capacidadParsed,
       pets_friendly: petsParsed,
@@ -201,19 +271,18 @@ const PublicarVehiculoPage = () => {
     setFeedback({ message: "", type: "" });
 
     try {
-      const data = await publicarVehiculo(usuario.id, payload);
-
-      await definirPrecioVehiculo(data.id, precioParsed);
+      await actualizarVehiculo(vehiculoId, payload);
+      await definirPrecioVehiculo(vehiculoId, precioParsed);
 
       mostrarFeedback(
-        `Vehículo registrado exitosamente con precio diario definido. ID: ${data.id}`,
+        `Datos del vehículo actualizados exitosamente.`,
         "success",
       );
 
       setTimeout(() => {
         navigate("/propietario/dashboard", {
           state: {
-            message: "Vehículo publicado correctamente.",
+            message: "Datos del vehículo actualizados correctamente.",
           },
         });
       }, 2000);
@@ -226,17 +295,21 @@ const PublicarVehiculoPage = () => {
         mensajeError = detalle
           .map((item) => {
             let msg = item.msg || "";
+            // Quitar prefijo técnico de Pydantic
             if (msg.startsWith("Value error, ")) {
               msg = msg.replace("Value error, ", "");
             }
+            // Correcciones ortográficas para la vista
             msg = msg.replace(/Anio/g, "Año").replace(/invalido/g, "inválido").replace(/tamanio/g, "tamaño");
+            
+            // Capitalizar la primera letra
             return msg.charAt(0).toUpperCase() + msg.slice(1);
           })
           .join(" | ");
       }
 
       mostrarFeedback(
-        `Error al registrar: ${mensajeError || error.message}`,
+        `Error al actualizar: ${mensajeError || error.message}`,
         "error",
       );
       setCargando(false);
@@ -253,6 +326,14 @@ const PublicarVehiculoPage = () => {
     const partes = foto.url.split("/");
     return partes[partes.length - 1] || "";
   };
+
+  if (cargandoInicial) {
+    return (
+      <main className="min-h-screen bg-autospot-cream text-autospot-black flex items-center justify-center">
+        <p className="text-autospot-black font-bold">Cargando datos del vehículo...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-autospot-cream text-autospot-black">
@@ -277,38 +358,16 @@ const PublicarVehiculoPage = () => {
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
         <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8 lg:sticky lg:top-28 lg:h-fit">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
-            Publicación
+            Edición
           </p>
 
           <h1 className="font-display text-3xl font-black leading-[1.05] tracking-[-0.06em] !text-autospot-white sm:text-4xl">
-            Publicar vehículo
+            Modificar vehículo
           </h1>
 
           <p className="mt-4 text-sm leading-7 !text-[#b8b8b8] sm:text-base">
-            Cargá las características principales, las fotos obligatorias y el
-            precio diario para publicar tu vehículo en AutoSpot.
+            Actualizá las características de tu vehículo o cambiá sus fotos. La marca y el modelo no pueden modificarse.
           </p>
-
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
-            <p className="text-sm font-bold !text-autospot-white">
-              Estado inicial
-            </p>
-
-            <p className="mt-2 text-sm leading-6 !text-white/65">
-              Luego del alta, el vehículo quedará pendiente de documentación
-              para completar la validación.
-            </p>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
-            <p className="text-sm font-bold !text-autospot-white">
-              Fotos requeridas
-            </p>
-
-            <p className="mt-2 text-sm leading-6 !text-white/65">
-              Frente, trasera, lateral izquierdo y lateral derecho.
-            </p>
-          </div>
         </aside>
 
         <section className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
@@ -324,15 +383,14 @@ const PublicarVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Completá la información básica con valores válidos para el
-                  catálogo.
+                  Editá la información de tu vehículo. Recordá que la marca y el modelo no se pueden cambiar.
                 </p>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="marca" className={labelClassName}>
-                    Marca *
+                    Marca <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -341,6 +399,7 @@ const PublicarVehiculoPage = () => {
                     className={inputClassName}
                     value={form.marca}
                     onChange={actualizarCampo}
+                    disabled={true}
                   >
                     <option value="">Seleccioná una marca</option>
                     {Object.keys(CATALOGO).map((marca) => (
@@ -348,12 +407,15 @@ const PublicarVehiculoPage = () => {
                         {marca}
                       </option>
                     ))}
+                    {!CATALOGO[form.marca] && form.marca && (
+                      <option value={form.marca}>{form.marca}</option>
+                    )}
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="modelo" className={labelClassName}>
-                    Modelo *
+                    Modelo <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -362,22 +424,25 @@ const PublicarVehiculoPage = () => {
                     className={inputClassName}
                     value={form.modelo}
                     onChange={actualizarCampo}
-                    disabled={!form.marca}
+                    disabled={true}
                   >
                     <option value="">Seleccioná un modelo</option>
-                    {form.marca
+                    {form.marca && CATALOGO[form.marca]
                       ? CATALOGO[form.marca].map((modelo) => (
                         <option key={modelo} value={modelo}>
                           {modelo}
                         </option>
                       ))
                       : null}
+                    {(!CATALOGO[form.marca] || !CATALOGO[form.marca].includes(form.modelo)) && form.modelo && (
+                      <option value={form.modelo}>{form.modelo}</option>
+                    )}
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="anio" className={labelClassName}>
-                    Año *
+                    Año <span className="text-red-500">*</span>
                   </label>
 
                   <input
@@ -394,7 +459,7 @@ const PublicarVehiculoPage = () => {
 
                 <div>
                   <label htmlFor="tipo_transmision" className={labelClassName}>
-                    Transmisión *
+                    Transmisión <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -412,7 +477,7 @@ const PublicarVehiculoPage = () => {
 
                 <div>
                   <label htmlFor="capacidad" className={labelClassName}>
-                    Capacidad *
+                    Capacidad <span className="text-red-500">*</span>
                   </label>
 
                   <input
@@ -429,7 +494,7 @@ const PublicarVehiculoPage = () => {
 
                 <div>
                   <label htmlFor="categoria" className={labelClassName}>
-                    Categoría *
+                    Categoría <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -450,7 +515,7 @@ const PublicarVehiculoPage = () => {
 
                 <div>
                   <label htmlFor="tipo_combustible" className={labelClassName}>
-                    Combustible *
+                    Combustible <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -471,7 +536,7 @@ const PublicarVehiculoPage = () => {
 
                 <div>
                   <label htmlFor="pets_friendly" className={labelClassName}>
-                    Acepta mascotas *
+                    Acepta mascotas <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -488,7 +553,7 @@ const PublicarVehiculoPage = () => {
 
                 <div className="sm:col-span-2">
                   <label htmlFor="precio_por_dia" className={labelClassName}>
-                    Precio por día *
+                    Precio por día <span className="text-red-500">*</span>
                   </label>
 
                   <input
@@ -509,6 +574,114 @@ const PublicarVehiculoPage = () => {
             <section>
               <div className="mb-6">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                  Documentación y Contacto
+                </p>
+
+                <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black sm:text-3xl">
+                  Datos legales y operativos
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                  Actualizá los datos de tu vehículo. Si el auto no está en revisión, necesitarás contactar a un administrador para cambiar patente, chasis o motor.
+                </p>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="patente" className={labelClassName}>
+                    Patente
+                  </label>
+                  <input
+                    id="patente"
+                    name="patente"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. AB123CD"
+                    value={form.patente}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="motor" className={labelClassName}>
+                    Nro. de Motor
+                  </label>
+                  <input
+                    id="motor"
+                    name="motor"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. 123456789"
+                    value={form.motor}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="chasis" className={labelClassName}>
+                    Chasis
+                  </label>
+                  <input
+                    id="chasis"
+                    name="chasis"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. 987654321"
+                    value={form.chasis}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="titular" className={labelClassName}>
+                    Titular Registral
+                  </label>
+                  <input
+                    id="titular"
+                    name="titular"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. Juan Pérez"
+                    value={form.titular}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="estacion" className={labelClassName}>
+                    Estación
+                  </label>
+                  <input
+                    id="estacion"
+                    name="estacion"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. Sede Central"
+                    value={form.estacion}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="telefono" className={labelClassName}>
+                    Teléfono de Contacto
+                  </label>
+                  <input
+                    id="telefono"
+                    name="telefono"
+                    className={inputClassName}
+                    type="text"
+                    placeholder="Ej. +54 9 11 1234-5678"
+                    value={form.telefono}
+                    onChange={actualizarCampo}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
                   Fotos
                 </p>
 
@@ -517,7 +690,7 @@ const PublicarVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Subí una foto real por cada lado requerido (jpg, jpeg, png o webp, máx. 5 MB).
+                  Podés cambiar las fotos subiendo nuevos archivos (jpg, jpeg, png o webp, máx. 5 MB).
                 </p>
               </div>
 
@@ -606,7 +779,7 @@ const PublicarVehiculoPage = () => {
                 disabled={cargando}
                 className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
               >
-                {cargando ? "Publicando..." : "Publicar vehículo"}
+                {cargando ? "Guardando..." : "Aplicar cambios"}
               </button>
             </div>
           </form>
@@ -617,4 +790,4 @@ const PublicarVehiculoPage = () => {
   );
 };
 
-export default PublicarVehiculoPage;
+export default ModificarVehiculoPage;

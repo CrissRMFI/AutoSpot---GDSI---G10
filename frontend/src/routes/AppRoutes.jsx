@@ -7,6 +7,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
 import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
+import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 
 const AppRoutes = () => {
   return (
@@ -57,6 +58,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PublicarVehiculoPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/modificar-datos/:vehiculoId"
+        element={
+          <ProtectedRoute>
+            <ModificarVehiculoPage />
           </ProtectedRoute>
         }
       />

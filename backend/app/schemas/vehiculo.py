@@ -339,3 +339,16 @@ class DisponibilidadVehiculoResponseSchema(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+class ActualizarVehiculoPayloadSchema(VehiculoBaseSchema):
+    """
+    Payload HTTP para actualizar las características y fotos de un vehículo.
+    Hereda la validación de `VehiculoBaseSchema`.
+    Incluye datos de documentación que pueden actualizarse posteriormente.
+    """
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None

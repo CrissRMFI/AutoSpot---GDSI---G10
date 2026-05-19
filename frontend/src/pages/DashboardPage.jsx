@@ -505,26 +505,33 @@ const DashboardPage = () => {
                         </div>
                       )}
 
-                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                    <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       {vehiculo.estado_registro === "RECHAZADO" ? (
                         <Link
                           to={`/vehiculos/${vehiculo.id}/documentacion`}
-                          className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700"
+                          className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700 whitespace-nowrap"
                         >
                           Re-subir documentación
                         </Link>
                       ) : (
                         <Link
                           to={`/vehiculos/${vehiculo.id}/documentacion`}
-                          className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                          className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420] whitespace-nowrap"
                         >
                           Cargar documentación
                         </Link>
                       )}
 
                       <Link
+                        to={`/modificar-datos/${vehiculo.id}`}
+                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
+                      >
+                        Modificar datos
+                      </Link>
+
+                      <Link
                         to="/propietario/publicar"
-                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
                       >
                         Publicar otro
                       </Link>
