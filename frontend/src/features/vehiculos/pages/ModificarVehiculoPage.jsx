@@ -63,6 +63,10 @@ const ModificarVehiculoPage = () => {
   const [cargando, setCargando] = useState(false);
   const [cargandoInicial, setCargandoInicial] = useState(true);
 
+  const mostrarFeedback = (message, type) => {
+    setFeedback({ message, type });
+  };
+
   useEffect(() => {
     const cargarDatos = async () => {
       try {
@@ -92,6 +96,7 @@ const ModificarVehiculoPage = () => {
           telefono: datos.telefono || "",
         });
       } catch (error) {
+        console.error("Error al cargar los datos del vehículo:", error);
         mostrarFeedback("Error al cargar los datos del vehículo.", "error");
       } finally {
         setCargandoInicial(false);
@@ -154,9 +159,6 @@ const ModificarVehiculoPage = () => {
     }
   };
 
-  const mostrarFeedback = (message, type) => {
-    setFeedback({ message, type });
-  };
 
   const validarFormulario = ({
     datosVehiculo,
