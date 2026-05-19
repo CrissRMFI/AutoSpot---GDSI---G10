@@ -8,6 +8,7 @@ import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage"
 import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
+import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
 
 const AppRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const AppRoutes = () => {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/estaciones" element={<EstacionesPage />} />
 
       <Route
         path="/datos-personales"
