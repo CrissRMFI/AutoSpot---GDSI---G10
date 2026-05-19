@@ -73,6 +73,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
