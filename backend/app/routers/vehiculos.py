@@ -48,6 +48,7 @@ from app.schemas.vehiculo import (
     RegistroVehiculoSchema,
     VehiculoDocumentacionResponseSchema,
     VehiculoPublicoSchema,
+    ActualizarVehiculoPayloadSchema,
 )
 from app.services.vehiculo import (
     cambiar_disponibilidad_vehiculo,
@@ -56,6 +57,7 @@ from app.services.vehiculo import (
     listar_vehiculos_por_propietario,
     registrar_vehiculo,
     obtener_vehiculo,
+    actualizar_vehiculo,
 )
 
 
@@ -515,4 +517,72 @@ def cambiar_disponibilidad_de_vehiculo(
             detail=str(exc),
         ) from exc
 
-    return DisponibilidadVehiculoResponseSchema.model_validate(vehiculo)
+    return DisponibilidadVehiculoResponseSchema.model_validate(vehiculo)
+
+
+@router.put(
+    "/vehiculos/{vehiculo_id}",
+    response_model=VehiculoPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar datos y fotos de un vehículo",
+    description=(
+        "Actualiza las características de un vehículo y reemplaza sus fotos. "
+        "No actualiza la marca ni el modelo por reglas de negocio. "
+        "Requiere autenticación JWT y solo permite modificar vehículos propios."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Vehículo actualizado exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def actualizar_datos_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: ActualizarVehiculoPayloadSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> VehiculoPublicoSchema:
+    """
+    PUT /vehiculos/{vehiculo_id}
+
+    Flujo:
+        1. FastAPI valida vehiculo_id y el payload.
+        2. Se valida el JWT y que el vehículo pertenezca al usuario.
+        3. El servicio actualiza las propiedades y reemplaza las fotos.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        vehiculo = actualizar_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            schema=payload,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return VehiculoPublicoSchema.model_validate(vehiculo)

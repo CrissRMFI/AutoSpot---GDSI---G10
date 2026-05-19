@@ -25,6 +25,7 @@ from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
     DocumentacionVehiculoSchema,
     RegistroVehiculoSchema,
+    ActualizarVehiculoPayloadSchema,
 )
 
 def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
@@ -78,6 +79,58 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     ]
 
     db.add(vehiculo)
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
+
+
+def actualizar_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    schema: ActualizarVehiculoPayloadSchema
+) -> Vehiculo:
+    """
+    Actualiza las características y fotos de un vehículo.
+    No actualiza marca ni modelo para mantener integridad con reservas/reglas de negocio.
+    Reemplaza todas las fotos por las nuevas provistas.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    # Se actualizan las características generales, ignorando marca y modelo
+    vehiculo.anio = schema.anio
+    vehiculo.tipo_transmision = schema.tipo_transmision
+    vehiculo.capacidad = schema.capacidad
+    vehiculo.categoria = schema.categoria
+    vehiculo.tipo_combustible = schema.tipo_combustible
+    vehiculo.pets_friendly = schema.pets_friendly
+
+    # Actualizar campos de documentación opcionales
+    if schema.patente is not None: vehiculo.patente = schema.patente
+    if schema.chasis is not None: vehiculo.chasis = schema.chasis
+    if schema.motor is not None: vehiculo.motor = schema.motor
+    if schema.titular is not None: vehiculo.titular = schema.titular
+    if schema.estacion is not None: vehiculo.estacion = schema.estacion
+    if schema.telefono is not None: vehiculo.telefono = schema.telefono
+
+    # Reemplazar fotos (debido a cascade delete-orphan, las viejas se borran)
+    vehiculo.fotos = [
+        FotoVehiculo(
+            lado=foto.lado,
+            url=foto.url,
+            formato=foto.formato,
+            tamanio_bytes=foto.tamanio_bytes,
+        )
+        for foto in schema.fotos
+    ]
+
     db.commit()
     db.refresh(vehiculo)
 
@@ -282,4 +335,4 @@ def cambiar_disponibilidad_vehiculo(
     db.commit()
     db.refresh(vehiculo)
 
-    return vehiculo
+    return vehiculo
