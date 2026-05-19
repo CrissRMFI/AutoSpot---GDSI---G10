@@ -64,3 +64,17 @@ export const getStatusSolicitud = async (vehiculoId) => {
     motivo_rechazo: response.data.motivo_rechazo,
   };
 };
+
+export const getDetalleVehiculo = async (vehiculoId) => {
+  const response = await httpClient.get(`/vehiculos/${vehiculoId}`);
+  return response.data;
+};
+
+export const actualizarVehiculo = async (vehiculoId, datosVehiculo) => {
+  const response = await httpClient.put(
+    `/vehiculos/${vehiculoId}`,
+    datosVehiculo
+  );
+  return response.data;
+};
+
