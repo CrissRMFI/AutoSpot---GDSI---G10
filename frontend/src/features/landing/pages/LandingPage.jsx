@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
+
 const cars = [
   {
     icon: "🌿",
@@ -366,7 +369,36 @@ function FeatureCard({ feature }) {
   );
 }
 
+const ESTACIONES_POR_PAGINA = 4;
+
 export default function LandingPage() {
+  const [estaciones, setEstaciones] = useState([]);
+  const [paginaEstaciones, setPaginaEstaciones] = useState(0);
+
+  useEffect(() => {
+    const fetchEstaciones = async () => {
+      try {
+        const data = await getEstacionesActivas();
+        setEstaciones(data);
+      } catch (error) {
+        console.error("Error al cargar las estaciones en la Landing", error);
+      }
+    };
+    fetchEstaciones();
+  }, []);
+
+  const totalPaginasEstaciones = Math.max(
+    1,
+    Math.ceil(estaciones.length / ESTACIONES_POR_PAGINA),
+  );
+  const estacionesVisibles = estaciones.slice(
+    paginaEstaciones * ESTACIONES_POR_PAGINA,
+    (paginaEstaciones + 1) * ESTACIONES_POR_PAGINA,
+  );
+  const irAnterior = () =>
+    setPaginaEstaciones((p) => (p - 1 + totalPaginasEstaciones) % totalPaginasEstaciones);
+  const irSiguiente = () =>
+    setPaginaEstaciones((p) => (p + 1) % totalPaginasEstaciones);
   return (
     <main
       id="inicio"
@@ -486,6 +518,121 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section
+        id="estaciones-publicas"
+        className="px-6 py-[72px] md:px-12 lg:px-[72px] lg:py-[100px]"
+      >
+        <SectionHeader
+          tag="Red Logística"
+          title="Nuestras Estaciones"
+          subtitle="Encontrá un punto de retiro cerca tuyo. El proceso de entrega y recepción del Activo se realiza exclusivamente en nuestras instalaciones."
+          centered
+        />
+
+        {estaciones.length === 0 ? (
+          <p className="mt-14 text-center text-sm text-autospot-muted">
+            Cargando puntos de servicio...
+          </p>
+        ) : (
+          <div className="mt-14">
+            <div className="relative">
+              {totalPaginasEstaciones > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={irAnterior}
+                    aria-label="Estaciones anteriores"
+                    className="absolute left-0 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 -translate-x-1/2 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-black shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition hover:border-autospot-accent hover:!text-autospot-accent md:flex"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={irSiguiente}
+                    aria-label="Estaciones siguientes"
+                    className="absolute right-0 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-black shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition hover:border-autospot-accent hover:!text-autospot-accent md:flex"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {estacionesVisibles.map((est) => (
+                  <article
+                    key={est.id}
+                    className="overflow-hidden rounded-2xl border border-autospot-border bg-autospot-white text-center transition hover:-translate-y-1 shadow-[0_12px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                  >
+                    {est.imagen_url ? (
+                      <img
+                        src={est.imagen_url}
+                        alt={est.nombre}
+                        className="h-32 w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-32 w-full items-center justify-center bg-[#f9f6f0] text-3xl">
+                        📍
+                      </div>
+                    )}
+                    <div className="px-6 py-5">
+                      <h3 className="mb-2 font-display text-sm font-bold tracking-[-0.02em] text-autospot-black">
+                        {est.nombre}
+                      </h3>
+                      <p className="text-sm leading-6 text-autospot-muted">
+                        {est.direccion}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            {totalPaginasEstaciones > 1 && (
+              <div className="mt-8 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPaginasEstaciones }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setPaginaEstaciones(idx)}
+                      aria-label={`Ir a la página ${idx + 1}`}
+                      className={`h-2.5 rounded-full transition-all ${
+                        idx === paginaEstaciones
+                          ? "w-8 bg-autospot-accent"
+                          : "w-2.5 bg-autospot-border hover:bg-autospot-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3 md:hidden">
+                  <button
+                    type="button"
+                    onClick={irAnterior}
+                    aria-label="Estaciones anteriores"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                    {paginaEstaciones + 1} / {totalPaginasEstaciones}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={irSiguiente}
+                    aria-label="Estaciones siguientes"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <section

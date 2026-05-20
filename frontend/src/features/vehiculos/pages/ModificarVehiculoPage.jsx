@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import {
   definirPrecioVehiculo,
   actualizarVehiculo,
@@ -62,6 +63,22 @@ const ModificarVehiculoPage = () => {
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
   const [cargandoInicial, setCargandoInicial] = useState(true);
+  const [estaciones, setEstaciones] = useState([]);
+  const [cargandoEstaciones, setCargandoEstaciones] = useState(true);
+
+  useEffect(() => {
+    const cargarEstaciones = async () => {
+      try {
+        const data = await getEstacionesActivas();
+        setEstaciones(data);
+      } catch (error) {
+        console.error("Error al cargar estaciones:", error);
+      } finally {
+        setCargandoEstaciones(false);
+      }
+    };
+    cargarEstaciones();
+  }, []);
 
   const mostrarFeedback = (message, type) => {
     setFeedback({ message, type });
@@ -651,15 +668,31 @@ const ModificarVehiculoPage = () => {
                   <label htmlFor="estacion" className={labelClassName}>
                     Estación
                   </label>
-                  <input
+                  <select
                     id="estacion"
                     name="estacion"
                     className={inputClassName}
-                    type="text"
-                    placeholder="Ej. Sede Central"
                     value={form.estacion}
                     onChange={actualizarCampo}
-                  />
+                    disabled={cargandoEstaciones}
+                  >
+                    <option value="">
+                      {cargandoEstaciones
+                        ? "Cargando estaciones..."
+                        : "Seleccioná una estación"}
+                    </option>
+                    {form.estacion &&
+                      !estaciones.some((e) => e.nombre === form.estacion) && (
+                        <option value={form.estacion}>
+                          {form.estacion} (actual)
+                        </option>
+                      )}
+                    {estaciones.map((estacion) => (
+                      <option key={estacion.id} value={estacion.nombre}>
+                        {estacion.nombre} ({estacion.zona})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

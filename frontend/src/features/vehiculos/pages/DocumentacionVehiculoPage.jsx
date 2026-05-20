@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { subirFotoDocumentoVehiculo } from "../../../api/uploadService";
+import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import { cargarDocumentacionVehiculo } from "../api/vehiculoService";
 
 const CAMPOS_DOCUMENTACION = [
@@ -83,6 +84,22 @@ const DocumentacionVehiculoPage = () => {
     poliza: false,
     vtv: false,
   });
+  const [estaciones, setEstaciones] = useState([]);
+  const [cargandoEstaciones, setCargandoEstaciones] = useState(true);
+
+  useEffect(() => {
+    const cargarEstaciones = async () => {
+      try {
+        const data = await getEstacionesActivas();
+        setEstaciones(data);
+      } catch (error) {
+        console.error("Error al cargar estaciones:", error);
+      } finally {
+        setCargandoEstaciones(false);
+      }
+    };
+    cargarEstaciones();
+  }, []);
 
   const fileInputRefs = useRef({});
 
@@ -294,14 +311,36 @@ const DocumentacionVehiculoPage = () => {
                       {label} *
                     </label>
 
-                    <input
-                      id={name}
-                      name={name}
-                      className={inputClassName}
-                      placeholder={placeholder}
-                      value={form[name]}
-                      onChange={actualizarCampo}
-                    />
+                    {name === "estacion" ? (
+                      <select
+                        id={name}
+                        name={name}
+                        className={inputClassName}
+                        value={form[name]}
+                        onChange={actualizarCampo}
+                        disabled={cargandoEstaciones}
+                      >
+                        <option value="">
+                          {cargandoEstaciones
+                            ? "Cargando estaciones..."
+                            : "Seleccioná una estación"}
+                        </option>
+                        {estaciones.map((estacion) => (
+                          <option key={estacion.id} value={estacion.nombre}>
+                            {estacion.nombre} ({estacion.zona})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        id={name}
+                        name={name}
+                        className={inputClassName}
+                        placeholder={placeholder}
+                        value={form[name]}
+                        onChange={actualizarCampo}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
