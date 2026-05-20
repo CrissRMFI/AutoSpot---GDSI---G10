@@ -18,7 +18,7 @@
 | Sprint    | US  | Título                                               | Estimación | Implementada |
 | --------- | --- | ---------------------------------------------------- | ---------- | :----------: |
 | 2         | 2D  | Cargar documentación del auto                        | 3          |      ✅      |
-| 2         | 3D  | Editar características y fotos del auto              | 3          |      ❌      |
+| 2         | 3D  | Editar características y fotos del auto              | 3          |      ✅      |
 | 2         | 4D  | Visualización de estado de solicitud de habilitación | 2          |      ✅      |
 | 2         | 7D  | Actualización de precio del auto                     | 3          |      ✅      |
 | 2         | 9D  | Habilitar/deshabilitar auto en el momento            | 2          |      ✅      |
