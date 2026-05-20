@@ -4,6 +4,13 @@ Servicio de subida de archivos — Cloudinary.
 Responsabilidades:
     - Configurar el SDK de Cloudinary con credenciales del entorno.
     - Subir archivos de imagen y devolver la URL pública y metadatos.
+
+Diseño:
+    - `subir_imagen` es la primitiva genérica que valida formato y tamaño,
+      configura Cloudinary y sube a la carpeta indicada con los tags dados.
+    - `subir_foto_vehiculo` y `subir_foto_dni` son wrappers que fijan
+      la carpeta y los tags por dominio para mantener compatibilidad y
+      ordenar los assets en Cloudinary.
 """
 import os
 
@@ -23,30 +30,37 @@ def _configurar_cloudinary() -> None:
     )
 
 
-def subir_foto_vehiculo(
+def subir_imagen(
     contenido: bytes,
     nombre_archivo: str,
-    lado: str,
+    folder: str,
+    tags: list[str] | None = None,
 ) -> dict:
     """
-    Sube una imagen a Cloudinary bajo la carpeta autospot/vehiculos.
+    Sube una imagen genérica a Cloudinary.
 
     Args:
         contenido       : Bytes del archivo.
         nombre_archivo  : Nombre original (usado para inferir formato).
-        lado            : Lado del vehículo (FRENTE, TRASERA, etc.).
+        folder          : Carpeta destino en Cloudinary (ej: 'autospot/dni').
+        tags            : Lista opcional de tags para etiquetar el asset.
 
     Returns:
         dict con 'url' (str), 'formato' (str) y 'tamanio_bytes' (int).
 
     Raises:
         ValueError: Si el formato no está permitido o el tamaño excede el límite.
-        RuntimeError: Si Cloudinary devuelve un error inesperado.
     """
-    extension = nombre_archivo.rsplit(".", 1)[-1].lower() if "." in nombre_archivo else ""
+    extension = (
+        nombre_archivo.rsplit(".", 1)[-1].lower()
+        if "." in nombre_archivo
+        else ""
+    )
 
     if extension not in FORMATOS_PERMITIDOS:
-        raise ValueError(f"Formato '{extension}' no permitido. Usá: jpg, jpeg, png o webp.")
+        raise ValueError(
+            f"Formato '{extension}' no permitido. Usá: jpg, jpeg, png o webp."
+        )
 
     if len(contenido) > TAMANIO_MAXIMO_BYTES:
         raise ValueError("El archivo supera el tamaño máximo de 5 MB.")
@@ -55,8 +69,8 @@ def subir_foto_vehiculo(
 
     resultado = cloudinary.uploader.upload(
         contenido,
-        folder="autospot/vehiculos",
-        tags=[lado.lower()],
+        folder=folder,
+        tags=tags or [],
         resource_type="image",
     )
 
@@ -65,3 +79,37 @@ def subir_foto_vehiculo(
         "formato": extension,
         "tamanio_bytes": len(contenido),
     }
+
+
+def subir_foto_vehiculo(
+    contenido: bytes,
+    nombre_archivo: str,
+    lado: str,
+) -> dict:
+    """
+    Sube una foto de vehículo a la carpeta autospot/vehiculos.
+    Mantiene el contrato original previo a la generalización.
+    """
+    return subir_imagen(
+        contenido=contenido,
+        nombre_archivo=nombre_archivo,
+        folder="autospot/vehiculos",
+        tags=[lado.lower()],
+    )
+
+
+def subir_foto_dni(
+    contenido: bytes,
+    nombre_archivo: str,
+    lado: str,
+) -> dict:
+    """
+    Sube una foto del DNI a la carpeta autospot/dni.
+    El `lado` se usa como tag (FRENTE / DORSO).
+    """
+    return subir_imagen(
+        contenido=contenido,
+        nombre_archivo=nombre_archivo,
+        folder="autospot/dni",
+        tags=[lado.lower()],
+    )
