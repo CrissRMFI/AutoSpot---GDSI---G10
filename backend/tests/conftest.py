@@ -33,6 +33,9 @@ from app.main import app
 
 # ── Importar todos los modelos para Base.metadata ────────────────────────────
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
+from app.models.documentacion_habilitante_conductor import (  # noqa: F401
+    DocumentacionHabilitanteConductor,
+)
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
