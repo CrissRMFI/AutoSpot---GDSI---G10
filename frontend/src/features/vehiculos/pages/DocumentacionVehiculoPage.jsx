@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { subirFotoDocumentoVehiculo } from "../../../api/uploadService";
 import { cargarDocumentacionVehiculo } from "../api/vehiculoService";
 
 const CAMPOS_DOCUMENTACION = [
@@ -38,18 +39,18 @@ const CAMPOS_DOCUMENTACION = [
 const ARCHIVOS_DOCUMENTACION = [
   {
     name: "cedula",
+    tipo: "CEDULA",
     label: "Título automotor / Cédula",
-    placeholder: "cedula.pdf o cedula.jpg",
   },
   {
     name: "poliza",
+    tipo: "POLIZA",
     label: "Póliza de seguro",
-    placeholder: "poliza.pdf o poliza.jpg",
   },
   {
     name: "vtv",
+    tipo: "VTV",
     label: "VTV / Revisión técnica",
-    placeholder: "vtv.pdf o vtv.jpg",
   },
 ];
 
@@ -77,6 +78,13 @@ const DocumentacionVehiculoPage = () => {
 
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
+  const [subiendoArchivo, setSubiendoArchivo] = useState({
+    cedula: false,
+    poliza: false,
+    vtv: false,
+  });
+
+  const fileInputRefs = useRef({});
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -85,6 +93,38 @@ const DocumentacionVehiculoPage = () => {
       ...estadoActual,
       [name]: value,
     }));
+  };
+
+  const handleSeleccionarArchivoDocumento = (name) => {
+    fileInputRefs.current[name]?.click();
+  };
+
+  const handleArchivoSeleccionadoDocumento = async (name, tipo, evento) => {
+    const archivo = evento.target.files?.[0];
+    if (!archivo) return;
+
+    setSubiendoArchivo((prev) => ({ ...prev, [name]: true }));
+    setFeedback({ message: "", type: "" });
+
+    try {
+      const resultado = await subirFotoDocumentoVehiculo(archivo, tipo);
+      setForm((estadoActual) => ({
+        ...estadoActual,
+        [name]: resultado.url,
+      }));
+    } catch (err) {
+      const detalle = err.response?.data?.detail;
+      setFeedback({
+        message:
+          typeof detalle === "string"
+            ? `Error al subir ${tipo.toLowerCase()}: ${detalle}`
+            : `Error al subir ${tipo.toLowerCase()}.`,
+        type: "error",
+      });
+    } finally {
+      setSubiendoArchivo((prev) => ({ ...prev, [name]: false }));
+      evento.target.value = "";
+    }
   };
 
   const validarFormulario = () => {
@@ -278,34 +318,68 @@ const DocumentacionVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Por ahora se registra el nombre o ruta del archivo como mock.
+                  Subí una foto de cada documento. Las imágenes se almacenan en
+                  Cloudinary.
                 </p>
               </div>
 
-              <div className="grid gap-5">
-                {ARCHIVOS_DOCUMENTACION.map(({ name, label, placeholder }) => (
-                  <div
-                    key={name}
-                    className="rounded-2xl border border-autospot-border bg-white/70 p-4"
-                  >
-                    <label htmlFor={name} className={labelClassName}>
-                      {label} *
-                    </label>
+              <div className="grid gap-5 sm:grid-cols-3">
+                {ARCHIVOS_DOCUMENTACION.map(({ name, tipo, label }) => {
+                  const url = form[name];
+                  const subiendo = subiendoArchivo[name];
 
-                    <input
-                      id={name}
-                      name={name}
-                      className={inputClassName}
-                      placeholder={placeholder}
-                      value={form[name]}
-                      onChange={actualizarCampo}
-                    />
+                  return (
+                    <div
+                      key={name}
+                      className="rounded-2xl border border-autospot-border bg-white/70 p-4"
+                    >
+                      <label className={labelClassName}>{label} *</label>
 
-                    <p className="mt-2 text-xs leading-5 text-autospot-muted">
-                      Ingresá un nombre de archivo o una ruta simulada.
-                    </p>
-                  </div>
-                ))}
+                      <div className="flex flex-col gap-3 rounded-xl border border-dashed border-autospot-border bg-white p-3">
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={`${label} subido`}
+                            className="h-36 w-full rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-36 w-full items-center justify-center rounded-lg bg-gray-100 text-xs text-autospot-muted">
+                            Sin foto cargada
+                          </div>
+                        )}
+
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          ref={(elemento) => {
+                            fileInputRefs.current[name] = elemento;
+                          }}
+                          onChange={(evento) =>
+                            handleArchivoSeleccionadoDocumento(name, tipo, evento)
+                          }
+                          className="hidden"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => handleSeleccionarArchivoDocumento(name)}
+                          disabled={subiendo}
+                          className="inline-flex w-full justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
+                        >
+                          {subiendo
+                            ? "Subiendo..."
+                            : url
+                              ? "Reemplazar foto"
+                              : "Seleccionar foto"}
+                        </button>
+                      </div>
+
+                      <p className="mt-2 text-xs leading-5 text-autospot-muted">
+                        Formatos jpg, png o webp. Hasta 5 MB.
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -347,7 +421,12 @@ const DocumentacionVehiculoPage = () => {
 
               <button
                 type="submit"
-                disabled={cargando}
+                disabled={
+                  cargando ||
+                  subiendoArchivo.cedula ||
+                  subiendoArchivo.poliza ||
+                  subiendoArchivo.vtv
+                }
                 className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
               >
                 {cargando ? "Guardando..." : "Guardar documentación"}

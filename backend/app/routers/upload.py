@@ -36,6 +36,7 @@ LADOS_VEHICULO_VALIDOS = {
 }
 LADOS_DNI_VALIDOS = {"FRENTE", "DORSO"}
 LADOS_LICENCIA_VALIDOS = {"FRENTE", "DORSO"}
+TIPOS_DOCUMENTO_VEHICULO_VALIDOS = {"CEDULA", "POLIZA", "VTV"}
 
 
 router = APIRouter(tags=["upload"])
@@ -144,6 +145,66 @@ async def subir_foto_dni_endpoint(
             contenido=contenido,
             nombre_archivo=archivo.filename or "dni.jpg",
             lado=lado_normalizado,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al subir la imagen. Intentá de nuevo.",
+        ) from exc
+
+    return FotoSubidaResponseSchema(**resultado)
+
+
+@router.post(
+    "/upload/foto-documento-vehiculo",
+    response_model=FotoSubidaResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir foto de documento del vehículo a Cloudinary",
+    description=(
+        "Recibe un archivo de imagen y el tipo de documento del vehículo "
+        "(CEDULA, POLIZA o VTV), lo sube a Cloudinary bajo la carpeta "
+        "autospot/documentos-vehiculo y devuelve la URL pública. "
+        "Requiere autenticación JWT."
+    ),
+    responses={
+        status.HTTP_201_CREATED: {"description": "Foto subida exitosamente."},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Formato inválido, tamaño excedido o tipo no reconocido.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido o expirado.",
+        },
+    },
+)
+async def subir_foto_documento_vehiculo_endpoint(
+    tipo: str,
+    archivo: UploadFile,
+    _usuario: dict = Depends(get_usuario_actual),
+) -> FotoSubidaResponseSchema:
+    """POST /upload/foto-documento-vehiculo?tipo=CEDULA|POLIZA|VTV"""
+    tipo_normalizado = tipo.strip().upper()
+    if tipo_normalizado not in TIPOS_DOCUMENTO_VEHICULO_VALIDOS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Tipo inválido. Valores permitidos: "
+                f"{', '.join(sorted(TIPOS_DOCUMENTO_VEHICULO_VALIDOS))}"
+            ),
+        )
+
+    contenido = await archivo.read()
+
+    try:
+        resultado = subir_imagen(
+            contenido=contenido,
+            nombre_archivo=archivo.filename or "documento.jpg",
+            folder="autospot/documentos-vehiculo",
+            tags=[tipo_normalizado.lower()],
         )
     except ValueError as exc:
         raise HTTPException(
