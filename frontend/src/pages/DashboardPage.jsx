@@ -281,6 +281,27 @@ const DashboardPage = () => {
             </Link>
           </article>
 
+          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+              Conductor
+            </p>
+
+            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+              Documentación habilitante
+            </h2>
+
+            <p className="mb-5 text-sm leading-6 text-autospot-muted">
+              Cargá o actualizá tu licencia de conducir para contratar vehículos.
+            </p>
+
+            <Link
+              to="/documentacion-habilitante"
+              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+            >
+              Cargar documentación
+            </Link>
+          </article>
+
           <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:col-span-2 xl:col-span-1">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
               Vehículos

@@ -5,6 +5,7 @@ import LandingPage from "../features/landing/pages/LandingPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
+import DocumentacionHabilitantePage from "../features/usuarios/pages/DocumentacionHabilitantePage";
 import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
@@ -22,6 +23,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DatosPersonalesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/documentacion-habilitante"
+        element={
+          <ProtectedRoute>
+            <DocumentacionHabilitantePage />
           </ProtectedRoute>
         }
       />
