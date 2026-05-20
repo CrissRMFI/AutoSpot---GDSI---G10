@@ -103,19 +103,19 @@ class Vehiculo(Base):
         doc="Titular registral del vehículo.",
     )
     cedula: Mapped[str | None] = mapped_column(
-        String(50),
+        String(500),
         nullable=True,
-        doc="Cédula verde (número o estado).",
+        doc="URL de la foto del título / cédula verde (Cloudinary).",
     )
     poliza: Mapped[str | None] = mapped_column(
-        String(50),
+        String(500),
         nullable=True,
-        doc="Número de póliza de seguro.",
+        doc="URL de la foto de la póliza de seguro (Cloudinary).",
     )
     vtv: Mapped[str | None] = mapped_column(
-        String(50),
+        String(500),
         nullable=True,
-        doc="VTV (fecha de vencimiento o constancia).",
+        doc="URL de la foto de la VTV / revisión técnica (Cloudinary).",
     )
     estacion: Mapped[str | None] = mapped_column(
         String(100),
