@@ -43,6 +43,8 @@ from app.schemas.vehiculo import (
     DefinirPrecioVehiculoSchema,
     DisponibilidadVehiculoResponseSchema,
     DocumentacionVehiculoSchema,
+    FotoVehiculoPublicoSchema,
+    FotoVehiculoSchema,
     PrecioVehiculoResponseSchema,
     RegistroVehiculoPayloadSchema,
     RegistroVehiculoSchema,
@@ -51,6 +53,7 @@ from app.schemas.vehiculo import (
     ActualizarVehiculoPayloadSchema,
 )
 from app.services.vehiculo import (
+    agregar_foto_a_vehiculo,
     cambiar_disponibilidad_vehiculo,
     cargar_documentacion_vehiculo,
     definir_precio_vehiculo,
@@ -586,3 +589,69 @@ def actualizar_datos_vehiculo(
         ) from exc
 
     return VehiculoPublicoSchema.model_validate(vehiculo)
+
+
+@router.post(
+    "/vehiculos/{vehiculo_id}/fotos",
+    response_model=FotoVehiculoPublicoSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="Agregar una foto adicional a un vehículo existente",
+    description=(
+        "Agrega una foto al vehículo. Pensado para fotos del lado EXTRA "
+        "subidas después del alta inicial, aunque admite cualquiera de los "
+        "lados válidos. Requiere autenticación JWT y solo permite operar "
+        "sobre vehículos del usuario autenticado."
+    ),
+    responses={
+        status.HTTP_201_CREATED: {
+            "description": "Foto agregada exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def agregar_foto_vehiculo_endpoint(
+    vehiculo_id: uuid.UUID,
+    payload: FotoVehiculoSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> FotoVehiculoPublicoSchema:
+    """
+    POST /vehiculos/{vehiculo_id}/fotos
+
+    El cliente primero sube la imagen a Cloudinary vía /upload/foto-vehiculo
+    (incluyendo lado=EXTRA si corresponde) y luego llama a este endpoint con
+    la URL devuelta para persistirla asociada al vehículo.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        foto = agregar_foto_a_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            lado=payload.lado,
+            url=payload.url,
+            formato=payload.formato,
+            tamanio_bytes=payload.tamanio_bytes,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return FotoVehiculoPublicoSchema.model_validate(foto)

@@ -9,6 +9,7 @@ import DocumentacionHabilitantePage from "../features/usuarios/pages/Documentaci
 import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPage";
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
+import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 
 const AppRoutes = () => {
   return (
@@ -86,6 +87,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DocumentacionVehiculoPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/vehiculos/:vehiculoId/detalle"
+        element={
+          <ProtectedRoute>
+            <DetalleVehiculoPage />
           </ProtectedRoute>
         }
       />

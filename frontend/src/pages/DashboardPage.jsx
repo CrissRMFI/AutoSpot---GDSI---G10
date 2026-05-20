@@ -405,9 +405,12 @@ const DashboardPage = () => {
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                        <Link
+                          to={`/vehiculos/${vehiculo.id}/detalle`}
+                          className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black transition hover:!text-autospot-accent"
+                        >
                           {vehiculo.marca} {vehiculo.modelo}
-                        </h3>
+                        </Link>
 
                         <p className="mt-1 text-sm text-autospot-muted">
                           {vehiculo.anio} · {vehiculo.categoria}
@@ -551,10 +554,10 @@ const DashboardPage = () => {
                       </Link>
 
                       <Link
-                        to="/propietario/publicar"
+                        to={`/vehiculos/${vehiculo.id}/detalle`}
                         className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
                       >
-                        Publicar otro
+                        Ver detalle
                       </Link>
                     </div>
                   </article>

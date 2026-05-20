@@ -205,6 +205,57 @@ def obtener_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> Vehiculo:
 
     return vehiculo
 
+def agregar_foto_a_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    lado: str,
+    url: str,
+    formato: str,
+    tamanio_bytes: int,
+) -> FotoVehiculo:
+    """
+    Agrega una foto adicional a un vehículo existente.
+
+    Pensado para fotos del lado EXTRA cargadas después del alta inicial,
+    aunque admite cualquier lado válido.
+
+    Args:
+        db            : Sesión SQLAlchemy activa.
+        vehiculo_id   : UUID del vehículo.
+        lado          : Lado de la foto (FRENTE/TRASERA/...EXTRA).
+        url           : URL pública devuelta por Cloudinary.
+        formato       : Formato del archivo (jpg/jpeg/png/webp).
+        tamanio_bytes : Tamaño del archivo subido en bytes.
+
+    Returns:
+        La FotoVehiculo persistida.
+
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    foto = FotoVehiculo(
+        vehiculo_id=vehiculo_id,
+        lado=lado,
+        url=url,
+        formato=formato,
+        tamanio_bytes=tamanio_bytes,
+    )
+
+    db.add(foto)
+    db.commit()
+    db.refresh(foto)
+
+    return foto
+
+
 def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehiculo]:
     """
     Lista los vehículos registrados por un propietario.

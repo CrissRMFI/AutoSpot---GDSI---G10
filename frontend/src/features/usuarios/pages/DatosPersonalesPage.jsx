@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { subirFotoDni } from "../../../api/uploadService";
 import {
   obtenerDatosPersonales,
   actualizarDatosPersonales,
@@ -24,6 +25,12 @@ const DatosPersonalesPage = () => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [mensajeExito, setMensajeExito] = useState("");
+  const [subiendoFoto, setSubiendoFoto] = useState({
+    FRENTE: false,
+    DORSO: false,
+  });
+
+  const fileInputRefs = useRef({});
 
   useEffect(() => {
     if (!usuario?.id) return;
@@ -57,6 +64,41 @@ const DatosPersonalesPage = () => {
     setForm((estadoActual) => ({ ...estadoActual, [name]: value }));
   };
 
+  const FOTO_CAMPO = {
+    FRENTE: "foto_dni_frente_url",
+    DORSO: "foto_dni_dorso_url",
+  };
+
+  const handleSeleccionarArchivoDni = (lado) => {
+    fileInputRefs.current[lado]?.click();
+  };
+
+  const handleArchivoSeleccionadoDni = async (lado, evento) => {
+    const archivo = evento.target.files?.[0];
+    if (!archivo) return;
+
+    setSubiendoFoto((prev) => ({ ...prev, [lado]: true }));
+    setError("");
+
+    try {
+      const resultado = await subirFotoDni(archivo, lado);
+      setForm((estadoActual) => ({
+        ...estadoActual,
+        [FOTO_CAMPO[lado]]: resultado.url,
+      }));
+    } catch (err) {
+      const detalle = err.response?.data?.detail;
+      setError(
+        typeof detalle === "string"
+          ? `Error al subir foto ${lado.toLowerCase()} del DNI: ${detalle}`
+          : `Error al subir foto ${lado.toLowerCase()} del DNI.`,
+      );
+    } finally {
+      setSubiendoFoto((prev) => ({ ...prev, [lado]: false }));
+      evento.target.value = "";
+    }
+  };
+
   const enviarFormulario = async (evento) => {
     evento.preventDefault();
     setError("");
@@ -64,6 +106,11 @@ const DatosPersonalesPage = () => {
 
     if (!usuario?.id) {
       setError("No se encontró el usuario autenticado.");
+      return;
+    }
+
+    if (!form.foto_dni_frente_url || !form.foto_dni_dorso_url) {
+      setError("Debés subir el frente y el dorso del DNI.");
       return;
     }
 
@@ -227,43 +274,63 @@ const DatosPersonalesPage = () => {
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="foto_dni_frente_url" className={labelClassName}>
-                    DNI frente
-                  </label>
-                  <input
-                    type="text"
-                    id="foto_dni_frente_url"
-                    name="foto_dni_frente_url"
-                    value={form.foto_dni_frente_url}
-                    onChange={actualizarCampo}
-                    placeholder="uploads/dni/frente.jpg"
-                    required
-                    className={inputClassName}
-                  />
-                  <p className="mt-2 text-xs leading-5 text-autospot-muted">
-                    Por ahora se ingresa una URL o ruta simulada.
-                  </p>
-                </div>
+                {[
+                  { lado: "FRENTE", titulo: "DNI frente" },
+                  { lado: "DORSO", titulo: "DNI dorso" },
+                ].map(({ lado, titulo }) => {
+                  const campo = FOTO_CAMPO[lado];
+                  const url = form[campo];
+                  const subiendo = subiendoFoto[lado];
 
-                <div>
-                  <label htmlFor="foto_dni_dorso_url" className={labelClassName}>
-                    DNI dorso
-                  </label>
-                  <input
-                    type="text"
-                    id="foto_dni_dorso_url"
-                    name="foto_dni_dorso_url"
-                    value={form.foto_dni_dorso_url}
-                    onChange={actualizarCampo}
-                    placeholder="uploads/dni/dorso.jpg"
-                    required
-                    className={inputClassName}
-                  />
-                  <p className="mt-2 text-xs leading-5 text-autospot-muted">
-                    La carga real de archivos se integrará más adelante.
-                  </p>
-                </div>
+                  return (
+                    <div key={lado}>
+                      <label className={labelClassName}>{titulo}</label>
+
+                      <div className="flex flex-col gap-3 rounded-xl border border-dashed border-autospot-border bg-white p-3 sm:p-4">
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={`${titulo} subido`}
+                            className="h-40 w-full rounded-lg object-cover sm:h-44"
+                          />
+                        ) : (
+                          <div className="flex h-40 w-full items-center justify-center rounded-lg bg-gray-100 text-xs text-autospot-muted sm:h-44">
+                            Sin foto cargada
+                          </div>
+                        )}
+
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          ref={(elemento) => {
+                            fileInputRefs.current[lado] = elemento;
+                          }}
+                          onChange={(evento) =>
+                            handleArchivoSeleccionadoDni(lado, evento)
+                          }
+                          className="hidden"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => handleSeleccionarArchivoDni(lado)}
+                          disabled={subiendo}
+                          className="inline-flex w-full justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
+                        >
+                          {subiendo
+                            ? "Subiendo..."
+                            : url
+                              ? "Reemplazar foto"
+                              : "Seleccionar foto"}
+                        </button>
+                      </div>
+
+                      <p className="mt-2 text-xs leading-5 text-autospot-muted">
+                        Formatos jpg, png o webp. Hasta 5 MB.
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
 
               {mensajeExito && (
@@ -288,7 +355,9 @@ const DatosPersonalesPage = () => {
 
                 <button
                   type="submit"
-                  disabled={cargando}
+                  disabled={
+                    cargando || subiendoFoto.FRENTE || subiendoFoto.DORSO
+                  }
                   className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
                 >
                   {cargando

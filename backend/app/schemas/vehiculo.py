@@ -32,6 +32,8 @@ LADOS_FOTO_REQUERIDOS = {
     "LATERAL_DERECHO",
 }
 
+LADOS_FOTO_VALIDOS = LADOS_FOTO_REQUERIDOS | {"EXTRA"}
+
 
 
 # Catálogo inicial hardcodeado para US 1D.
@@ -60,9 +62,14 @@ class FotoVehiculoSchema(BaseModel):
     @field_validator("lado")
     @classmethod
     def validar_lado(cls, v: str) -> str:
-        """Normaliza y valida el lado fotografiado del vehículo."""
+        """
+        Normaliza y valida el lado fotografiado del vehículo.
+
+        Acepta los cuatro lados obligatorios (FRENTE, TRASERA, LATERAL_*)
+        y el lado EXTRA para fotos adicionales agregadas después del alta.
+        """
         valor = v.strip().upper()
-        if valor not in LADOS_FOTO_REQUERIDOS:
+        if valor not in LADOS_FOTO_VALIDOS:
             raise ValueError("Lado de foto invalido")
         return valor
 
