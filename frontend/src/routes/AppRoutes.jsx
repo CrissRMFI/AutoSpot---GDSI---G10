@@ -10,6 +10,7 @@ import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPa
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
+import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
 
 const AppRoutes = () => {
   return (
@@ -18,6 +19,7 @@ const AppRoutes = () => {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/estaciones" element={<EstacionesPage />} />
 
       <Route
         path="/datos-personales"
