@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getDetalleEstacion,
   getEstacionesActivas,
@@ -28,7 +29,7 @@ const EstacionesPage = () => {
 
   const handleSeleccionarEstacion = async (id) => {
     setLoadingDetalle(true);
-    setEstacionSeleccionada(null); // Clear previous selection while loading
+    setEstacionSeleccionada(null);
     try {
       const data = await getDetalleEstacion(id);
       setEstacionSeleccionada(data);
@@ -41,94 +42,103 @@ const EstacionesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-            Estaciones AutoSpot
+    <main className="min-h-screen bg-autospot-cream text-autospot-black">
+      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4 sm:px-8">
+          <Link
+            to="/"
+            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
+          >
+            Auto<span className="!text-autospot-accent">Spot</span>
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            Volver al Panel
+          </Link>
+        </div>
+      </header>
+
+      <section className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
+        <div className="mb-8">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
+            Red Logística
+          </p>
+          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
+            Estaciones Habilitadas
           </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            Encuentra la estación más cercana para retirar o entregar tu Activo.
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-autospot-muted sm:text-base">
+            Seleccioná una estación de retiro para visualizar las instrucciones necesarias para la operatividad de tu Activo.
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
+          <div className="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
+            {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="flex justify-center py-12">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-autospot-border border-t-autospot-accent"></div>
           </div>
         ) : (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <ul className="divide-y divide-gray-200">
-              {estaciones.length === 0 ? (
-                <li className="px-6 py-4 text-center text-gray-500">
-                  No hay estaciones activas en este momento.
-                </li>
-              ) : (
-                estaciones.map((estacion) => (
-                  <li key={estacion.id}>
-                    <div
-                      onClick={() => handleSeleccionarEstacion(estacion.id)}
-                      className="px-6 py-5 hover:bg-gray-50 cursor-pointer transition duration-150 ease-in-out"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-medium text-indigo-600 truncate">
-                            {estacion.nombre}
-                          </h3>
-                          <div className="mt-2 flex items-center text-sm text-gray-500">
-                            <span className="truncate">{estacion.zona}</span>
-                          </div>
-                        </div>
-                        <div className="ml-4 flex-shrink-0">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Activa
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Render detail if selected */}
-                      {estacionSeleccionada &&
-                        estacionSeleccionada.id === estacion.id && (
-                          <div className="mt-4 p-4 bg-indigo-50 rounded-md border border-indigo-100">
-                            <h4 className="text-md font-semibold text-gray-900 mb-2">
-                              Detalles de Acceso
-                            </h4>
-                            <p className="text-sm text-gray-700 mb-2">
-                              <span className="font-medium">Dirección:</span>{" "}
-                              {estacionSeleccionada.direccion}
-                            </p>
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">Instrucciones:</span>{" "}
-                              {estacionSeleccionada.instrucciones_acceso}
-                            </p>
-                          </div>
-                        )}
-                        
-                      {/* Show loading spinner only for this specific item if it's loading */}
-                      {loadingDetalle && !estacionSeleccionada && (
-                        <div className="mt-4 flex justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-                        </div>
-                      )}
+          <div className="flex flex-col gap-4">
+            {estaciones.length === 0 ? (
+              <div className="rounded-[22px] border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
+                <p className="text-sm font-bold text-autospot-muted">No hay estaciones activas en este momento.</p>
+              </div>
+            ) : (
+              estaciones.map((estacion) => (
+                <article
+                  key={estacion.id}
+                  onClick={() => handleSeleccionarEstacion(estacion.id)}
+                  className="cursor-pointer rounded-[22px] border border-autospot-border bg-autospot-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                        {estacion.nombre}
+                      </h3>
+                      <p className="mt-1 text-sm text-autospot-muted">
+                        Zona: {estacion.zona}
+                      </p>
                     </div>
-                  </li>
-                ))
-              )}
-            </ul>
+                    <span className="inline-flex items-center rounded-full bg-[#f0fdf4] px-2.5 py-1 text-xs font-bold text-[#166534] border border-[#bbf7d0]">
+                      Operativa
+                    </span>
+                  </div>
+
+                  {estacionSeleccionada?.id === estacion.id && (
+                    <div className="mt-5 rounded-xl bg-[#f9fafb] p-4 border border-autospot-border">
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Dirección Exacta
+                      </p>
+                      <p className="mb-4 font-display text-base font-bold text-autospot-black">
+                        {estacionSeleccionada.direccion}
+                      </p>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Instrucciones de Retiro
+                      </p>
+                      <p className="text-sm text-autospot-black">
+                        {estacionSeleccionada.instrucciones_acceso}
+                      </p>
+                    </div>
+                  )}
+
+                  {loadingDetalle && !estacionSeleccionada && togglingVehiculoId === estacion.id && (
+                    <div className="mt-4 flex justify-center">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-autospot-border border-t-autospot-accent"></div>
+                    </div>
+                  )}
+                </article>
+              ))
+            )}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

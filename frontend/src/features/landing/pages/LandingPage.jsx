@@ -367,6 +367,18 @@ function FeatureCard({ feature }) {
 }
 
 export default function LandingPage() {
+  const [estaciones, setEstaciones] = useState([]);
+  useEffect(() => {
+    const fetchEstaciones = async () => {
+      try {
+        const data = await getEstacionesActivas();
+        setEstaciones(data.slice(0, 4)); // Mostramos solo 4 en la landing para no saturar
+      } catch (error) {
+        console.error("Error al cargar las estaciones en la Landing", error);
+      }
+    };
+    fetchEstaciones();
+  }, []);
   return (
     <main
       id="inicio"
@@ -485,6 +497,41 @@ export default function LandingPage() {
               <CarCard key={car.name} car={car} />
             ))}
           </div>
+        </div>
+      </section>
+
+            <section
+        id="estaciones-publicas"
+        className="px-6 py-[72px] md:px-12 lg:px-[72px] lg:py-[100px]"
+      >
+        <SectionHeader
+          tag="Red Logística"
+          title="Nuestras Estaciones"
+          subtitle="Encontrá un punto de retiro cerca tuyo. El proceso de entrega y recepción del Activo se realiza exclusivamente en nuestras instalaciones."
+          centered
+        />
+
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {estaciones.length > 0 ? (
+            estaciones.map((est) => (
+              <article
+                key={est.id}
+                className="rounded-2xl border border-autospot-border bg-autospot-white px-6 py-7 text-center transition hover:-translate-y-1 shadow-[0_12px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+              >
+                <div className="mb-3.5 text-3xl">📍</div>
+                <h3 className="mb-2 font-display text-sm font-bold tracking-[-0.02em] text-autospot-black">
+                  {est.nombre}
+                </h3>
+                <p className="text-sm leading-6 text-autospot-muted">
+                  {est.direccion}
+                </p>
+              </article>
+            ))
+          ) : (
+            <p className="col-span-full text-center text-sm text-autospot-muted">
+              Cargando puntos de servicio...
+            </p>
+          )}
         </div>
       </section>
 
@@ -714,6 +761,7 @@ export default function LandingPage() {
           </SecondaryButton>
         </div>
       </section>
+
 
       <footer className="flex flex-col items-center justify-between gap-5 border-t border-[#1c1c1c] bg-autospot-black px-6 py-10 text-center text-[rgba(245,242,237,0.4)] md:px-[72px] lg:flex-row">
         <Logo light />
