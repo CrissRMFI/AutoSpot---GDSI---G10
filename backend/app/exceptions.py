@@ -92,6 +92,29 @@ class DatosPersonalesNoRegistradosError(AutoSpotError):
         super().__init__("Datos personales no registrados")
 
 
+class DocumentacionHabilitanteYaRegistradaError(AutoSpotError):
+    """
+    Se lanza cuando un Conductor intenta registrar su documentación habilitante
+    (licencia de conducir) pero ya posee un registro previo.
+
+    La actualización posterior corresponde al endpoint de actualizar.
+    Mensaje canónico: "Documentacion habilitante ya registrada"
+    """
+    def __init__(self) -> None:
+        super().__init__("Documentacion habilitante ya registrada")
+
+
+class DocumentacionHabilitanteNoRegistradaError(AutoSpotError):
+    """
+    Se lanza cuando se intenta acceder o actualizar la documentación habilitante
+    de un Conductor que aún no la cargó.
+
+    Mensaje canónico: "Documentacion habilitante no registrada"
+    """
+    def __init__(self) -> None:
+        super().__init__("Documentacion habilitante no registrada")
+
+
 class VehiculoNoEncontradoError(AutoSpotError):
     """
     Se lanza cuando se intenta operar sobre un Vehiculo inexistente.
