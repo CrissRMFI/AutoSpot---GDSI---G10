@@ -50,7 +50,9 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      # DATABASE_URL viene de .env y apunta a la base PostgreSQL en la nube.
+      # DB_HOST/DB_PORT se sobreescriben acá para que la suite de tests
+      # (que usa autospot_test_db) hable con el servicio `db` del Compose.
       DB_HOST: db
       DB_PORT: 5432
     ports:

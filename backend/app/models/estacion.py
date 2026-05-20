@@ -18,6 +18,7 @@ class Estacion(Base):
     instrucciones_acceso: Mapped[str] = mapped_column(String(1000), nullable=False)
     zona: Mapped[str] = mapped_column(String(100), nullable=False)
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     def __repr__(self) -> str:
         return f"<Estacion id={self.id} nombre='{self.nombre}' activa={self.activa}>"
