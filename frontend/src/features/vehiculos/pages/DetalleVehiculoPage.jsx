@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
 import {
   agregarFotoAVehiculo,
   reemplazarFotoVehiculo,
   subirFotoVehiculo,
 } from "../../../api/uploadService";
-import { getDetalleVehiculo } from "../api/vehiculoService";
+import {
+  definirPrecioVehiculo,
+  getDetalleVehiculo,
+  toggleEstadoVehiculo,
+} from "../api/vehiculoService";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -18,6 +23,9 @@ const LADO_LABEL = {
 
 const DetalleVehiculoPage = () => {
   const { vehiculoId } = useParams();
+  const { usuario } = useAuth();
+  const esPropietario = (usuario?.rol || "").toUpperCase() === "PROPIETARIO";
+
   const fileInputRef = useRef(null);
   const fileInputReemplazoRef = useRef(null);
 
@@ -28,6 +36,64 @@ const DetalleVehiculoPage = () => {
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
+
+  const [editandoPrecio, setEditandoPrecio] = useState(false);
+  const [inputPrecio, setInputPrecio] = useState("");
+  const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [togglingDisponible, setTogglingDisponible] = useState(false);
+
+  const isDisponibilidadInactiva =
+    vehiculo?.estado_registro === "EN_REVISION" ||
+    vehiculo?.estado_registro === "RECHAZADO" ||
+    vehiculo?.estado_registro === "PENDIENTE_DOCUMENTACION";
+
+  const handleToggleDisponible = async () => {
+    if (!vehiculo) return;
+    setTogglingDisponible(true);
+    try {
+      const nuevoEstado = !vehiculo.disponible;
+      await toggleEstadoVehiculo(vehiculo.id, nuevoEstado);
+      setVehiculo((prev) =>
+        prev ? { ...prev, disponible: nuevoEstado } : prev,
+      );
+      mostrarFeedback(
+        `Vehículo marcado como ${nuevoEstado ? "Disponible" : "No Disponible"}.`,
+        "success",
+      );
+    } catch (err) {
+      mostrarFeedback(
+        err.response?.data?.detail ||
+          "No se pudo cambiar la disponibilidad del vehículo.",
+        "error",
+      );
+    } finally {
+      setTogglingDisponible(false);
+    }
+  };
+
+  const handleActualizarPrecio = async () => {
+    const precio = Number(inputPrecio);
+    if (!precio || precio <= 0 || Number.isNaN(precio)) {
+      mostrarFeedback("El precio debe ser mayor a cero.", "error");
+      return;
+    }
+    setGuardandoPrecio(true);
+    try {
+      await definirPrecioVehiculo(vehiculo.id, precio);
+      setVehiculo((prev) =>
+        prev ? { ...prev, precio_por_dia: precio } : prev,
+      );
+      setEditandoPrecio(false);
+      mostrarFeedback("Precio actualizado correctamente.", "success");
+    } catch (err) {
+      mostrarFeedback(
+        err.response?.data?.detail || "No se pudo actualizar el precio.",
+        "error",
+      );
+    } finally {
+      setGuardandoPrecio(false);
+    }
+  };
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -310,47 +376,51 @@ const DetalleVehiculoPage = () => {
             </div>
           )}
 
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            ref={fileInputRef}
-            onChange={handleArchivoSeleccionado}
-            className="hidden"
-          />
+          {esPropietario && (
+            <>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                ref={fileInputRef}
+                onChange={handleArchivoSeleccionado}
+                className="hidden"
+              />
 
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            ref={fileInputReemplazoRef}
-            onChange={handleArchivoReemplazoSeleccionado}
-            className="hidden"
-          />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                ref={fileInputReemplazoRef}
+                onChange={handleArchivoReemplazoSeleccionado}
+                className="hidden"
+              />
 
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              onClick={handleSeleccionarFoto}
-              disabled={subiendoFoto || reemplazandoFotoId !== null}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
-            >
-              {subiendoFoto ? "Subiendo foto..." : "Agregar foto"}
-            </button>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSeleccionarFoto}
+                  disabled={subiendoFoto || reemplazandoFotoId !== null}
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+                >
+                  {subiendoFoto ? "Subiendo foto..." : "Agregar foto"}
+                </button>
 
-            <button
-              type="button"
-              onClick={handleSeleccionarReemplazo}
-              disabled={
-                !fotoActiva || subiendoFoto || reemplazandoFotoId !== null
-              }
-              className="inline-flex flex-1 items-center justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
-            >
-              {reemplazandoFotoId
-                ? "Reemplazando foto..."
-                : fotoActiva
-                  ? `Cambiar foto (${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado})`
-                  : "Cambiar foto"}
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleSeleccionarReemplazo}
+                  disabled={
+                    !fotoActiva || subiendoFoto || reemplazandoFotoId !== null
+                  }
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+                >
+                  {reemplazandoFotoId
+                    ? "Reemplazando foto..."
+                    : fotoActiva
+                      ? `Cambiar foto (${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado})`
+                      : "Cambiar foto"}
+                </button>
+              </div>
+            </>
+          )}
         </article>
 
         <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8">
@@ -363,6 +433,10 @@ const DetalleVehiculoPage = () => {
           </h2>
 
           <dl className="mt-6 space-y-4 text-sm">
+            <DatoFicha label="Marca" valor={vehiculo.marca} />
+            <DatoFicha label="Modelo" valor={vehiculo.modelo} />
+            <DatoFicha label="Año" valor={vehiculo.anio} />
+            <DatoFicha label="Categoría" valor={vehiculo.categoria} />
             <DatoFicha label="Transmisión" valor={vehiculo.tipo_transmision} />
             <DatoFicha label="Capacidad" valor={`${vehiculo.capacidad} pasajeros`} />
             <DatoFicha label="Combustible" valor={vehiculo.tipo_combustible} />
@@ -370,10 +444,12 @@ const DetalleVehiculoPage = () => {
               label="Acepta mascotas"
               valor={vehiculo.pets_friendly ? "Sí" : "No"}
             />
-            <DatoFicha
-              label="Estado registro"
-              valor={vehiculo.estado_registro}
-            />
+            {esPropietario && (
+              <DatoFicha
+                label="Estado registro"
+                valor={vehiculo.estado_registro}
+              />
+            )}
             <DatoFicha
               label="Precio por día"
               valor={
@@ -388,20 +464,120 @@ const DetalleVehiculoPage = () => {
             />
           </dl>
 
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Link
-              to={`/modificar-datos/${vehiculo.id}`}
-              className="inline-flex flex-1 justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
-            >
-              Modificar datos
-            </Link>
-            <Link
-              to={`/vehiculos/${vehiculo.id}/documentacion`}
-              className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-            >
-              Documentación
-            </Link>
-          </div>
+          {esPropietario && vehiculo.estado_registro === "RECHAZADO" &&
+            vehiculo.motivo_rechazo && (
+              <div className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-3 text-xs text-[#b42318]">
+                <p className="font-bold">Motivo de rechazo</p>
+                <p className="mt-1 leading-5">{vehiculo.motivo_rechazo}</p>
+              </div>
+            )}
+
+          {esPropietario && (
+            <div className="mt-6 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
+                  Disponibilidad
+                </p>
+                <p className="mt-1 text-sm !text-white">
+                  {vehiculo.disponible ? "Disponible para alquilar" : "No disponible"}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleToggleDisponible}
+                  disabled={togglingDisponible || isDisponibilidadInactiva}
+                  title={
+                    isDisponibilidadInactiva
+                      ? "El vehículo debe estar Aprobado para definir disponibilidad"
+                      : ""
+                  }
+                  className={`mt-3 inline-flex w-full items-center justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    vehiculo.disponible
+                      ? "bg-[#fef2f2] text-[#b42318] hover:bg-[#fee2e2]"
+                      : "bg-[#f0fdf4] text-[#166534] hover:bg-[#dcfce7]"
+                  }`}
+                >
+                  {togglingDisponible
+                    ? "Cambiando..."
+                    : vehiculo.disponible
+                      ? "Marcar como No disponible"
+                      : "Marcar como Disponible"}
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
+                  Precio por día
+                </p>
+                {editandoPrecio ? (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      step="100"
+                      autoFocus
+                      value={inputPrecio}
+                      onChange={(e) => setInputPrecio(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleActualizarPrecio();
+                        if (e.key === "Escape") setEditandoPrecio(false);
+                      }}
+                      className="w-full min-w-0 rounded-lg bg-white px-2 py-1.5 text-sm font-bold text-autospot-black focus:outline-none focus:ring-2 focus:ring-autospot-accent"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleActualizarPrecio}
+                        disabled={guardandoPrecio}
+                        className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                      >
+                        {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditandoPrecio(false)}
+                        className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
+                      >
+                        ✕ Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="font-display text-xl font-bold !text-white">
+                      {vehiculo.precio_por_dia
+                        ? `$${vehiculo.precio_por_dia}`
+                        : "Sin definir"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditandoPrecio(true);
+                        setInputPrecio(vehiculo.precio_por_dia || "");
+                      }}
+                      className="rounded-full border border-white/20 bg-white/[0.06] px-3 py-1 text-[11px] font-bold !text-white transition hover:bg-white/[0.12]"
+                    >
+                      Actualizar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link
+                  to={`/modificar-datos/${vehiculo.id}`}
+                  className="inline-flex flex-1 justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
+                >
+                  Modificar datos
+                </Link>
+                <Link
+                  to={`/vehiculos/${vehiculo.id}/documentacion`}
+                  className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                >
+                  Documentación
+                </Link>
+              </div>
+            </div>
+          )}
         </aside>
       </section>
     </main>

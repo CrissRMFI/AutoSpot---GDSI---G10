@@ -23,7 +23,8 @@ const SECCIONES_POR_ROL = {
     {
       titulo: "Principal",
       items: [
-        { to: "/propietario/dashboard", label: "Mis vehículos", end: true },
+        { to: "/propietario/dashboard", label: "Dashboard", end: true },
+        { to: "/propietario/vehiculos", label: "Mis vehículos" },
         { to: "/propietario/publicar", label: "Publicar vehículo" },
         { to: "/estaciones", label: "Estaciones" },
       ],
