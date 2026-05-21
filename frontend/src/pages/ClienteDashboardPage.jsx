@@ -1,23 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import DashboardLayout from "../layouts/DashboardLayout";
-
-const SECCIONES = [
-  {
-    titulo: "Principal",
-    items: [
-      { to: "/usuario/dashboard", label: "Dashboard", end: true },
-      { to: "/estaciones", label: "Estaciones" },
-    ],
-  },
-  {
-    titulo: "Cuenta",
-    items: [
-      { to: "/datos-personales", label: "Datos personales" },
-      { to: "/documentacion-habilitante", label: "Documentación habilitante" },
-    ],
-  },
-];
 
 const ClienteDashboardPage = () => {
   const location = useLocation();
@@ -28,7 +10,7 @@ const ClienteDashboardPage = () => {
     usuario?.nombre || usuario?.first_name || usuario?.email || "Usuario";
 
   return (
-    <DashboardLayout secciones={SECCIONES}>
+    <>
       {mensaje && (
         <div className="mb-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-semibold text-[#166534]">
           {mensaje}
@@ -107,7 +89,7 @@ const ClienteDashboardPage = () => {
           </Link>
         </article>
       </section>
-    </DashboardLayout>
+    </>
   );
 };
 

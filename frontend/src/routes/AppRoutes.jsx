@@ -6,6 +6,7 @@ import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ClienteDashboardPage from "../pages/ClienteDashboardPage";
 import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import AuthenticatedShell from "./AuthenticatedShell";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
 import DocumentacionHabilitantePage from "../features/usuarios/pages/DocumentacionHabilitantePage";
@@ -42,90 +43,93 @@ const AppRoutes = () => {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
-      <Route path="/estaciones" element={<EstacionesPage />} />
 
-      <Route
-        path="/datos-personales"
-        element={
-          <ProtectedRoute>
-            <DatosPersonalesPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<AuthenticatedShell />}>
+        <Route path="/estaciones" element={<EstacionesPage />} />
 
-      <Route
-        path="/documentacion-habilitante"
-        element={
-          <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
-            <DocumentacionHabilitantePage />
-          </ProtectedRoute>
-        }
-      />
+        <Route path="/dashboard" element={<DashboardRedirect />} />
 
-      <Route path="/dashboard" element={<DashboardRedirect />} />
+        <Route
+          path="/datos-personales"
+          element={
+            <ProtectedRoute>
+              <DatosPersonalesPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/usuario/dashboard"
-        element={
-          <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
-            <ClienteDashboardPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/documentacion-habilitante"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <DocumentacionHabilitantePage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/propietario/dashboard"
-        element={
-          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-            <PropietarioDashboardPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/usuario/dashboard"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <ClienteDashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/propietario/publicar"
-        element={
-          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-            <PublicarVehiculoPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/propietario/dashboard"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <PropietarioDashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/modificar-datos/:vehiculoId"
-        element={
-          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-            <ModificarVehiculoPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/propietario/publicar"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <PublicarVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/vehiculos/:vehiculoId/documentacion"
-        element={
-          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-            <DocumentacionVehiculoPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/modificar-datos/:vehiculoId"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <ModificarVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/vehiculos/:vehiculoId/detalle"
-        element={
-          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-            <DetalleVehiculoPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/vehiculos/:vehiculoId/documentacion"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DocumentacionVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute rolesPermitidos={["ADMIN"]}>
-            <AdminDashboardPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/vehiculos/:vehiculoId/detalle"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DetalleVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

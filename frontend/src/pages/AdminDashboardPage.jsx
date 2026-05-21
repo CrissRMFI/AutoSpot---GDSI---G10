@@ -1,15 +1,4 @@
 import { useAuth } from "../features/auth/hooks/useAuth";
-import DashboardLayout from "../layouts/DashboardLayout";
-
-const SECCIONES = [
-  {
-    titulo: "Principal",
-    items: [
-      { to: "/admin/dashboard", label: "Dashboard", end: true },
-      { to: "/estaciones", label: "Estaciones" },
-    ],
-  },
-];
 
 const AdminDashboardPage = () => {
   const { usuario } = useAuth();
@@ -17,7 +6,7 @@ const AdminDashboardPage = () => {
     usuario?.nombre || usuario?.first_name || usuario?.email || "Admin";
 
   return (
-    <DashboardLayout secciones={SECCIONES}>
+    <>
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
@@ -66,7 +55,7 @@ const AdminDashboardPage = () => {
           </p>
         </article>
       </section>
-    </DashboardLayout>
+    </>
   );
 };
 

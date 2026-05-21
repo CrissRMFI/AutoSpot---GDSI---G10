@@ -1,28 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import DashboardLayout from "../layouts/DashboardLayout";
 import {
   listarVehiculosDelPropietario,
   toggleEstadoVehiculo,
   definirPrecioVehiculo,
   getStatusSolicitud,
 } from "../features/vehiculos/api/vehiculoService";
-
-const SECCIONES = [
-  {
-    titulo: "Principal",
-    items: [
-      { to: "/propietario/dashboard", label: "Dashboard", end: true },
-      { to: "/propietario/publicar", label: "Publicar vehículo" },
-      { to: "/estaciones", label: "Estaciones" },
-    ],
-  },
-  {
-    titulo: "Cuenta",
-    items: [{ to: "/datos-personales", label: "Datos personales" }],
-  },
-];
 
 const PropietarioDashboardPage = () => {
   const location = useLocation();
@@ -174,7 +158,7 @@ const PropietarioDashboardPage = () => {
   };
 
   return (
-    <DashboardLayout secciones={SECCIONES}>
+    <>
       <div
         className={`fixed left-1/2 top-6 z-50 flex -translate-x-1/2 transform items-center justify-center rounded-full px-6 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ease-in-out ${
           toast.visible
@@ -462,7 +446,7 @@ const PropietarioDashboardPage = () => {
           </div>
         )}
       </section>
-    </DashboardLayout>
+    </>
   );
 };
 
