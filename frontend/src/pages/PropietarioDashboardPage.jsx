@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import DashboardLayout from "../layouts/DashboardLayout";
 import {
   listarVehiculosDelPropietario,
   toggleEstadoVehiculo,
@@ -8,10 +9,24 @@ import {
   getStatusSolicitud,
 } from "../features/vehiculos/api/vehiculoService";
 
+const SECCIONES = [
+  {
+    titulo: "Principal",
+    items: [
+      { to: "/propietario/dashboard", label: "Dashboard", end: true },
+      { to: "/propietario/publicar", label: "Publicar vehículo" },
+      { to: "/estaciones", label: "Estaciones" },
+    ],
+  },
+  {
+    titulo: "Cuenta",
+    items: [{ to: "/datos-personales", label: "Datos personales" }],
+  },
+];
+
 const PropietarioDashboardPage = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
 
   const [vehiculos, setVehiculos] = useState([]);
   const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
@@ -158,18 +173,8 @@ const PropietarioDashboardPage = () => {
     }
   };
 
-  const cerrarSesion = async () => {
-    try {
-      await logout();
-    } catch {
-      // logout's finally block already cleared localStorage and React state
-    }
-    navigate("/login");
-  };
-
   return (
-    <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      {/* Toast Flotante */}
+    <DashboardLayout secciones={SECCIONES}>
       <div
         className={`fixed left-1/2 top-6 z-50 flex -translate-x-1/2 transform items-center justify-center rounded-full px-6 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ease-in-out ${
           toast.visible
@@ -184,373 +189,280 @@ const PropietarioDashboardPage = () => {
         <p className="text-sm font-bold">{toast.message}</p>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Link
-              to="/"
-              className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-            >
-              Inicio
-            </Link>
-
-            <button
-              type="button"
-              className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-              onClick={cerrarSesion}
-            >
-              Cerrar sesión
-            </button>
-          </div>
+      {mensaje && (
+        <div className="mb-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-semibold text-[#166534]">
+          {mensaje}
         </div>
-      </header>
+      )}
 
-      <section className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
-        {mensaje && (
-          <div className="mb-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-semibold text-[#166534]">
-            {mensaje}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
+            Panel del propietario
+          </p>
+          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
+            Buen día, {nombreUsuario} 👋
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-autospot-muted">
+            Publicá tus vehículos, definí su precio y consultá el estado de
+            cada solicitud.
+          </p>
+        </div>
+
+        <Link
+          to="/propietario/publicar"
+          className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+        >
+          Publicar vehículo
+        </Link>
+      </div>
+
+      <section className="rounded-2xl border border-autospot-border bg-autospot-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:p-6">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+              Mis vehículos
+            </p>
+            <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+              Vehículos publicados
+            </h2>
+          </div>
+
+          <Link
+            to="/propietario/publicar"
+            className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            Agregar vehículo
+          </Link>
+        </div>
+
+        {cargandoVehiculos && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2].map((skeleton) => (
+              <div
+                key={skeleton}
+                className="animate-pulse rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+              >
+                <div className="h-6 w-3/4 rounded bg-gray-200 mb-2"></div>
+                <div className="h-4 w-1/2 rounded bg-gray-200 mb-6"></div>
+                <div className="flex gap-4">
+                  <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
+                  <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
+                </div>
+                <div className="h-10 mt-5 w-full rounded-full bg-gray-200"></div>
+              </div>
+            ))}
           </div>
         )}
 
-        <section className="mb-8 rounded-[28px] border border-autospot-border bg-white/70 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.07)] sm:p-8">
-          <p className="mb-2 text-sm font-bold uppercase tracking-[0.08em] text-autospot-accent">
-            Panel del propietario
-          </p>
+        {errorVehiculos && (
+          <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
+            {errorVehiculos}
+          </div>
+        )}
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
-                Bienvenido, {nombreUsuario}
-              </h1>
+        {!cargandoVehiculos && !errorVehiculos && vehiculos.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
+            <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+              Todavía no publicaste vehículos
+            </h3>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-autospot-muted sm:text-base">
-                Gestioná tu perfil, publicá vehículos y consultá el estado de
-                tus publicaciones desde un solo lugar.
-              </p>
-            </div>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-autospot-muted">
+              Cuando registres tu primer vehículo, vas a poder verlo acá y
+              continuar con la carga de documentación.
+            </p>
 
             <Link
               to="/propietario/publicar"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+              className="mt-5 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
             >
-              Publicar vehículo
+              Publicar mi primer vehículo
             </Link>
           </div>
-        </section>
+        )}
 
-        <section className="mb-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-              Cuenta
-            </p>
+        {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {vehiculos.map((vehiculo) => {
+              const estadoInfo = formatEstado(vehiculo.estado_registro);
+              const isDisponibilidadInactiva =
+                vehiculo.estado_registro === "EN_REVISION" ||
+                vehiculo.estado_registro === "RECHAZADO" ||
+                vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION";
 
-            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-              Sesión activa
-            </h2>
-
-            <p className="break-words text-sm leading-6 text-autospot-muted">
-              {usuario?.email || "Email no disponible"}
-            </p>
-          </article>
-
-          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-              Perfil
-            </p>
-
-            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-              Datos personales
-            </h2>
-
-            <p className="mb-5 text-sm leading-6 text-autospot-muted">
-              Completá o actualizá la información asociada a tu cuenta.
-            </p>
-
-            <Link
-              to="/datos-personales"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-            >
-              Actualizar datos
-            </Link>
-          </article>
-
-          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:col-span-2 xl:col-span-1">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-              Vehículos
-            </p>
-
-            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-              Publicaciones
-            </h2>
-
-            <p className="mb-5 text-sm leading-6 text-autospot-muted">
-              Registrá vehículos, cargá fotos y definí su precio diario.
-            </p>
-
-            <Link
-              to="/propietario/publicar"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-            >
-              Publicar vehículo
-            </Link>
-          </article>
-        </section>
-
-        <section className="rounded-[22px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:p-6">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                Mis vehículos
-              </p>
-
-              <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
-                Vehículos publicados
-              </h2>
-            </div>
-
-            <Link
-              to="/propietario/publicar"
-              className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-            >
-              Agregar vehículo
-            </Link>
-          </div>
-
-          {cargandoVehiculos && (
-            <div className="grid gap-4 md:grid-cols-2">
-              {[1, 2].map((skeleton) => (
-                <div
-                  key={skeleton}
-                  className="animate-pulse rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+              return (
+                <article
+                  key={vehiculo.id}
+                  className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
                 >
-                  <div className="h-6 w-3/4 rounded bg-gray-200 mb-2"></div>
-                  <div className="h-4 w-1/2 rounded bg-gray-200 mb-6"></div>
-                  <div className="flex gap-4">
-                    <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
-                    <div className="h-20 flex-1 rounded-xl bg-gray-200"></div>
-                  </div>
-                  <div className="h-10 mt-5 w-full rounded-full bg-gray-200"></div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {errorVehiculos && (
-            <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
-              {errorVehiculos}
-            </div>
-          )}
-
-          {!cargandoVehiculos && !errorVehiculos && vehiculos.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
-              <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
-                Todavía no publicaste vehículos
-              </h3>
-
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-autospot-muted">
-                Cuando registres tu primer vehículo, vas a poder verlo acá y
-                continuar con la carga de documentación.
-              </p>
-
-              <Link
-                to="/propietario/publicar"
-                className="mt-5 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-              >
-                Publicar mi primer vehículo
-              </Link>
-            </div>
-          )}
-
-          {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-2">
-              {vehiculos.map((vehiculo) => {
-                const estadoInfo = formatEstado(vehiculo.estado_registro);
-                const isDisponibilidadInactiva =
-                  vehiculo.estado_registro === "EN_REVISION" ||
-                  vehiculo.estado_registro === "RECHAZADO" ||
-                  vehiculo.estado_registro === "PENDIENTE_DOCUMENTACION";
-
-                return (
-                  <article
-                    key={vehiculo.id}
-                    className="rounded-2xl border border-autospot-border bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <Link
-                          to={`/vehiculos/${vehiculo.id}/detalle`}
-                          className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black transition hover:!text-autospot-accent"
-                        >
-                          {vehiculo.marca} {vehiculo.modelo}
-                        </Link>
-
-                        <p className="mt-1 text-sm text-autospot-muted">
-                          {vehiculo.anio} · {vehiculo.categoria}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2">
-                        <span
-                          className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${estadoInfo.className}`}
-                        >
-                          {estadoInfo.label}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleToggleEstado(vehiculo.id, vehiculo.disponible)
-                          }
-                          disabled={
-                            togglingVehiculoId === vehiculo.id ||
-                            isDisponibilidadInactiva
-                          }
-                          title={
-                            isDisponibilidadInactiva
-                              ? "El vehículo debe estar Aprobado para definir disponibilidad"
-                              : ""
-                          }
-                          className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                            vehiculo.disponible
-                              ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
-                              : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
-                          }`}
-                        >
-                          {togglingVehiculoId === vehiculo.id
-                            ? "Cambiando..."
-                            : vehiculo.disponible
-                              ? "Disponible"
-                              : "No Disponible"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl bg-[#f9fafb] p-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                          Precio diario
-                        </p>
-
-                        {editandoPrecioId === vehiculo.id ? (
-                          <div className="mt-2 flex flex-col gap-2">
-                            <input
-                              type="number"
-                              value={inputPrecio}
-                              onChange={(e) => setInputPrecio(e.target.value)}
-                              className="w-full min-w-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
-                              min="1"
-                              step="100"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter")
-                                  handleActualizarPrecio(vehiculo.id);
-                                if (e.key === "Escape")
-                                  setEditandoPrecioId(null);
-                              }}
-                            />
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() =>
-                                  handleActualizarPrecio(vehiculo.id)
-                                }
-                                disabled={guardandoPrecioId === vehiculo.id}
-                                className="flex-1 shrink-0 rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
-                              >
-                                {guardandoPrecioId === vehiculo.id
-                                  ? "..."
-                                  : "✓ Guardar"}
-                              </button>
-                              <button
-                                onClick={() => setEditandoPrecioId(null)}
-                                className="flex-1 shrink-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
-                              >
-                                ✕ Cancelar
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-1 flex items-center justify-between gap-2">
-                            <p className="font-display text-lg font-bold text-autospot-black">
-                              {vehiculo.precio_por_dia
-                                ? `$${vehiculo.precio_por_dia}`
-                                : "Sin definir"}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setEditandoPrecioId(vehiculo.id);
-                                setInputPrecio(vehiculo.precio_por_dia || "");
-                              }}
-                              className="text-xs font-bold text-autospot-muted transition hover:text-autospot-accent"
-                            >
-                              Actualizar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="rounded-xl bg-[#f9fafb] p-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                          Transmisión
-                        </p>
-
-                        <p className="mt-1 font-display text-lg font-bold text-autospot-black">
-                          {vehiculo.tipo_transmision || "No informada"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {vehiculo.estado_registro === "RECHAZADO" &&
-                      vehiculo.motivo_rechazo && (
-                        <div className="mt-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b42318]">
-                          <p className="font-bold">Motivo de rechazo:</p>
-                          <p className="mt-1">{vehiculo.motivo_rechazo}</p>
-                        </div>
-                      )}
-
-                    <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                      {vehiculo.estado_registro === "RECHAZADO" ? (
-                        <Link
-                          to={`/vehiculos/${vehiculo.id}/documentacion`}
-                          className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700 whitespace-nowrap"
-                        >
-                          Re-subir documentación
-                        </Link>
-                      ) : (
-                        <Link
-                          to={`/vehiculos/${vehiculo.id}/documentacion`}
-                          className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420] whitespace-nowrap"
-                        >
-                          Cargar documentación
-                        </Link>
-                      )}
-
-                      <Link
-                        to={`/modificar-datos/${vehiculo.id}`}
-                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
-                      >
-                        Modificar datos
-                      </Link>
-
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
                       <Link
                         to={`/vehiculos/${vehiculo.id}/detalle`}
-                        className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
+                        className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black transition hover:!text-autospot-accent"
                       >
-                        Ver detalle
+                        {vehiculo.marca} {vehiculo.modelo}
                       </Link>
+
+                      <p className="mt-1 text-sm text-autospot-muted">
+                        {vehiculo.anio} · {vehiculo.categoria}
+                      </p>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
+
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${estadoInfo.className}`}
+                      >
+                        {estadoInfo.label}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handleToggleEstado(vehiculo.id, vehiculo.disponible)
+                        }
+                        disabled={
+                          togglingVehiculoId === vehiculo.id ||
+                          isDisponibilidadInactiva
+                        }
+                        title={
+                          isDisponibilidadInactiva
+                            ? "El vehículo debe estar Aprobado para definir disponibilidad"
+                            : ""
+                        }
+                        className={`flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                          vehiculo.disponible
+                            ? "bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] hover:bg-[#dcfce7]"
+                            : "bg-[#fef2f2] text-[#b42318] border border-[#fecaca] hover:bg-[#fee2e2]"
+                        }`}
+                      >
+                        {togglingVehiculoId === vehiculo.id
+                          ? "Cambiando..."
+                          : vehiculo.disponible
+                            ? "Disponible"
+                            : "No Disponible"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl bg-[#f9fafb] p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Precio diario
+                      </p>
+
+                      {editandoPrecioId === vehiculo.id ? (
+                        <div className="mt-2 flex flex-col gap-2">
+                          <input
+                            type="number"
+                            value={inputPrecio}
+                            onChange={(e) => setInputPrecio(e.target.value)}
+                            className="w-full min-w-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
+                            min="1"
+                            step="100"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter")
+                                handleActualizarPrecio(vehiculo.id);
+                              if (e.key === "Escape")
+                                setEditandoPrecioId(null);
+                            }}
+                          />
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() =>
+                                handleActualizarPrecio(vehiculo.id)
+                              }
+                              disabled={guardandoPrecioId === vehiculo.id}
+                              className="flex-1 shrink-0 rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                            >
+                              {guardandoPrecioId === vehiculo.id
+                                ? "..."
+                                : "✓ Guardar"}
+                            </button>
+                            <button
+                              onClick={() => setEditandoPrecioId(null)}
+                              className="flex-1 shrink-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
+                            >
+                              ✕ Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <p className="font-display text-lg font-bold text-autospot-black">
+                            {vehiculo.precio_por_dia
+                              ? `$${vehiculo.precio_por_dia}`
+                              : "Sin definir"}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setEditandoPrecioId(vehiculo.id);
+                              setInputPrecio(vehiculo.precio_por_dia || "");
+                            }}
+                            className="text-xs font-bold text-autospot-muted transition hover:text-autospot-accent"
+                          >
+                            Actualizar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl bg-[#f9fafb] p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                        Transmisión
+                      </p>
+
+                      <p className="mt-1 font-display text-lg font-bold text-autospot-black">
+                        {vehiculo.tipo_transmision || "No informada"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {vehiculo.estado_registro === "RECHAZADO" &&
+                    vehiculo.motivo_rechazo && (
+                      <div className="mt-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b42318]">
+                        <p className="font-bold">Motivo de rechazo:</p>
+                        <p className="mt-1">{vehiculo.motivo_rechazo}</p>
+                      </div>
+                    )}
+
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    {vehiculo.estado_registro === "RECHAZADO" ? (
+                      <Link
+                        to={`/vehiculos/${vehiculo.id}/documentacion`}
+                        className="inline-flex flex-1 justify-center rounded-full bg-red-600 px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-red-700 whitespace-nowrap"
+                      >
+                        Re-subir documentación
+                      </Link>
+                    ) : (
+                      <Link
+                        to={`/vehiculos/${vehiculo.id}/documentacion`}
+                        className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420] whitespace-nowrap"
+                      >
+                        Cargar documentación
+                      </Link>
+                    )}
+
+                    <Link
+                      to={`/modificar-datos/${vehiculo.id}`}
+                      className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
+                    >
+                      Modificar datos
+                    </Link>
+
+                    <Link
+                      to={`/vehiculos/${vehiculo.id}/detalle`}
+                      className="inline-flex flex-1 justify-center rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent whitespace-nowrap"
+                    >
+                      Ver detalle
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
-    </main>
+    </DashboardLayout>
   );
 };
 
