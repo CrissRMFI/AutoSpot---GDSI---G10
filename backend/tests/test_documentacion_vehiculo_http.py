@@ -66,6 +66,12 @@ def crear_vehiculo_base(db_session):
                     formato="jpg",
                     tamanio_bytes=500_000,
                 ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="uploads/vehiculos/corolla/interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=500_000,
+                ),
             ],
         ),
     )

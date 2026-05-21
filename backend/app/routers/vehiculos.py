@@ -32,6 +32,7 @@ from app.dependencies.auth import (
     validar_usuario_autenticado_coincide_con_id,
 )
 from app.exceptions import (
+    FotoVehiculoNoEncontradaError,
     UsuarioNoEncontradoError,
     VehiculoConReservaActivaError,
     VehiculoNoEncontradoError,
@@ -46,6 +47,7 @@ from app.schemas.vehiculo import (
     FotoVehiculoPublicoSchema,
     FotoVehiculoSchema,
     PrecioVehiculoResponseSchema,
+    ReemplazarFotoVehiculoSchema,
     RegistroVehiculoPayloadSchema,
     RegistroVehiculoSchema,
     VehiculoDocumentacionResponseSchema,
@@ -58,6 +60,7 @@ from app.services.vehiculo import (
     cargar_documentacion_vehiculo,
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
+    reemplazar_foto_vehiculo,
     registrar_vehiculo,
     obtener_vehiculo,
     actualizar_vehiculo,
@@ -649,6 +652,79 @@ def agregar_foto_vehiculo_endpoint(
             tamanio_bytes=payload.tamanio_bytes,
         )
     except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return FotoVehiculoPublicoSchema.model_validate(foto)
+
+
+@router.put(
+    "/vehiculos/{vehiculo_id}/fotos/{foto_id}",
+    response_model=FotoVehiculoPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Reemplazar una foto existente de un vehículo",
+    description=(
+        "Reemplaza la imagen de una foto ya asociada a un vehículo, "
+        "conservando el lado original. El cliente sube primero la nueva "
+        "imagen a Cloudinary y luego invoca este endpoint con la URL "
+        "devuelta. Requiere autenticación JWT y solo permite operar sobre "
+        "vehículos del usuario autenticado."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Foto reemplazada exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo o foto no encontrados.",
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def reemplazar_foto_de_vehiculo(
+    vehiculo_id: uuid.UUID,
+    foto_id: uuid.UUID,
+    payload: ReemplazarFotoVehiculoSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> FotoVehiculoPublicoSchema:
+    """
+    PUT /vehiculos/{vehiculo_id}/fotos/{foto_id}
+
+    Flujo:
+        1. Se valida el JWT y que el vehículo pertenezca al usuario autenticado.
+        2. El servicio actualiza url, formato y tamaño manteniendo el `lado`.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        foto = reemplazar_foto_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            foto_id=foto_id,
+            url=payload.url,
+            formato=payload.formato,
+            tamanio_bytes=payload.tamanio_bytes,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except FotoVehiculoNoEncontradaError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),

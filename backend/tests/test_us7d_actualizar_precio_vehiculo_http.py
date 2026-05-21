@@ -95,6 +95,7 @@ def _payload_vehiculo_valido() -> dict:
             {"lado": "TRASERA", "url": "uploads/etios/trasera.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_IZQUIERDO", "url": "uploads/etios/lateral_izq.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_DERECHO", "url": "uploads/etios/lateral_der.jpg", "formato": "jpg", "tamanio_bytes": 100},
+            {"lado": "INTERIOR", "url": "uploads/etios/interior.jpg", "formato": "jpg", "tamanio_bytes": 100},
         ],
     }
 

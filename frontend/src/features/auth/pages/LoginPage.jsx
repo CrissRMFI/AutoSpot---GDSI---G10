@@ -3,6 +3,40 @@ import { useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "../../../layouts/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 
+const normalizarMensajeError = (err) => {
+  const detalle = err?.response?.data?.detail;
+
+  if (typeof detalle === "string") return detalle;
+
+  if (Array.isArray(detalle)) {
+    return detalle
+      .map((item) =>
+        typeof item === "string"
+          ? item
+          : item?.msg || JSON.stringify(item),
+      )
+      .join(" | ");
+  }
+
+  if (detalle && typeof detalle === "object") {
+    return detalle.msg || JSON.stringify(detalle);
+  }
+
+  return err?.message || "Error al iniciar sesión. Inténtelo de nuevo.";
+};
+
+const rutaPorRol = (rol) => {
+  switch ((rol || "").toUpperCase()) {
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "PROPIETARIO":
+      return "/propietario/dashboard";
+    case "CLIENTE":
+    default:
+      return "/usuario/dashboard";
+  }
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,6 +50,7 @@ const LoginPage = () => {
 
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -33,26 +68,10 @@ const LoginPage = () => {
     setCargando(true);
 
     try {
-      await login(form);
-
-      const emailLower = form.email.toLowerCase();
-
-      if (
-        emailLower.includes("admin") ||
-        emailLower.includes("recepcionista")
-      ) {
-        navigate("/admin/dashboard");
-      } else if (
-        emailLower.includes("owner") ||
-        emailLower.includes("duenio")
-      ) {
-        navigate("/propietario/dashboard");
-      } else {
-        navigate("/usuario/dashboard");
-      }
+      const usuarioAutenticado = await login(form);
+      navigate(rutaPorRol(usuarioAutenticado?.rol));
     } catch (err) {
-      const detalle = err.response?.data?.detail;
-      setError(detalle || "Error al iniciar sesión. Inténtelo de nuevo.");
+      setError(normalizarMensajeError(err));
     } finally {
       setCargando(false);
     }
@@ -105,17 +124,31 @@ const LoginPage = () => {
             Contraseña
           </label>
 
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={form.password}
-            onChange={actualizarCampo}
-            required
-            autoComplete="current-password"
-            placeholder="Ingresá tu contraseña"
-            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
-          />
+          <div className="relative">
+            <input
+              type={mostrarPassword ? "text" : "password"}
+              id="password"
+              name="password"
+              value={form.password}
+              onChange={actualizarCampo}
+              required
+              autoComplete="current-password"
+              placeholder="Ingresá tu contraseña"
+              className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 pr-12 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
+            />
+
+            <button
+              type="button"
+              onClick={() => setMostrarPassword((valor) => !valor)}
+              aria-label={
+                mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+              }
+              aria-pressed={mostrarPassword}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-bold text-autospot-muted transition hover:text-autospot-accent"
+            >
+              {mostrarPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
         </div>
 
         {mensaje && (

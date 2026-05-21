@@ -30,6 +30,7 @@ LADOS_FOTO_REQUERIDOS = {
     "TRASERA",
     "LATERAL_IZQUIERDO",
     "LATERAL_DERECHO",
+    "INTERIOR",
 }
 
 LADOS_FOTO_VALIDOS = LADOS_FOTO_REQUERIDOS | {"EXTRA"}
@@ -100,6 +101,41 @@ class FotoVehiculoSchema(BaseModel):
             raise ValueError("Tamanio de foto excedido")
         return v
 
+class ReemplazarFotoVehiculoSchema(BaseModel):
+    """
+    Payload para reemplazar la imagen de una foto ya asociada a un vehículo.
+    No incluye `lado` porque se preserva el del registro original.
+    """
+
+    url: str
+    formato: str
+    tamanio_bytes: int
+
+    @field_validator("url")
+    @classmethod
+    def validar_url(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Campo obligatorio")
+        return v.strip()
+
+    @field_validator("formato")
+    @classmethod
+    def validar_formato(cls, v: str) -> str:
+        formato = v.strip().lower()
+        if formato not in FORMATOS_FOTO_PERMITIDOS:
+            raise ValueError("Formato de foto invalido")
+        return formato
+
+    @field_validator("tamanio_bytes")
+    @classmethod
+    def validar_tamanio(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Tamanio de foto invalido")
+        if v > TAMANIO_MAXIMO_FOTO_BYTES:
+            raise ValueError("Tamanio de foto excedido")
+        return v
+
+
 class FotoVehiculoPublicoSchema(BaseModel):
     """
     Respuesta pública de una foto asociada al vehículo.
@@ -168,16 +204,9 @@ class VehiculoBaseSchema(BaseModel):
 
     @model_validator(mode="after")
     def validar_fotos_requeridas(self):
-        lados_requeridos = {
-            "FRENTE",
-            "TRASERA",
-            "LATERAL_IZQUIERDO",
-            "LATERAL_DERECHO",
-        }
-
         lados_recibidos = {foto.lado for foto in self.fotos}
 
-        if not lados_requeridos.issubset(lados_recibidos):
+        if not LADOS_FOTO_REQUERIDOS.issubset(lados_recibidos):
             raise ValueError("Cantidad minima de fotos requerida")
 
         return self

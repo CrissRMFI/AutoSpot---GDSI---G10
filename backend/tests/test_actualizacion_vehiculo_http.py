@@ -53,6 +53,7 @@ def _crear_vehiculo(client: TestClient, propietario_id: str, token: str) -> str:
             {"lado": "TRASERA", "url": "t.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_IZQUIERDO", "url": "i.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_DERECHO", "url": "d.jpg", "formato": "jpg", "tamanio_bytes": 100},
+            {"lado": "INTERIOR", "url": "int.jpg", "formato": "jpg", "tamanio_bytes": 100},
         ],
     }
     response = client.post(
@@ -84,6 +85,7 @@ class TestActualizarVehiculoHTTP:
                         {"lado": "TRASERA", "url": "nt.jpg", "formato": "jpg", "tamanio_bytes": 100},
                         {"lado": "LATERAL_IZQUIERDO", "url": "ni.jpg", "formato": "jpg", "tamanio_bytes": 100},
                         {"lado": "LATERAL_DERECHO", "url": "nd.jpg", "formato": "jpg", "tamanio_bytes": 100},
+                        {"lado": "INTERIOR", "url": "nint.jpg", "formato": "jpg", "tamanio_bytes": 100},
                     ],
                 }
 
@@ -127,6 +129,7 @@ class TestActualizarVehiculoHTTP:
                         {"lado": "TRASERA", "url": "nt.jpg", "formato": "jpg", "tamanio_bytes": 100},
                         {"lado": "LATERAL_IZQUIERDO", "url": "ni.jpg", "formato": "jpg", "tamanio_bytes": 100},
                         {"lado": "LATERAL_DERECHO", "url": "nd.jpg", "formato": "jpg", "tamanio_bytes": 100},
+                        {"lado": "INTERIOR", "url": "nint.jpg", "formato": "jpg", "tamanio_bytes": 100},
                     ],
                 }
 

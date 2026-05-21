@@ -1,9 +1,10 @@
 import httpClient from "../../../api/httpClient";
 
-export const registrarUsuario = async ({ email, password }) => {
+export const registrarUsuario = async ({ email, password, rol }) => {
   const response = await httpClient.post("/usuarios/registro", {
     email,
     password,
+    rol,
   });
 
   return response.data;

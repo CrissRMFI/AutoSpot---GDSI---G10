@@ -84,6 +84,12 @@ class TestCA6_RegistroExitosoVehiculo:
                     formato="jpg",
                     tamanio_bytes=500_000,
                     ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="uploads/vehiculos/corolla/interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=500_000,
+                    ),
                 ],
         )
         vehiculo = registrar_vehiculo(db=db_session, schema=payload)
@@ -99,13 +105,14 @@ class TestCA6_RegistroExitosoVehiculo:
         assert vehiculo.pets_friendly is True
         assert vehiculo.estado_registro == "PENDIENTE_DOCUMENTACION"
 
-        assert len(vehiculo.fotos) == 4
+        assert len(vehiculo.fotos) == 5
         lados = {foto.lado for foto in vehiculo.fotos}
         assert lados == {
             "FRENTE",
             "TRASERA",
             "LATERAL_IZQUIERDO",
             "LATERAL_DERECHO",
+            "INTERIOR",
         }
 
 
@@ -153,6 +160,12 @@ class TestCA1_CamposObligatoriosVehiculo:
             {
                 "lado": "LATERAL_DERECHO",
                 "url": "uploads/vehiculos/corolla/lateral_derecho.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
+            {
+                "lado": "INTERIOR",
+                "url": "uploads/vehiculos/corolla/interior.jpg",
                 "formato": "jpg",
                 "tamanio_bytes": 500_000,
             },
@@ -482,17 +495,18 @@ class TestCA5_FotosMinimasVehiculo:
         self._assert_error_fotos_requeridas(fotos)
 
     def test_ca5_cuatro_fotos_una_de_cada_lado_es_valido(self):
-        """Con cuatro fotos y una de cada lado requerido, el schema es válido."""
+        """Con una foto de cada lado requerido, el schema es válido."""
         schema = RegistroVehiculoSchema(**self.PAYLOAD_VALIDO)
 
         lados = {foto.lado for foto in schema.fotos}
 
-        assert len(schema.fotos) == 4
+        assert len(schema.fotos) == 5
         assert lados == {
             "FRENTE",
             "TRASERA",
             "LATERAL_IZQUIERDO",
             "LATERAL_DERECHO",
+            "INTERIOR",
         }
 
 

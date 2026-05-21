@@ -81,6 +81,7 @@ def _payload_vehiculo_valido():
             {"lado": "TRASERA", "url": "url2", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_IZQUIERDO", "url": "url3", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "LATERAL_DERECHO", "url": "url4", "formato": "jpg", "tamanio_bytes": 100},
+            {"lado": "INTERIOR", "url": "url5", "formato": "jpg", "tamanio_bytes": 100},
         ],
     }
 

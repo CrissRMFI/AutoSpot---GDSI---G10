@@ -90,6 +90,7 @@ def _payload_registro_vehiculo():
             {"lado": "TRASERA", "url": "u/trasera.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
             {"lado": "LATERAL_IZQUIERDO", "url": "u/li.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
             {"lado": "LATERAL_DERECHO", "url": "u/ld.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
+            {"lado": "INTERIOR", "url": "u/interior.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
         ],
     }
 

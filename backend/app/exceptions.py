@@ -127,6 +127,15 @@ class VehiculoNoEncontradoError(AutoSpotError):
         super().__init__("Vehiculo no encontrado")
 
 
+class FotoVehiculoNoEncontradaError(AutoSpotError):
+    """
+    Se lanza cuando se intenta reemplazar o consultar una foto de vehículo
+    que no existe o no pertenece al vehículo indicado.
+    """
+    def __init__(self) -> None:
+        super().__init__("Foto del vehiculo no encontrada")
+
+
 class VehiculoNoHabilitadoError(AutoSpotError):
     """
     Se lanza cuando se intenta cambiar la disponibilidad de un auto que

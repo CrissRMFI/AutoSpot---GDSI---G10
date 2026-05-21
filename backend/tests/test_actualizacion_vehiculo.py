@@ -73,6 +73,12 @@ class TestActualizarVehiculoService:
                     formato="jpg",
                     tamanio_bytes=500,
                 ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=500,
+                ),
             ],
         )
         vehiculo = registrar_vehiculo(db=db_session, schema=payload_registro)
@@ -116,6 +122,12 @@ class TestActualizarVehiculoService:
                     formato="jpg",
                     tamanio_bytes=600,
                 ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="nuevo_interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=600,
+                ),
             ],
         )
 
@@ -139,7 +151,7 @@ class TestActualizarVehiculoService:
         assert vehiculo_actualizado.patente == "AB123CD"
 
         # Verificar que se reemplazaron las fotos
-        assert len(vehiculo_actualizado.fotos) == 4
+        assert len(vehiculo_actualizado.fotos) == 5
         url_fotos = [f.url for f in vehiculo_actualizado.fotos]
         assert "nuevo_frente.jpg" in url_fotos
 
@@ -158,6 +170,7 @@ class TestActualizarVehiculoService:
                 FotoVehiculoSchema(lado="TRASERA", url="t.jpg", formato="jpg", tamanio_bytes=100),
                 FotoVehiculoSchema(lado="LATERAL_IZQUIERDO", url="i.jpg", formato="jpg", tamanio_bytes=100),
                 FotoVehiculoSchema(lado="LATERAL_DERECHO", url="d.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="INTERIOR", url="int.jpg", formato="jpg", tamanio_bytes=100),
             ],
         )
 

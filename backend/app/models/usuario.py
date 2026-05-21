@@ -72,6 +72,15 @@ class Usuario(Base):
         doc="False = cuenta suspendida o pendiente de verificación.",
     )
 
+    # ── Rol del usuario ──────────────────────────────────────────────────────
+    rol: Mapped[str] = mapped_column(
+        String(20),
+        default="CLIENTE",
+        server_default="CLIENTE",
+        nullable=False,
+        doc="Rol del usuario: CLIENTE, PROPIETARIO o ADMIN. ADMIN solo se setea por backoffice.",
+    )
+
     # ── Auditoría ────────────────────────────────────────────────────────────
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
