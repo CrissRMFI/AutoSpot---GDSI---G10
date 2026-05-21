@@ -89,6 +89,12 @@ def _crear_propietario_con_vehiculo(db_session):
                     formato="jpg",
                     tamanio_bytes=500_000,
                 ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="uploads/vehiculos/corolla/interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=500_000,
+                ),
             ],
         ),
     )

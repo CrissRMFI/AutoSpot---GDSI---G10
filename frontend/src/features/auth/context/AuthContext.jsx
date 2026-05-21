@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
       id: data.id,
       email: data.email,
       isActive: data.is_active,
+      rol: data.rol,
     };
 
     localStorage.setItem("access_token", data.access_token);

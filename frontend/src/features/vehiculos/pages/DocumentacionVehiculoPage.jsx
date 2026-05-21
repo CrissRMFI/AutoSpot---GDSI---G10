@@ -362,7 +362,7 @@ const DocumentacionVehiculoPage = () => {
                 </p>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="flex flex-col gap-5">
                 {ARCHIVOS_DOCUMENTACION.map(({ name, tipo, label }) => {
                   const url = form[name];
                   const subiendo = subiendoArchivo[name];
@@ -370,52 +370,70 @@ const DocumentacionVehiculoPage = () => {
                   return (
                     <div
                       key={name}
-                      className="rounded-2xl border border-autospot-border bg-white/70 p-4"
+                      className="rounded-2xl border border-autospot-border bg-white/70 p-4 sm:p-5"
                     >
-                      <label className={labelClassName}>{label} *</label>
-
-                      <div className="flex flex-col gap-3 rounded-xl border border-dashed border-autospot-border bg-white p-3">
-                        {url ? (
-                          <img
-                            src={url}
-                            alt={`${label} subido`}
-                            className="h-36 w-full rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-36 w-full items-center justify-center rounded-lg bg-gray-100 text-xs text-autospot-muted">
-                            Sin foto cargada
-                          </div>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <label className="text-sm font-bold text-autospot-black">
+                          {label} *
+                        </label>
+                        {url && (
+                          <span className="rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-0.5 text-[11px] font-bold text-[#166534]">
+                            Cargada
+                          </span>
                         )}
-
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          ref={(elemento) => {
-                            fileInputRefs.current[name] = elemento;
-                          }}
-                          onChange={(evento) =>
-                            handleArchivoSeleccionadoDocumento(name, tipo, evento)
-                          }
-                          className="hidden"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() => handleSeleccionarArchivoDocumento(name)}
-                          disabled={subiendo}
-                          className="inline-flex w-full justify-center rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
-                        >
-                          {subiendo
-                            ? "Subiendo..."
-                            : url
-                              ? "Reemplazar foto"
-                              : "Seleccionar foto"}
-                        </button>
                       </div>
 
-                      <p className="mt-2 text-xs leading-5 text-autospot-muted">
-                        Formatos jpg, png o webp. Hasta 5 MB.
-                      </p>
+                      <div className="flex flex-col gap-4 rounded-xl border border-dashed border-autospot-border bg-white p-3 sm:flex-row sm:items-stretch sm:gap-5 sm:p-4">
+                        <div className="sm:w-64 sm:flex-shrink-0">
+                          {url ? (
+                            <img
+                              src={url}
+                              alt={`${label} subido`}
+                              className="h-48 w-full rounded-lg object-cover sm:h-40"
+                            />
+                          ) : (
+                            <div className="flex h-48 w-full items-center justify-center rounded-lg bg-gray-100 text-xs text-autospot-muted sm:h-40">
+                              Sin foto cargada
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-1 flex-col justify-between gap-3">
+                          <p className="text-xs leading-5 text-autospot-muted">
+                            Subí una foto clara de {label.toLowerCase()}.
+                            Formatos jpg, png o webp. Hasta 5 MB.
+                          </p>
+
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            ref={(elemento) => {
+                              fileInputRefs.current[name] = elemento;
+                            }}
+                            onChange={(evento) =>
+                              handleArchivoSeleccionadoDocumento(name, tipo, evento)
+                            }
+                            className="hidden"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => handleSeleccionarArchivoDocumento(name)}
+                            disabled={subiendo}
+                            className={`inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto ${
+                              url
+                                ? "border border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent"
+                                : "bg-autospot-accent text-white hover:bg-[#5a1420]"
+                            }`}
+                          >
+                            {subiendo
+                              ? "Subiendo..."
+                              : url
+                                ? "Reemplazar foto"
+                                : "Seleccionar foto"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

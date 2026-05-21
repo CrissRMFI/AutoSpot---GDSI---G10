@@ -22,6 +22,7 @@ const LADOS_REQUERIDOS = [
   { codigo: "TRASERA", label: "Trasera" },
   { codigo: "LATERAL_IZQUIERDO", label: "Lateral izquierdo" },
   { codigo: "LATERAL_DERECHO", label: "Lateral derecho" },
+  { codigo: "INTERIOR", label: "Interior" },
 ];
 
 const inputClassName =

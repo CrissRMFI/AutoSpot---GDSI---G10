@@ -8,7 +8,7 @@ import {
   getStatusSolicitud,
 } from "../features/vehiculos/api/vehiculoService";
 
-const DashboardPage = () => {
+const PropietarioDashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario, logout } = useAuth();
@@ -221,7 +221,7 @@ const DashboardPage = () => {
 
         <section className="mb-8 rounded-[28px] border border-autospot-border bg-white/70 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.07)] sm:p-8">
           <p className="mb-2 text-sm font-bold uppercase tracking-[0.08em] text-autospot-accent">
-            Panel principal
+            Panel del propietario
           </p>
 
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -278,27 +278,6 @@ const DashboardPage = () => {
               className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
             >
               Actualizar datos
-            </Link>
-          </article>
-
-          <article className="rounded-[22px] border border-autospot-border bg-autospot-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-              Conductor
-            </p>
-
-            <h2 className="mb-3 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-              Documentación habilitante
-            </h2>
-
-            <p className="mb-5 text-sm leading-6 text-autospot-muted">
-              Cargá o actualizá tu licencia de conducir para contratar vehículos.
-            </p>
-
-            <Link
-              to="/documentacion-habilitante"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-            >
-              Cargar documentación
             </Link>
           </article>
 
@@ -458,12 +437,12 @@ const DashboardPage = () => {
                         </p>
 
                         {editandoPrecioId === vehiculo.id ? (
-                          <div className="mt-2 flex gap-1.5">
+                          <div className="mt-2 flex flex-col gap-2">
                             <input
                               type="number"
                               value={inputPrecio}
                               onChange={(e) => setInputPrecio(e.target.value)}
-                              className="w-full rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
+                              className="w-full min-w-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none"
                               min="1"
                               step="100"
                               autoFocus
@@ -474,21 +453,25 @@ const DashboardPage = () => {
                                   setEditandoPrecioId(null);
                               }}
                             />
-                            <button
-                              onClick={() =>
-                                handleActualizarPrecio(vehiculo.id)
-                              }
-                              disabled={guardandoPrecioId === vehiculo.id}
-                              className="rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
-                            >
-                              {guardandoPrecioId === vehiculo.id ? "..." : "✓"}
-                            </button>
-                            <button
-                              onClick={() => setEditandoPrecioId(null)}
-                              className="rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
-                            >
-                              ✕
-                            </button>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() =>
+                                  handleActualizarPrecio(vehiculo.id)
+                                }
+                                disabled={guardandoPrecioId === vehiculo.id}
+                                className="flex-1 shrink-0 rounded-lg bg-autospot-accent px-2 py-1 text-xs font-bold text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                              >
+                                {guardandoPrecioId === vehiculo.id
+                                  ? "..."
+                                  : "✓ Guardar"}
+                              </button>
+                              <button
+                                onClick={() => setEditandoPrecioId(null)}
+                                className="flex-1 shrink-0 rounded-lg border border-autospot-border bg-white px-2 py-1 text-xs font-bold text-autospot-black transition hover:border-autospot-accent"
+                              >
+                                ✕ Cancelar
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="mt-1 flex items-center justify-between gap-2">
@@ -571,4 +554,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default PropietarioDashboardPage;

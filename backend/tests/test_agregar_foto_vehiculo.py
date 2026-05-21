@@ -41,6 +41,7 @@ def _payload_registro_vehiculo(propietario_id):
             {"lado": "TRASERA", "url": "u/trasera.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
             {"lado": "LATERAL_IZQUIERDO", "url": "u/li.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
             {"lado": "LATERAL_DERECHO", "url": "u/ld.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
+            {"lado": "INTERIOR", "url": "u/interior.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
         ],
     }
 
@@ -97,7 +98,7 @@ class TestAgregarFotoServicio:
         assert foto.url == "https://cdn.cloudinary.com/extra-1.jpg"
 
         db_session.refresh(vehiculo)
-        assert len(vehiculo.fotos) == 5
+        assert len(vehiculo.fotos) == 6
 
     def test_lanza_excepcion_si_vehiculo_no_existe(self, db_session):
         with pytest.raises(VehiculoNoEncontradoError):

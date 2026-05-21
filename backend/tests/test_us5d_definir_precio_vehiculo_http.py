@@ -175,6 +175,12 @@ def _payload_vehiculo_valido():
                 "formato": "jpg",
                 "tamanio_bytes": 500_000,
             },
+            {
+                "lado": "INTERIOR",
+                "url": "uploads/vehiculos/corolla/interior.jpg",
+                "formato": "jpg",
+                "tamanio_bytes": 500_000,
+            },
         ],
     }
 

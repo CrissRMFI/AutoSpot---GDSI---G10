@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
+    FotoVehiculoNoEncontradaError,
     UsuarioNoEncontradoError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
@@ -250,6 +251,55 @@ def agregar_foto_a_vehiculo(
     )
 
     db.add(foto)
+    db.commit()
+    db.refresh(foto)
+
+    return foto
+
+
+def reemplazar_foto_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    foto_id: uuid.UUID,
+    url: str,
+    formato: str,
+    tamanio_bytes: int,
+) -> FotoVehiculo:
+    """
+    Reemplaza la URL y metadata de una foto existente de un vehículo.
+
+    El cliente sube primero la imagen nueva a Cloudinary (manteniendo el
+    `lado` original) y luego invoca este servicio para persistir la nueva
+    URL en la foto ya asociada al vehículo.
+
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+        FotoVehiculoNoEncontradaError: Si la foto no existe o no pertenece
+            al vehículo indicado.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    foto = (
+        db.query(FotoVehiculo)
+        .filter(
+            FotoVehiculo.id == foto_id,
+            FotoVehiculo.vehiculo_id == vehiculo_id,
+        )
+        .first()
+    )
+    if foto is None:
+        raise FotoVehiculoNoEncontradaError()
+
+    foto.url = url
+    foto.formato = formato
+    foto.tamanio_bytes = tamanio_bytes
+
     db.commit()
     db.refresh(foto)
 

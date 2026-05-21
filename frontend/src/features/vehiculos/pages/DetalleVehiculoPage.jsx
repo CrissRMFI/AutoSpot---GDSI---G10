@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   agregarFotoAVehiculo,
+  reemplazarFotoVehiculo,
   subirFotoVehiculo,
 } from "../../../api/uploadService";
 import { getDetalleVehiculo } from "../api/vehiculoService";
@@ -11,18 +12,21 @@ const LADO_LABEL = {
   TRASERA: "Trasera",
   LATERAL_IZQUIERDO: "Lateral izquierdo",
   LATERAL_DERECHO: "Lateral derecho",
+  INTERIOR: "Interior",
   EXTRA: "Extra",
 };
 
 const DetalleVehiculoPage = () => {
   const { vehiculoId } = useParams();
   const fileInputRef = useRef(null);
+  const fileInputReemplazoRef = useRef(null);
 
   const [vehiculo, setVehiculo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
 
   useEffect(() => {
@@ -104,6 +108,54 @@ const DetalleVehiculoPage = () => {
       );
     } finally {
       setSubiendoFoto(false);
+      evento.target.value = "";
+    }
+  };
+
+  const handleSeleccionarReemplazo = () => {
+    if (!fotoActiva) return;
+    fileInputReemplazoRef.current?.click();
+  };
+
+  const handleArchivoReemplazoSeleccionado = async (evento) => {
+    const archivo = evento.target.files?.[0];
+    if (!archivo || !fotoActiva) return;
+
+    setReemplazandoFotoId(fotoActiva.id);
+
+    try {
+      const subida = await subirFotoVehiculo(archivo, fotoActiva.lado);
+      const fotoActualizada = await reemplazarFotoVehiculo(
+        vehiculoId,
+        fotoActiva.id,
+        {
+          url: subida.url,
+          formato: subida.formato,
+          tamanio_bytes: subida.tamanio_bytes,
+        },
+      );
+
+      setVehiculo((estadoActual) =>
+        estadoActual
+          ? {
+              ...estadoActual,
+              fotos: estadoActual.fotos.map((foto) =>
+                foto.id === fotoActualizada.id ? fotoActualizada : foto,
+              ),
+            }
+          : estadoActual,
+      );
+      mostrarFeedback("Foto reemplazada correctamente.", "success");
+    } catch (err) {
+      const detalle = err.response?.data?.detail;
+      mostrarFeedback(
+        typeof detalle === "string"
+          ? `No se pudo reemplazar la foto: ${detalle}`
+          : "No se pudo reemplazar la foto.",
+        "error",
+      );
+    } finally {
+      setReemplazandoFotoId(null);
       evento.target.value = "";
     }
   };
@@ -266,14 +318,39 @@ const DetalleVehiculoPage = () => {
             className="hidden"
           />
 
-          <button
-            type="button"
-            onClick={handleSeleccionarFoto}
-            disabled={subiendoFoto}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
-          >
-            {subiendoFoto ? "Subiendo foto..." : "Agregar foto"}
-          </button>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            ref={fileInputReemplazoRef}
+            onChange={handleArchivoReemplazoSeleccionado}
+            className="hidden"
+          />
+
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <button
+              type="button"
+              onClick={handleSeleccionarFoto}
+              disabled={subiendoFoto || reemplazandoFotoId !== null}
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+            >
+              {subiendoFoto ? "Subiendo foto..." : "Agregar foto"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSeleccionarReemplazo}
+              disabled={
+                !fotoActiva || subiendoFoto || reemplazandoFotoId !== null
+              }
+              className="inline-flex flex-1 items-center justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+            >
+              {reemplazandoFotoId
+                ? "Reemplazando foto..."
+                : fotoActiva
+                  ? `Cambiar foto (${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado})`
+                  : "Cambiar foto"}
+            </button>
+          </div>
         </article>
 
         <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8">

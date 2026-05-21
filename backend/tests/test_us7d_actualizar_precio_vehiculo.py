@@ -85,6 +85,12 @@ def _crear_propietario_con_vehiculo_y_precio(db_session):
                     formato="jpg",
                     tamanio_bytes=500_000,
                 ),
+                FotoVehiculoSchema(
+                    lado="INTERIOR",
+                    url="uploads/vehiculos/civic/interior.jpg",
+                    formato="jpg",
+                    tamanio_bytes=500_000,
+                ),
             ],
         ),
     )

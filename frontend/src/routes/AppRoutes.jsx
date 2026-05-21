@@ -2,7 +2,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import LandingPage from "../features/landing/pages/LandingPage";
-import DashboardPage from "../pages/DashboardPage";
+import AdminDashboardPage from "../pages/AdminDashboardPage";
+import ClienteDashboardPage from "../pages/ClienteDashboardPage";
+import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
+import { useAuth } from "../features/auth/hooks/useAuth";
 import ProtectedRoute from "./ProtectedRoute";
 import DatosPersonalesPage from "../features/usuarios/pages/DatosPersonalesPage";
 import DocumentacionHabilitantePage from "../features/usuarios/pages/DocumentacionHabilitantePage";
@@ -11,6 +14,26 @@ import DocumentacionVehiculoPage from "../features/vehiculos/pages/Documentacion
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
+
+const rutaPorRol = (rol) => {
+  switch ((rol || "").toUpperCase()) {
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "PROPIETARIO":
+      return "/propietario/dashboard";
+    case "CLIENTE":
+    default:
+      return "/usuario/dashboard";
+  }
+};
+
+const DashboardRedirect = () => {
+  const { estaAutenticado, usuario } = useAuth();
+  if (!estaAutenticado) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Navigate to={rutaPorRol(usuario?.rol)} replace />;
+};
 
 const AppRoutes = () => {
   return (
@@ -33,26 +56,19 @@ const AppRoutes = () => {
       <Route
         path="/documentacion-habilitante"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
             <DocumentacionHabilitantePage />
           </ProtectedRoute>
         }
       />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/dashboard" element={<DashboardRedirect />} />
 
       <Route
         path="/usuario/dashboard"
         element={
-          <ProtectedRoute>
-            <DashboardPage />
+          <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+            <ClienteDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -60,8 +76,8 @@ const AppRoutes = () => {
       <Route
         path="/propietario/dashboard"
         element={
-          <ProtectedRoute>
-            <DashboardPage />
+          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+            <PropietarioDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -69,7 +85,7 @@ const AppRoutes = () => {
       <Route
         path="/propietario/publicar"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
             <PublicarVehiculoPage />
           </ProtectedRoute>
         }
@@ -78,7 +94,7 @@ const AppRoutes = () => {
       <Route
         path="/modificar-datos/:vehiculoId"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
             <ModificarVehiculoPage />
           </ProtectedRoute>
         }
@@ -87,7 +103,7 @@ const AppRoutes = () => {
       <Route
         path="/vehiculos/:vehiculoId/documentacion"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
             <DocumentacionVehiculoPage />
           </ProtectedRoute>
         }
@@ -96,7 +112,7 @@ const AppRoutes = () => {
       <Route
         path="/vehiculos/:vehiculoId/detalle"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
             <DetalleVehiculoPage />
           </ProtectedRoute>
         }
@@ -105,8 +121,8 @@ const AppRoutes = () => {
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute>
-            <DashboardPage />
+          <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />

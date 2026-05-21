@@ -283,6 +283,7 @@ def iniciar_sesion(
         id=usuario.id,
         email=usuario.email,
         is_active=usuario.is_active,
+        rol=usuario.rol,
         access_token=access_token,
     )
 

@@ -63,6 +63,7 @@ pnpm-debug.log*
 .idea/
 *.swp
 *.swo
+.claude
 
 # ── Sistema operativo ───────────────────────────────────────────────────────
 .DS_Store

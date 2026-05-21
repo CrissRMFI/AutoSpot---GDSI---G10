@@ -19,6 +19,12 @@ _EMAIL_REGEX = re.compile(
     r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
 )
 
+# Roles que un usuario puede elegir en el registro público.
+# ADMIN queda excluido y se crea exclusivamente por backoffice.
+ROLES_REGISTRO_PUBLICO = {"CLIENTE", "PROPIETARIO"}
+ROLES_VALIDOS = ROLES_REGISTRO_PUBLICO | {"ADMIN"}
+
+
 class RegistroUsuarioSchema(BaseModel):
     """
     Payload de entrada para el registro de un nuevo Usuario.
@@ -26,13 +32,13 @@ class RegistroUsuarioSchema(BaseModel):
     Campos:
         email    : Debe ser un correo electrónico con formato válido.
         password : Debe tener al menos 8 caracteres.
-
-    Los demás datos del Usuario (nombre, apellido, etc.) se completan
-    en una pantalla posterior (US 1U).
+        rol      : CLIENTE o PROPIETARIO. ADMIN no se permite en el registro
+                   público y se rechaza con 422.
     """
 
     email: str
     password: str
+    rol: str = "CLIENTE"
 
     @field_validator("email")
     @classmethod
@@ -61,6 +67,19 @@ class RegistroUsuarioSchema(BaseModel):
             raise ValueError("La contraseña debe tener minimo 8 caracteres")
         return v
 
+    @field_validator("rol")
+    @classmethod
+    def validar_rol(cls, v: str) -> str:
+        """
+        Normaliza el rol y bloquea el alta de ADMIN desde el registro público.
+        ADMIN solo se crea por backoffice (Postman/seed).
+        """
+        valor = (v or "").strip().upper()
+        if valor not in ROLES_REGISTRO_PUBLICO:
+            raise ValueError("Rol invalido")
+        return valor
+
+
 class UsuarioPublicoSchema(BaseModel):
     """
     Respuesta pública del Usuario tras un registro exitoso.
@@ -70,6 +89,7 @@ class UsuarioPublicoSchema(BaseModel):
     id: uuid.UUID
     email: str
     is_active: bool
+    rol: str
 
     model_config = {"from_attributes": True}
 
@@ -90,9 +110,6 @@ class LoginResponseSchema(UsuarioPublicoSchema):
     Extiende UsuarioPublicoSchema con los campos de autenticación JWT:
       - access_token : Token JWT firmado para autenticar requests posteriores.
       - token_type   : Siempre "bearer" (estándar OAuth2).
-
-    Los campos heredados (id, email, is_active) mantienen compatibilidad
-    con los tests existentes del login.
     """
     access_token: str
     token_type: str = "bearer"

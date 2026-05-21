@@ -4,8 +4,30 @@ import AuthLayout from "../../../layouts/AuthLayout";
 import { registrarUsuario } from "../api/authService";
 
 const TIPOS_CUENTA = {
-  CLIENTE: "cliente",
-  PROPIETARIO: "propietario",
+  CLIENTE: "CLIENTE",
+  PROPIETARIO: "PROPIETARIO",
+};
+
+const normalizarMensajeError = (err) => {
+  const detalle = err?.response?.data?.detail;
+
+  if (typeof detalle === "string") return detalle;
+
+  if (Array.isArray(detalle)) {
+    return detalle
+      .map((item) => {
+        if (typeof item === "string") return item;
+        const msg = (item?.msg || "").replace(/^Value error,\s*/, "");
+        return msg || JSON.stringify(item);
+      })
+      .join(" | ");
+  }
+
+  if (detalle && typeof detalle === "object") {
+    return detalle.msg || JSON.stringify(detalle);
+  }
+
+  return err?.message || "Error al crear la cuenta. Inténtelo de nuevo.";
 };
 
 const RegisterPage = () => {
@@ -19,6 +41,7 @@ const RegisterPage = () => {
 
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -46,6 +69,7 @@ const RegisterPage = () => {
       await registrarUsuario({
         email: form.email,
         password: form.password,
+        rol: form.tipoCuenta,
       });
 
       navigate("/login", {
@@ -57,8 +81,7 @@ const RegisterPage = () => {
         },
       });
     } catch (err) {
-      const detalle = err.response?.data?.detail;
-      setError(detalle || "Error al crear la cuenta. Inténtelo de nuevo.");
+      setError(normalizarMensajeError(err));
     } finally {
       setCargando(false);
     }
@@ -154,17 +177,31 @@ const RegisterPage = () => {
             Contraseña
           </label>
 
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={form.password}
-            onChange={actualizarCampo}
-            required
-            autoComplete="new-password"
-            placeholder="Mínimo 8 caracteres"
-            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm !text-autospot-black outline-none transition placeholder:!text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
-          />
+          <div className="relative">
+            <input
+              type={mostrarPassword ? "text" : "password"}
+              id="password"
+              name="password"
+              value={form.password}
+              onChange={actualizarCampo}
+              required
+              autoComplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+              className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 pr-12 text-sm !text-autospot-black outline-none transition placeholder:!text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
+            />
+
+            <button
+              type="button"
+              onClick={() => setMostrarPassword((valor) => !valor)}
+              aria-label={
+                mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+              }
+              aria-pressed={mostrarPassword}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-bold !text-autospot-muted transition hover:!text-autospot-accent"
+            >
+              {mostrarPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
 
           <p className="mt-2 text-xs leading-5 !text-autospot-muted">
             Usá una contraseña segura. El backend validará las reglas reales de

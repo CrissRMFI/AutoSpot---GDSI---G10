@@ -67,6 +67,7 @@ def crear_usuario(db: Session, schema: RegistroUsuarioSchema) -> Usuario:
     nuevo_usuario = Usuario(
         email=schema.email,
         hashed_password=hash_password(schema.password),
+        rol=schema.rol,
     )
 
     db.add(nuevo_usuario)

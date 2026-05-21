@@ -42,3 +42,11 @@ export const agregarFotoAVehiculo = async (vehiculoId, fotoMetadata) => {
   );
   return response.data;
 };
+
+export const reemplazarFotoVehiculo = async (vehiculoId, fotoId, fotoMetadata) => {
+  const response = await httpClient.put(
+    `/vehiculos/${vehiculoId}/fotos/${fotoId}`,
+    fotoMetadata,
+  );
+  return response.data;
+};
