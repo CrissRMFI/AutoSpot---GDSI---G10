@@ -4,6 +4,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 import LandingPage from "../features/landing/pages/LandingPage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ClienteDashboardPage from "../pages/ClienteDashboardPage";
+import MisVehiculosPage from "../pages/MisVehiculosPage";
 import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthenticatedShell from "./AuthenticatedShell";
@@ -81,6 +82,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
               <PropietarioDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/propietario/vehiculos"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <MisVehiculosPage />
             </ProtectedRoute>
           }
         />

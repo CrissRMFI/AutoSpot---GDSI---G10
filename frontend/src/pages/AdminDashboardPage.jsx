@@ -1,18 +1,24 @@
 import { useAuth } from "../features/auth/hooks/useAuth";
 
+const nombrePresentable = (usuario) => {
+  if (usuario?.nombre) return usuario.nombre;
+  if (usuario?.first_name) return usuario.first_name;
+  const local = (usuario?.email || "").split("@")[0];
+  return local || "Admin";
+};
+
 const AdminDashboardPage = () => {
   const { usuario } = useAuth();
-  const nombreUsuario =
-    usuario?.nombre || usuario?.first_name || usuario?.email || "Admin";
+  const nombreUsuario = nombrePresentable(usuario);
 
   return (
     <>
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
             Panel administrativo
           </p>
-          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
+          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black break-words sm:text-4xl">
             Buen día, {nombreUsuario} 👋
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-autospot-muted">
