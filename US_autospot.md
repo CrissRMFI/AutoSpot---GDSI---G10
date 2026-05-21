@@ -23,34 +23,40 @@
 | 2         | 7D  | Actualización de precio del auto                     | 3          |      ✅      |
 | 2         | 9D  | Habilitar/deshabilitar auto en el momento            | 2          |      ✅      |
 | 2         | 1C  | Cargar de identidad y documentación habilitante      | 3          |      ✅      |
-| 2         | 4C  | Visualización y selección de estación                | 3          |      ❌      |
+| 2         | 4C  | Visualización y selección de estación                | 3          |      ✅      |
 | **TOTAL** |     |                                                      | **19**     |              |
 
-## Sprint 3
+## Sprint 3 — reorganizado para mostrar el flujo end-to-end
 
-| Sprint    | US  | Título                                                         | Estimación | Implementada |
-| --------- | --- | -------------------------------------------------------------- | ---------- | :----------: |
-| 3         | 2C  | Visualización de estado de solicitud de habilitación           | 2          |      ❌      |
-| 3         | 3C  | Configuración del tiempo de alquiler                           | 2          |      ❌      |
-| 3         | 5C  | Visualización por zona y orden alfabética — selección estación | 3          |      ❌      |
-| 3         | 9C  | Visualización de ficha técnica y galería del auto              | 2          |      ❌      |
-| 3         | 7C  | Motor de filtrado de catálogo por características              | 2          |      ❌      |
-| 3         | 1R  | Solicitudes de documentación                                   | 2          |      ❌      |
-| 3         | 2R  | Priorización cronológica de las solicitudes                    | 2          |      ❌      |
-| **TOTAL** |     |                                                                | **15**     |              |
+Se promueven 3 US del Sprint 4 original (**14C**, **5R**, **6R**) para que el flujo end-to-end quede visible al cerrar este sprint.
 
-## Sprint 4
+| Orden     | US  | Título                                                         | Estimación | Implementada | Habilita / Notas                                                                                                                                                                                             |
+| --------- | --- | -------------------------------------------------------------- | ---------- | :----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1         | 1R  | Solicitudes de documentación                                   | 3          |      ❌      | Cola de solicitudes (vehículos + conductores en `EN_REVISION`) **+ acción aprobar/rechazar con motivo**. Endpoint backend nuevo. **Desbloquea ciclo del propietario** (sus autos pueden pasar a HABILITADO). |
+| 2         | 2R  | Priorización cronológica de las solicitudes                    | 2          |      ❌      | Ordena la cola de 1R por fecha de envío (más antiguas primero).                                                                                                                                              |
+| 3         | 9C  | Visualización de ficha técnica y galería del auto              | 3          |      ❌      | Página de detalle pública (cliente ve datos del activo sin acciones de gestión). Incluye **listado público de autos disponibles** (necesario para llegar al detalle). **Desbloquea descubrimiento cliente.** |
+| 4         | 5C  | Visualización por zona y orden alfabético — selección estación | 3          |      ❌      | Estaciones filtrables por zona/orden + listado de autos por estación.                                                                                                                                        |
+| 5         | 2C  | Visualización de estado de solicitud de habilitación (cliente) | 2          |      ❌      | Cliente ve si su licencia fue Aprobada/Rechazada (consume la salida de 1R/2R aplicada a conductores). **Cierra loop del cliente para conducir.**                                                             |
+| 6         | 7C  | Motor de filtrado de catálogo por características              | 3          |      ❌      | Filtros del catálogo (categoría, transmisión, mascotas, rango de precio). Refina sobre 9C + 5C.                                                                                                              |
+| 7         | 3C  | Configuración del tiempo de alquiler                           | 2          |      ❌      | Formulario en el detalle del auto: fechas desde/hasta + cálculo de total. Prepara la reserva (14C).                                                                                                          |
+| 8         | 14C | Obtener código de reserva                                      | 3          |      ❌      | **Promovida de Sprint 4.** Cliente confirma reserva → backend genera código único. Nueva entidad `Reserva` + estado `RESERVADO` en el vehículo.                                                              |
+| 9         | 5R  | Verificar código de reserva                                    | 3          |      ❌      | **Promovida de Sprint 4.** Recepcionista busca/valida el código en su panel, ve datos del cliente y del auto.                                                                                                |
+| 10        | 6R  | Entrega                                                        | 1          |      ❌      | **Promovida de Sprint 4.** Recepcionista marca la reserva como entregada. **Cierra el loop end-to-end visible.**                                                                                             |
+| **TOTAL** |     |                                                                | **25**     |              |                                                                                                                                                                                                              |
+
+### Notas y dependencias
+
+- **Flujo end-to-end visible al cerrar Sprint 3:** propietario publica → carga documentación → **admin aprueba (NUEVO)** → cliente filtra estaciones → cliente explora catálogo → **cliente ve detalle del auto (NUEVO)** → cliente filtra → cliente elige tiempo → **cliente reserva (NUEVO)** → **recepcionista verifica código (NUEVO)** → **recepcionista entrega el auto (NUEVO)**.
+
+## Sprint 4 — reducido tras promover 14C, 5R y 6R
 
 | Sprint    | US  | Título                                            | Estimación | Implementada |
 | --------- | --- | ------------------------------------------------- | ---------- | :----------: |
 | 4         | 15C | Registro del estado inicial del activo (Check-in) | 2          |      ❌      |
-| 4         | 6R  | Entrega                                           | 1          |      ❌      |
 | 4         | 11C | Suministro de información logística de retiro     | 2          |      ❌      |
-| 4         | 14C | Obtener código de reserva                         | 3          |      ❌      |
 | 4         | 3R  | Abrir documentación                               | 2          |      ❌      |
 | 4         | 4R  | Notificación y Validar documentación              | 2          |      ❌      |
-| 4         | 5R  | Verificar código de reserva                       | 3          |      ❌      |
-| **TOTAL** |     |                                                   | **15**     |              |
+| **TOTAL** |     |                                                   | **8**      |              |
 
 ## Sprint 5
 
