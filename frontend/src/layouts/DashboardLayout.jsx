@@ -42,7 +42,7 @@ const DashboardLayout = ({ secciones = [], children }) => {
   const rolLabel = etiquetaRol(usuario?.rol);
 
   return (
-    <div className="min-h-screen bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
       {/* Topbar mobile */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
         <Link
@@ -57,9 +57,36 @@ const DashboardLayout = ({ secciones = [], children }) => {
           onClick={() => setAbierto((valor) => !valor)}
           aria-expanded={abierto}
           aria-controls="dashboard-sidebar"
-          className="inline-flex items-center justify-center rounded-full border border-autospot-border bg-white px-3 py-1.5 text-xs font-bold text-autospot-black"
+          aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-autospot-border bg-white text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent"
         >
-          {abierto ? "Cerrar menú" : "Menú"}
+          {abierto ? (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+          )}
         </button>
       </header>
 
