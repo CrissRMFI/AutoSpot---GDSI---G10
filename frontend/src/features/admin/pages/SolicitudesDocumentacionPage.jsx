@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getSolicitudesDocumentacion } from "../api/solicitudesApi";
 
 const formatearFecha = (iso) => {
@@ -34,6 +35,9 @@ const SolicitudesDocumentacionPage = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
+  const focusParam = searchParams.get("focus") || "";
+  const itemRefs = useRef(new Map());
 
   useEffect(() => {
     const fetchSolicitudes = async () => {
@@ -56,6 +60,30 @@ const SolicitudesDocumentacionPage = () => {
     };
     fetchSolicitudes();
   }, []);
+
+  const claveFocus = useMemo(() => focusParam, [focusParam]);
+
+  useEffect(() => {
+    if (!claveFocus || cargando) return;
+    const nodo = itemRefs.current.get(claveFocus);
+    if (nodo) {
+      nodo.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [claveFocus, cargando, solicitudes]);
+
+  const obtenerClave = (solicitud) =>
+    `${solicitud.tipo}:${solicitud.recurso_id}`;
+
+  const esItemDestacado = (solicitud) =>
+    claveFocus && obtenerClave(solicitud) === claveFocus;
+
+  const registrarRef = (clave) => (nodo) => {
+    if (nodo) {
+      itemRefs.current.set(clave, nodo);
+    } else {
+      itemRefs.current.delete(clave);
+    }
+  };
 
   return (
     <>
@@ -109,10 +137,14 @@ const SolicitudesDocumentacionPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {solicitudes.map((solicitud, index) => (
+                {solicitudes.map((solicitud, index) => {
+                  const clave = obtenerClave(solicitud);
+                  const destacado = esItemDestacado(solicitud);
+                  return (
                   <tr
                     key={`${solicitud.tipo}-${solicitud.recurso_id}`}
-                    className="border-t border-autospot-border align-top"
+                    ref={registrarRef(clave)}
+                    className={`border-t border-autospot-border align-top transition ${destacado ? "bg-[#fff7ed] ring-2 ring-autospot-accent" : ""}`}
                   >
                     <td className="px-4 py-3 font-bold text-autospot-muted">
                       {index + 1}
@@ -137,41 +169,84 @@ const SolicitudesDocumentacionPage = () => {
                       {formatearFecha(solicitud.fecha_solicitud)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Lista de cards solo para mobile */}
-          <ul className="flex flex-col gap-4 md:hidden">
-            {solicitudes.map((solicitud, index) => (
+          <ul className="flex w-full flex-col gap-4 md:hidden">
+            {solicitudes.map((solicitud, index) => {
+              const clave = obtenerClave(solicitud);
+              const destacado = esItemDestacado(solicitud);
+              const inicial = (solicitud.usuario_email || "?")
+                .charAt(0)
+                .toUpperCase();
+              const esVehiculo = solicitud.tipo === "VEHICULO";
+              const avatarClase = esVehiculo
+                ? "bg-[#1d4ed8] text-white"
+                : "bg-[#92400e] text-white";
+              return (
               <li
                 key={`${solicitud.tipo}-${solicitud.recurso_id}`}
-                className="rounded-2xl border border-autospot-border bg-autospot-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]"
+                ref={registrarRef(clave)}
+                className={`overflow-hidden rounded-3xl border bg-autospot-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition ${destacado ? "border-autospot-accent ring-2 ring-autospot-accent" : "border-autospot-border"}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                      #{index + 1} · {formatearFecha(solicitud.fecha_solicitud)}
-                    </p>
-                    <p className="mt-1 break-words font-display text-base font-bold text-autospot-black">
-                      {solicitud.resumen}
-                    </p>
-                  </div>
+                {/* Banda de color superior */}
+                <div
+                  className={`h-1.5 w-full ${esVehiculo ? "bg-[#1d4ed8]" : "bg-[#92400e]"}`}
+                  aria-hidden="true"
+                />
+
+                <div className="flex flex-col items-center px-6 pb-6 pt-7">
                   <span
-                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-bold ${claseChipTipo(solicitud.tipo)}`}
+                    className={`inline-flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold shadow-[0_8px_20px_rgba(15,23,42,0.15)] ${avatarClase}`}
+                    aria-hidden="true"
+                  >
+                    {inicial}
+                  </span>
+
+                  <span
+                    className={`mt-4 inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${claseChipTipo(solicitud.tipo)}`}
                   >
                     {etiquetaTipo(solicitud.tipo)}
                   </span>
+
+                  <p className="mt-3 break-words text-center font-display text-lg font-bold leading-tight tracking-[-0.02em] text-autospot-black">
+                    {solicitud.resumen}
+                  </p>
+
+                  <p className="mt-1 break-all text-center text-xs text-autospot-muted">
+                    {solicitud.usuario_email}
+                  </p>
+
+                  <div className="mt-5 grid w-full grid-cols-2 gap-3 border-t border-autospot-border pt-4">
+                    <div className="text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
+                        Ingreso
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-autospot-black">
+                        {formatearFecha(solicitud.fecha_solicitud)}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
+                        Estado
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-autospot-black">
+                        {solicitud.estado}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
+                    #{index + 1} en la cola
+                  </p>
                 </div>
-                <p className="mt-3 break-words text-sm text-autospot-muted">
-                  {solicitud.usuario_email}
-                </p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                  Estado: <span className="text-autospot-black">{solicitud.estado}</span>
-                </p>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </>
       )}

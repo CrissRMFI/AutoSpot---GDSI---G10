@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import NotificacionesBell from "../features/notificaciones/components/NotificacionesBell";
 
 const obtenerIniciales = (email) => {
   if (!email) return "U";
@@ -44,7 +45,7 @@ const DashboardLayout = ({ secciones = [], children }) => {
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
       {/* Topbar mobile */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
         <Link
           to="/"
           className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
@@ -52,14 +53,17 @@ const DashboardLayout = ({ secciones = [], children }) => {
           Auto<span className="!text-autospot-accent">Spot</span>
         </Link>
 
-        <button
-          type="button"
-          onClick={() => setAbierto((valor) => !valor)}
-          aria-expanded={abierto}
-          aria-controls="dashboard-sidebar"
-          aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-autospot-border bg-white text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent"
-        >
+        <div className="flex items-center gap-2">
+          <NotificacionesBell />
+
+          <button
+            type="button"
+            onClick={() => setAbierto((valor) => !valor)}
+            aria-expanded={abierto}
+            aria-controls="dashboard-sidebar"
+            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-autospot-border bg-white text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent"
+          >
           {abierto ? (
             <svg
               viewBox="0 0 24 24"
@@ -87,7 +91,8 @@ const DashboardLayout = ({ secciones = [], children }) => {
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
           )}
-        </button>
+          </button>
+        </div>
       </header>
 
       {/* Sidebar */}
@@ -179,9 +184,29 @@ const DashboardLayout = ({ secciones = [], children }) => {
       </aside>
 
       {/* Main */}
-      <main className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-        {children}
-      </main>
+      <div className="flex min-w-0 flex-col">
+        {/* Topbar desktop con campanita */}
+        <div className="sticky top-0 z-30 hidden items-center justify-between gap-4 border-b border-autospot-border bg-autospot-cream/95 px-10 py-4 backdrop-blur-xl lg:flex">
+          <div className="flex items-center gap-3 text-sm text-autospot-muted">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-autospot-accent text-xs font-bold !text-white">
+              {iniciales}
+            </span>
+            <div className="leading-tight">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-autospot-muted">
+                {rolLabel}
+              </p>
+              <p className="font-bold text-autospot-black">
+                {usuario?.email || "—"}
+              </p>
+            </div>
+          </div>
+          <NotificacionesBell />
+        </div>
+
+        <main className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };
