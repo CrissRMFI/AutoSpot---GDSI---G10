@@ -16,6 +16,7 @@ import DocumentacionVehiculoPage from "../features/vehiculos/pages/Documentacion
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
+import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -136,6 +137,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/solicitudes-documentacion"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <SolicitudesDocumentacionPage />
             </ProtectedRoute>
           }
         />
