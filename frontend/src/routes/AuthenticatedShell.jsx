@@ -39,6 +39,10 @@ const SECCIONES_POR_ROL = {
       titulo: "Principal",
       items: [
         { to: "/admin/dashboard", label: "Dashboard", end: true },
+        {
+          to: "/admin/solicitudes-documentacion",
+          label: "Solicitudes de documentación",
+        },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },

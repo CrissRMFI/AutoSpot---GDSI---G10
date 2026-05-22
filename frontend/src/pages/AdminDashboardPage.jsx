@@ -31,6 +31,25 @@ const AdminDashboardPage = () => {
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+            Recepción
+          </p>
+          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+            Solicitudes de documentación
+          </h2>
+          <p className="mb-5 text-sm leading-6 text-autospot-muted">
+            Atendé los trámites pendientes en orden cronológico (los más
+            antiguos primero).
+          </p>
+          <a
+            href="/admin/solicitudes-documentacion"
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+          >
+            Ver solicitudes
+          </a>
+        </article>
+
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
             Red AutoSpot
           </p>
           <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
@@ -47,17 +66,16 @@ const AdminDashboardPage = () => {
           </a>
         </article>
 
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] md:col-span-2 xl:col-span-2">
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-1">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
             Próximamente
           </p>
           <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Validación de documentación
+            Aprobar / rechazar
           </h2>
           <p className="text-sm leading-6 text-autospot-muted">
-            La validación de documentación de vehículos llegará en próximos
-            sprints. Por ahora, las acciones de aprobación/rechazo se ejecutan
-            vía API.
+            Las acciones de aprobación y rechazo de solicitudes llegarán en las
+            próximas US (3R y 4R).
           </p>
         </article>
       </section>
