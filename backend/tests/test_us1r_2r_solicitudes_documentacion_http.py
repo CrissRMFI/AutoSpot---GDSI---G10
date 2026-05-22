@@ -26,7 +26,7 @@ from app.models.documentacion_habilitante_conductor import (
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.utils.security import hash_password
-from tests.conftest import _make_test_engine
+from tests.conftest import _make_test_engine, sembrar_catalogo
 
 
 def _override_get_db_factory(testing_session_local):
@@ -43,6 +43,11 @@ def _crear_cliente():
     engine = _make_test_engine()
     Base.metadata.create_all(engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    seed_session = TestingSessionLocal()
+    try:
+        sembrar_catalogo(seed_session)
+    finally:
+        seed_session.close()
     app.dependency_overrides[get_db] = _override_get_db_factory(TestingSessionLocal)
     return engine, TestingSessionLocal, TestClient(app)
 

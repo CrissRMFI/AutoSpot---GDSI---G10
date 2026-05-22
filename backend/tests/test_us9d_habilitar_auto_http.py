@@ -19,7 +19,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
 from app.main import app
-from tests.conftest import _make_test_engine
+from tests.conftest import _make_test_engine, sembrar_catalogo
 
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
@@ -42,6 +42,11 @@ def _crear_cliente():
     engine = _make_test_engine()
     Base.metadata.create_all(engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    seed_session = TestingSessionLocal()
+    try:
+        sembrar_catalogo(seed_session)
+    finally:
+        seed_session.close()
     app.dependency_overrides[get_db] = _override_get_db_factory(TestingSessionLocal)
     return engine, TestClient(app)
 

@@ -274,6 +274,42 @@ Recurso no existe → 404 Not Found
 Payload inválido → 422 Unprocessable Content
 ```
 
+# CUÁNDO HACE FALTA UN REBUILD DEL BACKEND ?
+
+El contenedor `web` se construye con `COPY . .` en el `Dockerfile` y **no tiene bind-mount** del código. Eso quiere decir que los archivos `.py` quedan "congelados" dentro de la imagen al momento del build, y editar archivos en el host no se refleja en el contenedor corriendo.
+
+Hay **3 casos en los que sí hace falta rebuild**:
+
+1. Cambios en `requirements.txt` (nuevas dependencias).
+2. Cambios en `backend/Dockerfile`.
+3. Cambios en código `.py`, `.sql` u otros archivos del backend cuando se quiere ver el efecto en el contenedor.
+
+```bash
+docker compose build web
+docker compose up -d web
+```
+
+**Para evitar el rebuild en cada cambio de `.py`** (recomendado en desarrollo), agregar bind-mount + `--reload` en `docker-compose.yml`:
+
+```yaml
+  web:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Con eso, los cambios en `.py` se recargan automáticamente. Solo hace falta rebuild para los puntos 1 y 2.
+
+**Excepción importante:** las **migraciones nuevas** no requieren rebuild si hay bind-mount, pero **sí requieren aplicarlas** con:
+
+```bash
+docker compose exec -T web alembic upgrade head
+```
+
+---
+
 # CUANDO HACE FALTA UNA MIGRACION ?
 
 Una migración es necesaria cuando cambia la estructura de la base de datos.

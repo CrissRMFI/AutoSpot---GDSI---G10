@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import datos_personales_usuario as router_datos_personales
 from app.routers import documentacion_habilitante_conductor as router_documentacion_habilitante
+from app.routers import marcas as router_marcas
 from app.routers import solicitudes_documentacion as router_solicitudes_documentacion
 from app.routers import upload as router_upload
 from app.routers import usuarios as router_usuarios
@@ -69,3 +70,4 @@ app.include_router(router_documentacion_habilitante.router)
 app.include_router(router_upload.router)
 app.include_router(router_estaciones.router)
 app.include_router(router_solicitudes_documentacion.router)
+app.include_router(router_marcas.router)
