@@ -4,6 +4,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 import LandingPage from "../features/landing/pages/LandingPage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ClienteDashboardPage from "../pages/ClienteDashboardPage";
+import MisVehiculosPage from "../pages/MisVehiculosPage";
 import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthenticatedShell from "./AuthenticatedShell";
@@ -15,6 +16,7 @@ import DocumentacionVehiculoPage from "../features/vehiculos/pages/Documentacion
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
+import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -86,6 +88,15 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/propietario/vehiculos"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <MisVehiculosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/propietario/publicar"
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
@@ -126,6 +137,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/solicitudes-documentacion"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <SolicitudesDocumentacionPage />
             </ProtectedRoute>
           }
         />

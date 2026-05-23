@@ -2,22 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
+import { getCatalogoMarcas } from "../api/catalogoApi";
 import {
   definirPrecioVehiculo,
   actualizarVehiculo,
   subirFotoVehiculo,
   getDetalleVehiculo,
 } from "../api/vehiculoService";
-
-const CATALOGO = {
-  Toyota: ["Corolla", "Hilux"],
-  Ford: ["Fiesta", "Focus"],
-  Volkswagen: ["Gol", "Vento", "Polo", "Amarok"],
-  Chevrolet: ["Onix", "Cruze", "S10"],
-  Renault: ["Sandero", "Logan", "Clio", "Kangoo"],
-  Fiat: ["Cronos", "Palio"],
-  Peugeot: ["208", "308"],
-};
 
 const LADOS_REQUERIDOS = [
   { codigo: "FRENTE", label: "Frente" },
@@ -65,6 +56,7 @@ const ModificarVehiculoPage = () => {
   const [cargandoInicial, setCargandoInicial] = useState(true);
   const [estaciones, setEstaciones] = useState([]);
   const [cargandoEstaciones, setCargandoEstaciones] = useState(true);
+  const [catalogo, setCatalogo] = useState([]);
 
   useEffect(() => {
     const cargarEstaciones = async () => {
@@ -79,6 +71,23 @@ const ModificarVehiculoPage = () => {
     };
     cargarEstaciones();
   }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+    getCatalogoMarcas()
+      .then((data) => {
+        if (!cancelado) setCatalogo(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelado) setCatalogo([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const marcaSeleccionada = catalogo.find((m) => m.nombre === form.marca);
+  const modelosDeMarcaSeleccionada = marcaSeleccionada?.modelos ?? [];
 
   const mostrarFeedback = (message, type) => {
     setFeedback({ message, type });
@@ -419,12 +428,12 @@ const ModificarVehiculoPage = () => {
                     disabled={true}
                   >
                     <option value="">Seleccioná una marca</option>
-                    {Object.keys(CATALOGO).map((marca) => (
-                      <option key={marca} value={marca}>
-                        {marca}
+                    {catalogo.map((marca) => (
+                      <option key={marca.id} value={marca.nombre}>
+                        {marca.nombre}
                       </option>
                     ))}
-                    {!CATALOGO[form.marca] && form.marca && (
+                    {!marcaSeleccionada && form.marca && (
                       <option value={form.marca}>{form.marca}</option>
                     )}
                   </select>
@@ -444,14 +453,12 @@ const ModificarVehiculoPage = () => {
                     disabled={true}
                   >
                     <option value="">Seleccioná un modelo</option>
-                    {form.marca && CATALOGO[form.marca]
-                      ? CATALOGO[form.marca].map((modelo) => (
-                        <option key={modelo} value={modelo}>
-                          {modelo}
-                        </option>
-                      ))
-                      : null}
-                    {(!CATALOGO[form.marca] || !CATALOGO[form.marca].includes(form.modelo)) && form.modelo && (
+                    {modelosDeMarcaSeleccionada.map((modelo) => (
+                      <option key={modelo.id} value={modelo.nombre}>
+                        {modelo.nombre}
+                      </option>
+                    ))}
+                    {!modelosDeMarcaSeleccionada.some((m) => m.nombre === form.modelo) && form.modelo && (
                       <option value={form.modelo}>{form.modelo}</option>
                     )}
                   </select>

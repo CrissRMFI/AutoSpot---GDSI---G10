@@ -38,9 +38,40 @@ from app.models.documentacion_habilitante_conductor import (  # noqa: F401
 )
 from app.models.estacion import Estacion  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.marca import Marca, Modelo  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
 from app.models.token_blacklist import TokenBlacklist  # noqa: F401
+
+
+# ── Catálogo inicial sembrado en cada test ───────────────────────────────────
+# Reemplaza al diccionario hardcodeado que vivía en app/schemas/vehiculo.py.
+# Se siembra automáticamente en las fixtures `db_session` y `client` para que
+# la validación de combinación marca/modelo (delegada al servicio) tenga datos
+# contra los cuales chequear.
+SEED_CATALOGO_TESTS = {
+    "Toyota": ["Corolla", "Etios", "Hilux"],
+    "Ford": ["Fiesta", "Focus", "Ranger"],
+    "Volkswagen": ["Gol", "Polo", "Amarok"],
+    "Chevrolet": ["Onix", "Cruze", "S10"],
+    "Renault": ["Clio", "Sandero", "Kangoo"],
+}
+
+
+def sembrar_catalogo(session) -> None:
+    """
+    Inserta marcas y modelos del catálogo inicial en una sesión activa.
+
+    Idempotente: si una marca ya existe (p.ej. por una fixture previa en el
+    mismo test que usa `client` + `db_session` juntas), no la duplica.
+    """
+    for nombre_marca, modelos in SEED_CATALOGO_TESTS.items():
+        if session.query(Marca).filter(Marca.nombre == nombre_marca).first():
+            continue
+        marca = Marca(nombre=nombre_marca)
+        marca.modelos = [Modelo(nombre=nombre) for nombre in modelos]
+        session.add(marca)
+    session.commit()
 
 # ── Construir URL de la base de datos de test ────────────────────────────────
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
@@ -86,6 +117,7 @@ def db_session():
         bind=engine,
     )
     session = TestingSessionLocal()
+    sembrar_catalogo(session)
 
     try:
         yield session
@@ -118,6 +150,12 @@ def client():
         autoflush=False,
         bind=engine,
     )
+
+    seed_session = TestingSessionLocal()
+    try:
+        sembrar_catalogo(seed_session)
+    finally:
+        seed_session.close()
 
     def override_get_db():
         db = TestingSessionLocal()

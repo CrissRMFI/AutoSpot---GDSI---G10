@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.exceptions import TokenInvalidoError
+from app.models.usuario import Usuario
 from app.services.usuario import validar_token_activo
 
 
@@ -115,3 +116,35 @@ def validar_usuario_autenticado_coincide_con_id(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No puede operar sobre otro usuario",
         )
+
+
+def requerir_rol_admin(
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Verifica que el usuario autenticado tenga rol ADMIN.
+
+    Pensado para rutas operativas reservadas al recepcionista/administrador
+    (por ejemplo, la cola de solicitudes de documentación de las US 1R y 2R).
+
+    Raises:
+        HTTPException 401: Si no se pudo identificar al usuario (sub inválido).
+        HTTPException 403: Si el usuario no tiene rol ADMIN.
+    """
+    usuario_id = usuario_actual.get("sub")
+    if not usuario_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
+    if usuario is None or (usuario.rol or "").upper() != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operación reservada al rol ADMIN",
+        )
+
+    return usuario_actual

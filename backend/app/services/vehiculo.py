@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import (
     FotoVehiculoNoEncontradaError,
+    MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
@@ -28,6 +29,7 @@ from app.schemas.vehiculo import (
     RegistroVehiculoSchema,
     ActualizarVehiculoPayloadSchema,
 )
+from app.services.marca_service import validar_combo_marca_modelo
 
 def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     """
@@ -48,6 +50,8 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
 
     Raises:
         UsuarioNoEncontradoError: Si el propietario no existe.
+        MarcaModeloInexistenteError: Si la combinación marca/modelo no está
+            registrada en el catálogo (tablas `marcas`/`modelos`).
     """
     propietario = (
         db.query(Usuario)
@@ -56,6 +60,8 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     )
     if propietario is None:
         raise UsuarioNoEncontradoError()
+
+    validar_combo_marca_modelo(db, marca=schema.marca, modelo=schema.modelo)
 
     vehiculo = Vehiculo(
       propietario_id=schema.propietario_id,

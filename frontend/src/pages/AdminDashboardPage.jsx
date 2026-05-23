@@ -1,18 +1,24 @@
 import { useAuth } from "../features/auth/hooks/useAuth";
 
+const nombrePresentable = (usuario) => {
+  if (usuario?.nombre) return usuario.nombre;
+  if (usuario?.first_name) return usuario.first_name;
+  const local = (usuario?.email || "").split("@")[0];
+  return local || "Admin";
+};
+
 const AdminDashboardPage = () => {
   const { usuario } = useAuth();
-  const nombreUsuario =
-    usuario?.nombre || usuario?.first_name || usuario?.email || "Admin";
+  const nombreUsuario = nombrePresentable(usuario);
 
   return (
     <>
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
             Panel administrativo
           </p>
-          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black sm:text-4xl">
+          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black break-words sm:text-4xl">
             Buen día, {nombreUsuario} 👋
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-autospot-muted">
@@ -23,6 +29,25 @@ const AdminDashboardPage = () => {
       </div>
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+            Recepción
+          </p>
+          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+            Solicitudes de documentación
+          </h2>
+          <p className="mb-5 text-sm leading-6 text-autospot-muted">
+            Atendé los trámites pendientes en orden cronológico (los más
+            antiguos primero).
+          </p>
+          <a
+            href="/admin/solicitudes-documentacion"
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+          >
+            Ver solicitudes
+          </a>
+        </article>
+
         <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
             Red AutoSpot
@@ -41,17 +66,16 @@ const AdminDashboardPage = () => {
           </a>
         </article>
 
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] md:col-span-2 xl:col-span-2">
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-1">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
             Próximamente
           </p>
           <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Validación de documentación
+            Aprobar / rechazar
           </h2>
           <p className="text-sm leading-6 text-autospot-muted">
-            La validación de documentación de vehículos llegará en próximos
-            sprints. Por ahora, las acciones de aprobación/rechazo se ejecutan
-            vía API.
+            Las acciones de aprobación y rechazo de solicitudes llegarán en las
+            próximas US (3R y 4R).
           </p>
         </article>
       </section>

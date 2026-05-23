@@ -8,6 +8,74 @@ const TIPOS_CUENTA = {
   PROPIETARIO: "PROPIETARIO",
 };
 
+const IconoCliente = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    {...props}
+  >
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4.42 3.58-8 8-8s8 3.58 8 8" />
+  </svg>
+);
+
+const IconoPropietario = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M3 13l2-6h14l2 6" />
+    <path d="M3 13v4h2M21 13v4h-2M5 17h14" />
+    <circle cx="7" cy="17" r="2" />
+    <circle cx="17" cy="17" r="2" />
+  </svg>
+);
+
+const IconoOjoAbierto = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const IconoOjoTachado = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+    <path d="M2 2l20 20" />
+  </svg>
+);
+
 const normalizarMensajeError = (err) => {
   const detalle = err?.response?.data?.detail;
 
@@ -112,39 +180,53 @@ const RegisterPage = () => {
           </span>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => seleccionarTipoCuenta(TIPOS_CUENTA.CLIENTE)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                form.tipoCuenta === TIPOS_CUENTA.CLIENTE
-                  ? "border-autospot-accent bg-white shadow-[0_10px_30px_rgba(123,28,46,0.12)]"
-                  : "border-autospot-border bg-white/70 hover:border-autospot-accent"
-              }`}
-            >
-              <div className="mb-1 text-sm font-bold !text-autospot-black">
-                Cliente
-              </div>
-              <div className="text-xs leading-5 !text-autospot-muted">
-                Buscar autos, alquilar, pagar y reportar problemas.
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => seleccionarTipoCuenta(TIPOS_CUENTA.PROPIETARIO)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                form.tipoCuenta === TIPOS_CUENTA.PROPIETARIO
-                  ? "border-autospot-accent bg-white shadow-[0_10px_30px_rgba(123,28,46,0.12)]"
-                  : "border-autospot-border bg-white/70 hover:border-autospot-accent"
-              }`}
-            >
-              <div className="mb-1 text-sm font-bold !text-autospot-black">
-                Propietario
-              </div>
-              <div className="text-xs leading-5 !text-autospot-muted">
-                Publicar vehículos, cargar documentación y definir precios.
-              </div>
-            </button>
+            {[
+              {
+                tipo: TIPOS_CUENTA.CLIENTE,
+                titulo: "Cliente",
+                descripcion: "Buscar autos, alquilar y gestionar tus reservas.",
+                Icono: IconoCliente,
+              },
+              {
+                tipo: TIPOS_CUENTA.PROPIETARIO,
+                titulo: "Propietario",
+                descripcion: "Publicar vehículos, cargar documentación y definir precios.",
+                Icono: IconoPropietario,
+              },
+            ].map(({ tipo, titulo, descripcion, Icono }) => {
+              const activo = form.tipoCuenta === tipo;
+              return (
+                <button
+                  key={tipo}
+                  type="button"
+                  onClick={() => seleccionarTipoCuenta(tipo)}
+                  aria-pressed={activo}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                    activo
+                      ? "border-autospot-accent bg-white shadow-[0_10px_30px_rgba(123,28,46,0.12)]"
+                      : "border-autospot-border bg-white/70 hover:border-autospot-accent"
+                  }`}
+                >
+                  <span
+                    className={`inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition ${
+                      activo
+                        ? "bg-autospot-accent !text-white"
+                        : "bg-autospot-cream text-autospot-accent"
+                    }`}
+                  >
+                    <Icono className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-sm font-bold !text-autospot-black">
+                      {titulo}
+                    </div>
+                    <div className="text-xs leading-5 !text-autospot-muted">
+                      {descripcion}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -197,9 +279,13 @@ const RegisterPage = () => {
                 mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
               }
               aria-pressed={mostrarPassword}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-bold !text-autospot-muted transition hover:!text-autospot-accent"
+              className="absolute inset-y-0 right-0 flex items-center px-3 !text-autospot-muted transition hover:!text-autospot-accent"
             >
-              {mostrarPassword ? "Ocultar" : "Ver"}
+              {mostrarPassword ? (
+                <IconoOjoTachado className="h-5 w-5" />
+              ) : (
+                <IconoOjoAbierto className="h-5 w-5" />
+              )}
             </button>
           </div>
 

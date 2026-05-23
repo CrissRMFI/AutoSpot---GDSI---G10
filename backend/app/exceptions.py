@@ -153,3 +153,31 @@ class VehiculoConReservaActivaError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("No es posible deshabilitar el auto mientras haya una reserva o alquiler en curso")
 
+
+class MarcaNoEncontradaError(AutoSpotError):
+    """Se lanza al referenciar una marca inexistente en el catálogo."""
+    def __init__(self) -> None:
+        super().__init__("Marca no encontrada")
+
+
+class MarcaYaExistenteError(AutoSpotError):
+    """Se lanza al intentar crear una marca con un nombre ya registrado."""
+    def __init__(self) -> None:
+        super().__init__("Marca ya existente")
+
+
+class ModeloYaExistenteError(AutoSpotError):
+    """Se lanza al intentar crear un modelo ya registrado para esa marca."""
+    def __init__(self) -> None:
+        super().__init__("Modelo ya existente para la marca")
+
+
+class MarcaModeloInexistenteError(AutoSpotError):
+    """
+    Se lanza al registrar un vehículo con una combinación marca/modelo que
+    no existe en el catálogo. Mensaje canónico mantenido para compatibilidad
+    con tests previos: "Combinacion marca modelo inexistente".
+    """
+    def __init__(self) -> None:
+        super().__init__("Combinacion marca modelo inexistente")
+

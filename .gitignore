@@ -79,3 +79,5 @@ temp/
 *.tmp
 *.bak
 *.backup
+
+backend/scripts/

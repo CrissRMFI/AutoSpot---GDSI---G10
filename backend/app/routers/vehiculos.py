@@ -33,6 +33,7 @@ from app.dependencies.auth import (
 )
 from app.exceptions import (
     FotoVehiculoNoEncontradaError,
+    MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
     VehiculoConReservaActivaError,
     VehiculoNoEncontradoError,
@@ -175,6 +176,11 @@ def registrar_vehiculo_usuario(
     except UsuarioNoEncontradoError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except MarcaModeloInexistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
 
