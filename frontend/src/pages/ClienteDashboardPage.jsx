@@ -70,8 +70,6 @@ const ClienteDashboardPage = () => {
   const estadoHabilitacion = habilitacion?.estado_validacion;
   const estaHabilitado = estadoHabilitacion === "APROBADO";
   const estaRechazado = estadoHabilitacion === "RECHAZADO";
-  const estaPendiente = estadoHabilitacion === "PENDIENTE_REVISION";
-  const puedeVerEstaciones = estaHabilitado || estaPendiente;
   const estadoInfo = estadoHabilitacion
     ? formatEstadoHabilitacion(estadoHabilitacion)
     : null;
