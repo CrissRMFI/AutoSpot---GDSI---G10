@@ -30,7 +30,7 @@ from app.schemas.solicitud_documentacion import (
 
 
 ESTADO_VEHICULO_EN_REVISION = "EN_REVISION"
-ESTADO_CONDUCTOR_PENDIENTE = "PENDIENTE_VALIDACION"
+ESTADO_CONDUCTOR_PENDIENTE = "PENDIENTE_REVISION"
 
 
 def listar_solicitudes_pendientes(

@@ -70,6 +70,8 @@ const ClienteDashboardPage = () => {
   const estadoHabilitacion = habilitacion?.estado_validacion;
   const estaHabilitado = estadoHabilitacion === "APROBADO";
   const estaRechazado = estadoHabilitacion === "RECHAZADO";
+  const estaPendiente = estadoHabilitacion === "PENDIENTE_REVISION";
+  const puedeVerEstaciones = estaHabilitado || estaPendiente;
   const estadoInfo = estadoHabilitacion
     ? formatEstadoHabilitacion(estadoHabilitacion)
     : null;
@@ -170,25 +172,19 @@ const ClienteDashboardPage = () => {
           <p className="mb-5 text-sm leading-6 text-autospot-muted">
             {estaHabilitado
               ? "Explorá las estaciones disponibles y conocé los autos publicados en cada una."
-              : "Necesitás tener tu documentación aprobada para explorar estaciones."}
+              : "Podés explorar las estaciones de la red. Para seleccionar una, tu documentación debe estar aprobada."}
           </p>
 
-          {estaHabilitado ? (
-            <Link
-              to="/estaciones"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-            >
-              Ver estaciones
-            </Link>
-          ) : (
-            <button
-              disabled
-              title="Tu documentación debe estar Aprobada para acceder a las estaciones"
-              className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white opacity-50 cursor-not-allowed sm:w-auto"
-            >
-              Ver estaciones
-            </button>
-          )}
+          <Link
+            to="/estaciones"
+            state={{
+              soloVisualizacion: !estaHabilitado,
+              estadoDocumentacion: estadoHabilitacion || "SIN_DOCUMENTACION"
+            }}
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+          >
+            Ver estaciones
+          </Link>
         </article>
       </section>
     </>

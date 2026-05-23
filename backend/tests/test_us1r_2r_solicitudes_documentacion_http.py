@@ -148,7 +148,7 @@ def _agregar_doc_habilitante_pendiente(
             fecha_vencimiento=date(2029, 1, 1),
             foto_licencia_frente_url="uploads/frente.jpg",
             foto_licencia_dorso_url="uploads/dorso.jpg",
-            estado_validacion="PENDIENTE_VALIDACION",
+            estado_validacion="PENDIENTE_REVISION",
             created_at=fecha_solicitud,
             updated_at=fecha_solicitud,
         )

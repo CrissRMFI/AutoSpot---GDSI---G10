@@ -79,7 +79,7 @@ def _crear_doc_habilitante_pendiente(
         fecha_vencimiento=date(2029, 1, 1),
         foto_licencia_frente_url="uploads/frente.jpg",
         foto_licencia_dorso_url="uploads/dorso.jpg",
-        estado_validacion="PENDIENTE_VALIDACION",
+        estado_validacion="PENDIENTE_REVISION",
         created_at=fecha_solicitud,
         updated_at=fecha_solicitud,
     )
@@ -125,7 +125,7 @@ class TestUS1R_CA1_RetornaSolicitudes:
         assert solicitud.recurso_id == documentacion.id
         assert solicitud.usuario_id == conductor.id
         assert solicitud.usuario_email == "conductor@autospot.com"
-        assert solicitud.estado == "PENDIENTE_VALIDACION"
+        assert solicitud.estado == "PENDIENTE_REVISION"
 
     def test_lista_combina_vehiculos_y_conductores(self, db_session):
         propietario = _crear_usuario(db_session, "propietario@autospot.com")
@@ -166,7 +166,7 @@ class TestUS1R_CA2_ListaVacia:
         documentacion = _crear_doc_habilitante_pendiente(
             db_session, conductor.id, ahora,
         )
-        documentacion.estado_validacion = "VALIDADA"
+        documentacion.estado_validacion = "APROBADO"
         db_session.commit()
 
         solicitudes = listar_solicitudes_pendientes(db=db_session)
