@@ -20,6 +20,7 @@ from app.models.vehiculo import Vehiculo
 from app.models.foto_vehiculo import FotoVehiculo
 from app.models.token_blacklist import TokenBlacklist
 from app.models.estacion import Estacion
+from app.models.documentacion_habilitante_conductor import DocumentacionHabilitanteConductor
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

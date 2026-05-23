@@ -81,6 +81,8 @@ class DocumentacionHabilitanteConductorSchema(BaseModel):
 class DocumentacionHabilitanteConductorPublicoSchema(BaseModel):
     """
     Respuesta pública de la documentación habilitante registrada.
+
+    Incluye estado de habilitación y motivo de rechazo (US 2C).
     """
 
     id: uuid.UUID
@@ -92,5 +94,6 @@ class DocumentacionHabilitanteConductorPublicoSchema(BaseModel):
     foto_licencia_frente_url: str
     foto_licencia_dorso_url: str
     estado_validacion: str
+    motivo_rechazo: str | None = None
 
     model_config = {"from_attributes": True}

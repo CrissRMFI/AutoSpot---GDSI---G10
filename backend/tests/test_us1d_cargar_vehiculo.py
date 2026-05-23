@@ -18,8 +18,10 @@ Criterios de Aceptación cubiertos inicialmente:
 import pytest
 from pydantic import ValidationError
 
+from app.exceptions import MarcaModeloInexistenteError
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.schemas.vehiculo import FotoVehiculoSchema, RegistroVehiculoSchema
+from app.services.marca_service import validar_combo_marca_modelo
 from app.services.usuario import crear_usuario
 from app.services.vehiculo import registrar_vehiculo
 
@@ -515,66 +517,41 @@ class TestCA5_FotosMinimasVehiculo:
 #
 #  "Dado que soy dueño de un auto y me encuentro llenando el formulario,
 #   cuando la combinación marca + modelo no exista, entonces se impide continuar."
+#
+#  Tras migrar el catálogo a la DB (tablas marcas/modelos), la validación se
+#  delegó al servicio. Estos tests usan la fixture `db_session` que siembra
+#  automáticamente el catálogo inicial.
 # ══════════════════════════════════════════════════════════════════════════════
 class TestCA4_MarcaModeloVehiculo:
     """
-    Verifica que el schema acepte únicamente combinaciones marca/modelo
-    existentes en el catálogo inicial hardcodeado.
+    Verifica que el servicio acepte únicamente combinaciones marca/modelo
+    que existan en el catálogo (tablas marcas/modelos).
     """
 
-    PAYLOAD_VALIDO = TestCA1_CamposObligatoriosVehiculo.PAYLOAD_VALIDO
+    def test_ca4_marca_modelo_existente_es_valida(self, db_session):
+        """Toyota Corolla existe en el catálogo sembrado por la fixture."""
+        validar_combo_marca_modelo(db_session, marca="Toyota", modelo="Corolla")
 
-    def _assert_error_marca_modelo(self, marca: str, modelo: str) -> None:
-        """Helper: verifica que la combinación marca/modelo sea rechazada."""
-        payload = {
-            **self.PAYLOAD_VALIDO,
-            "marca": marca,
-            "modelo": modelo,
-        }
+    def test_ca4_marca_inexistente_bloquea_solicitud(self, db_session):
+        """Una marca inexistente debe lanzar MarcaModeloInexistenteError."""
+        with pytest.raises(MarcaModeloInexistenteError):
+            validar_combo_marca_modelo(
+                db_session, marca="MarcaInexistente", modelo="Corolla"
+            )
 
-        with pytest.raises(ValidationError) as exc_info:
-            RegistroVehiculoSchema(**payload)
+    def test_ca4_modelo_inexistente_para_marca_existente_bloquea_solicitud(
+        self, db_session
+    ):
+        """Un modelo que no pertenece a la marca debe ser rechazado."""
+        with pytest.raises(MarcaModeloInexistenteError):
+            validar_combo_marca_modelo(
+                db_session, marca="Toyota", modelo="Fiesta"
+            )
 
-        mensajes = [error.get("msg", "") for error in exc_info.value.errors()]
-        assert any(
-            "Combinacion marca modelo inexistente" in mensaje
-            for mensaje in mensajes
-        ), (
-            "Se esperaba 'Combinacion marca modelo inexistente', "
-            f"pero se recibió: {mensajes}"
-        )
-
-    def test_ca4_marca_modelo_existente_es_valida(self):
-        """Toyota Corolla existe en el catálogo inicial."""
-        payload = {
-            **self.PAYLOAD_VALIDO,
-            "marca": "Toyota",
-            "modelo": "Corolla",
-        }
-
-        schema = RegistroVehiculoSchema(**payload)
-
-        assert schema.marca == "Toyota"
-        assert schema.modelo == "Corolla"
-
-    def test_ca4_marca_inexistente_bloquea_solicitud(self):
-        """Una marca inexistente debe impedir continuar."""
-        self._assert_error_marca_modelo(
-            marca="MarcaInexistente",
-            modelo="Corolla",
-        )
-
-    def test_ca4_modelo_inexistente_para_marca_existente_bloquea_solicitud(self):
-        """Un modelo que no pertenece a la marca debe impedir continuar."""
-        self._assert_error_marca_modelo(
-            marca="Toyota",
-            modelo="Fiesta",
-        )
-
-    def test_ca4_modelo_inexistente_bloquea_solicitud(self):
-        """Un modelo inexistente para una marca válida debe impedir continuar."""
-        self._assert_error_marca_modelo(
-            marca="Toyota",
-            modelo="ModeloFantasma",
-        )
+    def test_ca4_modelo_inexistente_bloquea_solicitud(self, db_session):
+        """Un modelo inexistente para una marca válida debe ser rechazado."""
+        with pytest.raises(MarcaModeloInexistenteError):
+            validar_combo_marca_modelo(
+                db_session, marca="Toyota", modelo="ModeloFantasma"
+            )
 

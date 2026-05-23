@@ -1,21 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { getCatalogoMarcas } from "../api/catalogoApi";
 import {
   definirPrecioVehiculo,
   publicarVehiculo,
   subirFotoVehiculo,
 } from "../api/vehiculoService";
-
-const CATALOGO = {
-  Toyota: ["Corolla", "Hilux"],
-  Ford: ["Fiesta", "Focus"],
-  Volkswagen: ["Gol", "Vento"],
-  Chevrolet: ["Onix", "Cruze"],
-  Renault: ["Sandero", "Logan"],
-  Fiat: ["Cronos", "Palio"],
-  Peugeot: ["208", "308"],
-};
 
 const LADOS_REQUERIDOS = [
   { codigo: "FRENTE", label: "Frente" },
@@ -52,6 +43,24 @@ const PublicarVehiculoPage = () => {
   const [fotosSubiendo, setFotosSubiendo] = useState(new Set());
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
+  const [catalogo, setCatalogo] = useState([]);
+
+  useEffect(() => {
+    let cancelado = false;
+    getCatalogoMarcas()
+      .then((data) => {
+        if (!cancelado) setCatalogo(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelado) setCatalogo([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const modelosDeMarcaSeleccionada =
+    catalogo.find((m) => m.nombre === form.marca)?.modelos ?? [];
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -90,7 +99,12 @@ const PublicarVehiculoPage = () => {
           ...estadoActual,
           fotos: [
             ...fotosSinLadoActual,
-            { lado, url: resultado.url, formato: resultado.formato, tamanio_bytes: resultado.tamanio_bytes },
+            {
+              lado,
+              url: resultado.url,
+              formato: resultado.formato,
+              tamanio_bytes: resultado.tamanio_bytes,
+            },
           ],
         };
       });
@@ -230,7 +244,10 @@ const PublicarVehiculoPage = () => {
             if (msg.startsWith("Value error, ")) {
               msg = msg.replace("Value error, ", "");
             }
-            msg = msg.replace(/Anio/g, "Año").replace(/invalido/g, "inválido").replace(/tamanio/g, "tamaño");
+            msg = msg
+              .replace(/Anio/g, "Año")
+              .replace(/invalido/g, "inválido")
+              .replace(/tamanio/g, "tamaño");
             return msg.charAt(0).toUpperCase() + msg.slice(1);
           })
           .join(" | ");
@@ -307,7 +324,7 @@ const PublicarVehiculoPage = () => {
             </p>
 
             <p className="mt-2 text-sm leading-6 !text-white/65">
-              Frente, trasera, lateral izquierdo y lateral derecho.
+              Frente, trasera, lateral izquierdo, lateral derecho e interior.
             </p>
           </div>
         </aside>
@@ -344,9 +361,9 @@ const PublicarVehiculoPage = () => {
                     onChange={actualizarCampo}
                   >
                     <option value="">Seleccioná una marca</option>
-                    {Object.keys(CATALOGO).map((marca) => (
-                      <option key={marca} value={marca}>
-                        {marca}
+                    {catalogo.map((marca) => (
+                      <option key={marca.id} value={marca.nombre}>
+                        {marca.nombre}
                       </option>
                     ))}
                   </select>
@@ -366,13 +383,11 @@ const PublicarVehiculoPage = () => {
                     disabled={!form.marca}
                   >
                     <option value="">Seleccioná un modelo</option>
-                    {form.marca
-                      ? CATALOGO[form.marca].map((modelo) => (
-                        <option key={modelo} value={modelo}>
-                          {modelo}
-                        </option>
-                      ))
-                      : null}
+                    {modelosDeMarcaSeleccionada.map((modelo) => (
+                      <option key={modelo.id} value={modelo.nombre}>
+                        {modelo.nombre}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -518,7 +533,8 @@ const PublicarVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Subí una foto real por cada lado requerido (jpg, jpeg, png o webp, máx. 5 MB).
+                  Subí una foto real por cada lado requerido (jpg, jpeg, png o
+                  webp, máx. 5 MB).
                 </p>
               </div>
 
@@ -530,13 +546,16 @@ const PublicarVehiculoPage = () => {
                   return (
                     <article
                       key={codigo}
-                      className={`rounded-2xl border p-4 transition ${cargada
+                      className={`rounded-2xl border p-4 transition ${
+                        cargada
                           ? "border-[#bbf7d0] bg-[#f0fdf4]"
                           : "border-autospot-border bg-white"
-                        }`}
+                      }`}
                     >
                       <input
-                        ref={(el) => { fileInputRefs.current[codigo] = el; }}
+                        ref={(el) => {
+                          fileInputRefs.current[codigo] = el;
+                        }}
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp"
                         className="hidden"
@@ -550,12 +569,13 @@ const PublicarVehiculoPage = () => {
                           </p>
 
                           <p
-                            className={`mt-1 text-xs leading-5 ${subiendo
+                            className={`mt-1 text-xs leading-5 ${
+                              subiendo
                                 ? "text-autospot-muted"
                                 : cargada
                                   ? "text-[#166534]"
                                   : "text-autospot-muted"
-                              }`}
+                            }`}
                           >
                             {subiendo
                               ? "Subiendo..."
@@ -568,13 +588,18 @@ const PublicarVehiculoPage = () => {
                         <button
                           type="button"
                           disabled={subiendo}
-                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${cargada
+                          className={`inline-flex justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            cargada
                               ? "border border-[#bbf7d0] bg-white !text-[#166534] hover:border-[#16a34a]"
                               : "bg-autospot-accent !text-white hover:bg-[#5a1420]"
-                            }`}
+                          }`}
                           onClick={() => handleSeleccionarArchivo(codigo)}
                         >
-                          {subiendo ? "Subiendo..." : cargada ? "Cambiar" : "Subir"}
+                          {subiendo
+                            ? "Subiendo..."
+                            : cargada
+                              ? "Cambiar"
+                              : "Subir"}
                         </button>
                       </div>
                     </article>
@@ -585,10 +610,11 @@ const PublicarVehiculoPage = () => {
 
             {feedback.message && (
               <div
-                className={`rounded-xl px-4 py-3 text-sm font-bold ${feedback.type === "success"
+                className={`rounded-xl px-4 py-3 text-sm font-bold ${
+                  feedback.type === "success"
                     ? "bg-[#e7f8ed] text-[#166534]"
                     : "bg-red-50 text-[#b42318]"
-                  }`}
+                }`}
               >
                 {feedback.message}
               </div>
@@ -613,7 +639,6 @@ const PublicarVehiculoPage = () => {
           </form>
         </section>
       </section>
-
     </main>
   );
 };

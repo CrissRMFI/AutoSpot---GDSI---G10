@@ -1,16 +1,50 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   getDetalleEstacion,
   getEstacionesActivas,
 } from "../api/estacionesApi";
+import { useAuth } from "../../auth/hooks/useAuth";
+import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
 
 const EstacionesPage = () => {
+  const location = useLocation();
+  const { usuario } = useAuth();
+
   const [estaciones, setEstaciones] = useState([]);
   const [estacionSeleccionada, setEstacionSeleccionada] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [error, setError] = useState("");
+
+  // Determinar si el modo es solo visualización
+  const [soloVisualizacion, setSoloVisualizacion] = useState(
+    location.state?.soloVisualizacion ?? false
+  );
+  const [estadoDocumentacion, setEstadoDocumentacion] = useState(
+    location.state?.estadoDocumentacion ?? null
+  );
+
+  // Verificar habilitación independientemente (por si acceden directo por URL)
+  useEffect(() => {
+    const verificarHabilitacion = async () => {
+      if (!usuario?.id || usuario?.rol === "ADMIN" || usuario?.rol === "PROPIETARIO") return;
+      try {
+        const data = await obtenerDocumentacionHabilitante(usuario.id);
+        setEstadoDocumentacion(data.estado_validacion);
+        if (data.estado_validacion !== "APROBADO") {
+          setSoloVisualizacion(true);
+        } else {
+          setSoloVisualizacion(false);
+        }
+      } catch {
+        // Sin documentación → solo visualización
+        setEstadoDocumentacion("SIN_DOCUMENTACION");
+        setSoloVisualizacion(true);
+      }
+    };
+    verificarHabilitacion();
+  }, [usuario?.id, usuario?.rol]);
 
   useEffect(() => {
     const fetchEstaciones = async () => {
@@ -28,6 +62,7 @@ const EstacionesPage = () => {
   }, []);
 
   const handleSeleccionarEstacion = async (id) => {
+    if (soloVisualizacion) return;
     setLoadingDetalle(true);
     setEstacionSeleccionada(null);
     try {
@@ -69,9 +104,26 @@ const EstacionesPage = () => {
             Estaciones Habilitadas
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-autospot-muted sm:text-base">
-            Seleccioná una estación de retiro para visualizar las instrucciones necesarias para la operatividad de tu Activo.
+            {soloVisualizacion
+              ? "Podés explorar las estaciones de la red, pero no podrás seleccionar ninguna hasta que tu documentación sea aprobada."
+              : "Seleccioná una estación de retiro para visualizar las instrucciones necesarias para la operatividad de tu Activo."}
           </p>
         </div>
+
+        {soloVisualizacion && (
+          <div className={`mb-6 flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+            estadoDocumentacion === "RECHAZADO" 
+              ? "border-[#fecaca] bg-[#fef2f2] text-[#b42318]" 
+              : "border-[#fef08a] bg-[#fef9c3] text-[#854d0e]"
+          }`}>
+            <span>{estadoDocumentacion === "RECHAZADO" ? "❌" : "⏳"}</span>
+            {estadoDocumentacion === "RECHAZADO"
+              ? "Tu documentación fue rechazada. Mientras tanto, podés ver las estaciones disponibles."
+              : estadoDocumentacion === "SIN_DOCUMENTACION"
+              ? "Aún no subiste tu documentación. Mientras tanto, podés ver las estaciones disponibles."
+              : "Tu documentación está en revisión. Mientras tanto, podés ver las estaciones disponibles."}
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
@@ -98,7 +150,11 @@ const EstacionesPage = () => {
                   <article
                     key={estacion.id}
                     onClick={() => handleSeleccionarEstacion(estacion.id)}
-                    className="cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                    className={
+                      soloVisualizacion
+                        ? "overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] opacity-80"
+                        : "cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                    }
                   >
                     {estacion.imagen_url && (
                       <img
@@ -124,7 +180,13 @@ const EstacionesPage = () => {
                         </span>
                       </div>
 
-                      {estaSeleccionada && (
+                      {soloVisualizacion && (
+                        <p className="mt-3 text-xs text-autospot-muted italic">
+                          Documentación pendiente — solo visualización
+                        </p>
+                      )}
+
+                      {!soloVisualizacion && estaSeleccionada && (
                         <div className="mt-5 rounded-xl bg-[#f9fafb] p-4 border border-autospot-border">
                           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
                             Dirección Exacta
@@ -141,7 +203,7 @@ const EstacionesPage = () => {
                         </div>
                       )}
 
-                      {cargandoDetalle && (
+                      {!soloVisualizacion && cargandoDetalle && (
                         <div className="mt-4 flex justify-center">
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-autospot-border border-t-autospot-accent"></div>
                         </div>
@@ -158,4 +220,4 @@ const EstacionesPage = () => {
   );
 };
 
-export default EstacionesPage;
+export default EstacionesPage;
