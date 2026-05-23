@@ -143,7 +143,7 @@ class TestCA1CA2_RegistroDocumentacionHabilitanteHTTP:
                 assert body["foto_licencia_dorso_url"] == (
                     "uploads/licencia/12345678/dorso.jpg"
                 )
-                assert body["estado_validacion"] == "PENDIENTE_VALIDACION"
+                assert body["estado_validacion"] == "PENDIENTE_REVISION"
                 assert "id" in body
         finally:
             app.dependency_overrides.clear()

@@ -85,7 +85,7 @@ class TestCA1CA2_RegistroDocumentacionHabilitante:
         )
 
         # Estado inicial documental
-        assert documentacion.estado_validacion == "PENDIENTE_VALIDACION"
+        assert documentacion.estado_validacion == "PENDIENTE_REVISION"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

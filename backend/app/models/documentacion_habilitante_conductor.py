@@ -13,13 +13,22 @@ Regla de diseño:
     Un Usuario puede tener cero o un registro de documentación habilitante.
     Por eso `usuario_id` es único.
 """
+import enum
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+
+class EstadoHabilitacion(str, enum.Enum):
+    """Estados posibles de la habilitación del conductor (US 2C)."""
+
+    PENDIENTE_REVISION = "PENDIENTE_REVISION"
+    APROBADO = "APROBADO"
+    RECHAZADO = "RECHAZADO"
 
 
 class DocumentacionHabilitanteConductor(Base):
@@ -90,12 +99,19 @@ class DocumentacionHabilitanteConductor(Base):
         doc="Ruta o URL de la foto del dorso de la licencia.",
     )
 
-    # ── Estado documental ────────────────────────────────────────────────────
+    # ── Estado documental (US 2C) ─────────────────────────────────────────────
     estado_validacion: Mapped[str] = mapped_column(
-        String(50),
-        default="PENDIENTE_VALIDACION",
+        Enum(EstadoHabilitacion, name="estado_habilitacion_enum", native_enum=True),
+        default=EstadoHabilitacion.PENDIENTE_REVISION,
         nullable=False,
-        doc="Estado inicial de validación documental.",
+        doc="Estado de la habilitación: PENDIENTE_REVISION, APROBADO o RECHAZADO.",
+    )
+
+    motivo_rechazo: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        default=None,
+        doc="Motivo del rechazo (completado por el administrador). Null si no fue rechazado.",
     )
 
     # ── Auditoría ────────────────────────────────────────────────────────────
