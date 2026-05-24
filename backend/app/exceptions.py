@@ -181,3 +181,14 @@ class MarcaModeloInexistenteError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("Combinacion marca modelo inexistente")
 
+
+class SolicitudDocumentacionNoEncontradaError(AutoSpotError):
+    """Se lanza cuando no existe la solicitud de documentación solicitada."""
+    def __init__(self) -> None:
+        super().__init__("Solicitud de documentacion no encontrada")
+
+
+class TipoSolicitudDocumentacionInvalidoError(AutoSpotError):
+    """Se lanza cuando el tipo de solicitud no es VEHICULO ni CONDUCTOR."""
+    def __init__(self) -> None:
+        super().__init__("Tipo de solicitud de documentacion invalido")

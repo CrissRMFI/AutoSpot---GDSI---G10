@@ -54,7 +54,7 @@ Se promueven 3 US del Sprint 4 original (**14C**, **5R**, **6R**) para que el fl
 | --------- | --- | ------------------------------------------------- | ---------- | :----------: |
 | 4         | 15C | Registro del estado inicial del activo (Check-in) | 2          |      ❌      |
 | 4         | 11C | Suministro de información logística de retiro     | 2          |      ❌      |
-| 4         | 3R  | Abrir documentación                               | 2          |      ❌      |
+| 4         | 3R  | Abrir documentación                               | 2          |      ✅      |
 | 4         | 4R  | Notificación y Validar documentación              | 2          |      ❌      |
 | **TOTAL** |     |                                                   | **8**      |              |
 

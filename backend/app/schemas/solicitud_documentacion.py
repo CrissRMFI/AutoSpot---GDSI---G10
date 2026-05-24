@@ -14,7 +14,7 @@ Criterios de Aceptación cubiertos:
     US 2R CA2 → los nuevos ingresos quedan al final de la secuencia.
 """
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -47,3 +47,43 @@ class SolicitudDocumentacionSchema(BaseModel):
     resumen: str
 
     model_config = {"from_attributes": True}
+
+
+class DocumentoSolicitudSchema(BaseModel):
+    """
+    Documento visualizable dentro del detalle de una solicitud (US 3R).
+    """
+
+    nombre: str
+    url: str
+
+
+class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
+    """
+    Detalle completo de una solicitud de documentacion para abrirla desde
+    la cola administrativa (US 3R).
+    """
+
+    documentos: list[DocumentoSolicitudSchema]
+
+    marca: str | None = None
+    modelo: str | None = None
+    anio: int | None = None
+    tipo_transmision: str | None = None
+    capacidad: int | None = None
+    categoria_vehiculo: str | None = None
+    tipo_combustible: str | None = None
+    pets_friendly: bool | None = None
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    estacion: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
+    motivo_rechazo: str | None = None
+
+    numero_licencia: str | None = None
+    categoria_licencia: str | None = None
+    fecha_emision: date | None = None
+    fecha_vencimiento: date | None = None
