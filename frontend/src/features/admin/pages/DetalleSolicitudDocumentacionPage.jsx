@@ -108,7 +108,7 @@ const SeccionFormulario = ({ eyebrow, titulo, descripcion, campos }) => (
   </section>
 );
 
-const DocumentoCampo = ({ documento, index, onAbrir }) => (
+const DocumentoCampo = ({ documento, onAbrir }) => (
   <div className="rounded-2xl border border-autospot-border bg-white/70 p-4 sm:p-5">
     <div className="mb-3 flex items-center justify-between gap-3">
       <label className="text-sm font-bold text-autospot-black">
@@ -457,11 +457,10 @@ const DetalleSolicitudDocumentacionPage = () => {
 
               {detalle.documentos.length > 0 ? (
                 <div className="flex flex-col gap-5">
-                  {detalle.documentos.map((documento, index) => (
+                  {detalle.documentos.map((documento) => (
                     <DocumentoCampo
                       key={`${documento.nombre}-${documento.url}`}
                       documento={documento}
-                      index={index}
                       onAbrir={setDocumentoActivo}
                     />
                   ))}
