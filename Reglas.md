@@ -92,7 +92,7 @@ Antes de mergear repetir todo este checklist
 git checkout develop
 git pull origin develop
 
-docker compose down -v
+docker compose down
 docker compose up --build -d
 docker compose ps
 curl -I http://localhost:8000/docs
@@ -292,12 +292,12 @@ docker compose up -d web
 **Para evitar el rebuild en cada cambio de `.py`** (recomendado en desarrollo), agregar bind-mount + `--reload` en `docker-compose.yml`:
 
 ```yaml
-  web:
-    build:
-      context: ./backend
-    volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+web:
+  build:
+    context: ./backend
+  volumes:
+    - ./backend:/app
+  command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Con eso, los cambios en `.py` se recargan automáticamente. Solo hace falta rebuild para los puntos 1 y 2.

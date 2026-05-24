@@ -5,7 +5,7 @@ Responsabilidades de esta capa:
     1. Consultar vehículos en estado EN_REVISION (documentación legal cargada
        pero aún no aprobada).
     2. Consultar documentación habilitante de conductores en estado
-       PENDIENTE_VALIDACION.
+       PENDIENTE_REVISION.
     3. Unificar ambos conjuntos en una cola única.
     4. Ordenar la cola cronológicamente ascendente por fecha de solicitud,
        de manera que la atención sea equitativa según el orden de ingreso.
@@ -17,12 +17,18 @@ US 2R CA2 — los nuevos ingresos quedan automáticamente al final.
 """
 from sqlalchemy.orm import Session
 
+from app.exceptions import (
+    SolicitudDocumentacionNoEncontradaError,
+    TipoSolicitudDocumentacionInvalidoError,
+)
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
 )
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.schemas.solicitud_documentacion import (
+    DocumentoSolicitudSchema,
+    SolicitudDocumentacionDetalleSchema,
     SolicitudDocumentacionSchema,
     TIPO_SOLICITUD_CONDUCTOR,
     TIPO_SOLICITUD_VEHICULO,
@@ -39,7 +45,7 @@ def listar_solicitudes_pendientes(
     """
     Lista todas las solicitudes de documentación pendientes de validación,
     unificando vehículos en EN_REVISION y documentación habilitante de
-    conductores en PENDIENTE_VALIDACION.
+    conductores en PENDIENTE_REVISION.
 
     Returns:
         Lista de solicitudes ordenada cronológicamente ascendente (más antiguas
@@ -96,3 +102,133 @@ def listar_solicitudes_pendientes(
     solicitudes.sort(key=lambda solicitud: solicitud.fecha_solicitud)
 
     return solicitudes
+
+
+def obtener_detalle_solicitud_documentacion(
+    db: Session,
+    tipo: str,
+    recurso_id,
+) -> SolicitudDocumentacionDetalleSchema:
+    """
+    Abre el detalle documental de una solicitud existente (US 3R).
+
+    Args:
+        db: Sesion activa.
+        tipo: VEHICULO o CONDUCTOR.
+        recurso_id: UUID del vehiculo o de la documentacion habilitante.
+
+    Raises:
+        TipoSolicitudDocumentacionInvalidoError: Si el tipo no es soportado.
+        SolicitudDocumentacionNoEncontradaError: Si el recurso no existe.
+    """
+    tipo_normalizado = tipo.strip().upper()
+
+    if tipo_normalizado == TIPO_SOLICITUD_VEHICULO:
+        return _obtener_detalle_vehiculo(db=db, recurso_id=recurso_id)
+
+    if tipo_normalizado == TIPO_SOLICITUD_CONDUCTOR:
+        return _obtener_detalle_conductor(db=db, recurso_id=recurso_id)
+
+    raise TipoSolicitudDocumentacionInvalidoError()
+
+
+def _documentos_desde_campos(campos: list[tuple[str, str | None]]) -> list[DocumentoSolicitudSchema]:
+    """Convierte pares nombre/url en documentos visibles, omitiendo vacios."""
+    return [
+        DocumentoSolicitudSchema(nombre=nombre, url=url.strip())
+        for nombre, url in campos
+        if url and url.strip()
+    ]
+
+
+def _obtener_detalle_vehiculo(
+    db: Session,
+    recurso_id,
+) -> SolicitudDocumentacionDetalleSchema:
+    resultado = (
+        db.query(Vehiculo, Usuario)
+        .join(Usuario, Vehiculo.propietario_id == Usuario.id)
+        .filter(Vehiculo.id == recurso_id)
+        .first()
+    )
+
+    if resultado is None:
+        raise SolicitudDocumentacionNoEncontradaError()
+
+    vehiculo, propietario = resultado
+    documentos = _documentos_desde_campos(
+        [
+            ("Cedula verde / titulo", vehiculo.cedula),
+            ("Poliza de seguro", vehiculo.poliza),
+            ("VTV / revision tecnica", vehiculo.vtv),
+        ]
+    )
+
+    return SolicitudDocumentacionDetalleSchema(
+        tipo=TIPO_SOLICITUD_VEHICULO,
+        recurso_id=vehiculo.id,
+        usuario_id=propietario.id,
+        usuario_email=propietario.email,
+        estado=vehiculo.estado_registro,
+        fecha_solicitud=vehiculo.updated_at,
+        resumen=f"{vehiculo.marca} {vehiculo.modelo} ({vehiculo.anio})",
+        documentos=documentos,
+        marca=vehiculo.marca,
+        modelo=vehiculo.modelo,
+        anio=vehiculo.anio,
+        tipo_transmision=vehiculo.tipo_transmision,
+        capacidad=vehiculo.capacidad,
+        categoria_vehiculo=vehiculo.categoria,
+        tipo_combustible=vehiculo.tipo_combustible,
+        pets_friendly=vehiculo.pets_friendly,
+        patente=vehiculo.patente,
+        chasis=vehiculo.chasis,
+        motor=vehiculo.motor,
+        titular=vehiculo.titular,
+        estacion=vehiculo.estacion,
+        telefono=vehiculo.telefono,
+        descripcion=vehiculo.descripcion,
+        motivo_rechazo=vehiculo.motivo_rechazo,
+    )
+
+
+def _obtener_detalle_conductor(
+    db: Session,
+    recurso_id,
+) -> SolicitudDocumentacionDetalleSchema:
+    resultado = (
+        db.query(DocumentacionHabilitanteConductor, Usuario)
+        .join(Usuario, DocumentacionHabilitanteConductor.usuario_id == Usuario.id)
+        .filter(DocumentacionHabilitanteConductor.id == recurso_id)
+        .first()
+    )
+
+    if resultado is None:
+        raise SolicitudDocumentacionNoEncontradaError()
+
+    documentacion, conductor = resultado
+    documentos = _documentos_desde_campos(
+        [
+            ("Licencia frente", documentacion.foto_licencia_frente_url),
+            ("Licencia dorso", documentacion.foto_licencia_dorso_url),
+        ]
+    )
+
+    return SolicitudDocumentacionDetalleSchema(
+        tipo=TIPO_SOLICITUD_CONDUCTOR,
+        recurso_id=documentacion.id,
+        usuario_id=conductor.id,
+        usuario_email=conductor.email,
+        estado=documentacion.estado_validacion,
+        fecha_solicitud=documentacion.updated_at,
+        resumen=(
+            f"Licencia {documentacion.categoria} "
+            f"N° {documentacion.numero_licencia}"
+        ),
+        documentos=documentos,
+        numero_licencia=documentacion.numero_licencia,
+        categoria_licencia=documentacion.categoria,
+        fecha_emision=documentacion.fecha_emision,
+        fecha_vencimiento=documentacion.fecha_vencimiento,
+        motivo_rechazo=documentacion.motivo_rechazo,
+    )

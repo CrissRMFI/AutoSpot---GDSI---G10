@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getSolicitudesDocumentacion } from "../api/solicitudesApi";
 
 const formatearFecha = (iso) => {
@@ -52,7 +52,9 @@ const SolicitudesDocumentacionPage = () => {
         } else if (status === 403) {
           setError("No tenés permisos para ver las solicitudes.");
         } else {
-          setError("No pudimos cargar las solicitudes. Intentá de nuevo en unos minutos.");
+          setError(
+            "No pudimos cargar las solicitudes. Intentá de nuevo en unos minutos.",
+          );
         }
       } finally {
         setCargando(false);
@@ -74,6 +76,9 @@ const SolicitudesDocumentacionPage = () => {
   const obtenerClave = (solicitud) =>
     `${solicitud.tipo}:${solicitud.recurso_id}`;
 
+  const obtenerUrlDetalle = (solicitud) =>
+    `/admin/solicitudes-documentacion/${solicitud.tipo}/${solicitud.recurso_id}`;
+
   const esItemDestacado = (solicitud) =>
     claveFocus && obtenerClave(solicitud) === claveFocus;
 
@@ -87,15 +92,15 @@ const SolicitudesDocumentacionPage = () => {
 
   return (
     <>
-      <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between px-2">
         <div className="min-w-0">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
+          <p className="mb-1 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
             Cola de revisión
           </p>
-          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black break-words sm:text-4xl">
+          <h1 className="font-display text-2xl font-black leading-[1.1] tracking-[-0.04em] text-autospot-black break-words sm:text-4xl">
             Solicitudes de documentación
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-autospot-muted">
+          <p className="mt-1 max-w-2xl text-xs sm:text-sm leading-relaxed text-autospot-muted">
             Listado de trámites pendientes ordenado por fecha de ingreso (más
             antiguos primero), para asegurar atención equitativa.
           </p>
@@ -103,7 +108,7 @@ const SolicitudesDocumentacionPage = () => {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
+        <div className="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318] mx-2">
           {error}
         </div>
       )}
@@ -113,7 +118,7 @@ const SolicitudesDocumentacionPage = () => {
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-autospot-border border-t-autospot-accent"></div>
         </div>
       ) : solicitudes.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center">
+        <div className="rounded-[22px] border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center mx-2">
           <p className="font-display text-lg font-bold text-autospot-black">
             No hay trámites pendientes
           </p>
@@ -122,9 +127,12 @@ const SolicitudesDocumentacionPage = () => {
           </p>
         </div>
       ) : (
-        <>
-          {/* Tabla solo para desktop */}
-          <div className="hidden overflow-hidden rounded-2xl border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] md:block">
+        <div className="w-full px-2">
+          {/* 
+            TABLA: Oculta por defecto (hidden) en celulares, 
+            visible como bloque de tabla a partir de pantallas medianas (md:block)
+          */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
             <table className="w-full text-left text-sm">
               <thead className="bg-[#f9fafb] text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
                 <tr>
@@ -134,6 +142,7 @@ const SolicitudesDocumentacionPage = () => {
                   <th className="px-4 py-3">Detalle</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3">Ingreso</th>
+                  <th className="px-4 py-3">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,41 +150,52 @@ const SolicitudesDocumentacionPage = () => {
                   const clave = obtenerClave(solicitud);
                   const destacado = esItemDestacado(solicitud);
                   return (
-                  <tr
-                    key={`${solicitud.tipo}-${solicitud.recurso_id}`}
-                    ref={registrarRef(clave)}
-                    className={`border-t border-autospot-border align-top transition ${destacado ? "bg-[#fff7ed] ring-2 ring-autospot-accent" : ""}`}
-                  >
-                    <td className="px-4 py-3 font-bold text-autospot-muted">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${claseChipTipo(solicitud.tipo)}`}
-                      >
-                        {etiquetaTipo(solicitud.tipo)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 break-words text-autospot-black">
-                      {solicitud.usuario_email}
-                    </td>
-                    <td className="px-4 py-3 text-autospot-black">
-                      {solicitud.resumen}
-                    </td>
-                    <td className="px-4 py-3 text-autospot-muted">
-                      {solicitud.estado}
-                    </td>
-                    <td className="px-4 py-3 text-autospot-muted">
-                      {formatearFecha(solicitud.fecha_solicitud)}
-                    </td>
-                  </tr>
+                    <tr
+                      key={`${solicitud.tipo}-${solicitud.recurso_id}`}
+                      ref={registrarRef(clave)}
+                      className={`border-t border-autospot-border align-top transition ${destacado ? "bg-[#fff7ed] ring-2 ring-autospot-accent" : "hover:bg-gray-50/50"}`}
+                    >
+                      <td className="px-4 py-3 font-bold text-autospot-muted">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${claseChipTipo(solicitud.tipo)}`}
+                        >
+                          {etiquetaTipo(solicitud.tipo)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 break-words text-autospot-black">
+                        {solicitud.usuario_email}
+                      </td>
+                      <td className="px-4 py-3 text-autospot-black">
+                        {solicitud.resumen}
+                      </td>
+                      <td className="px-4 py-3 text-autospot-muted">
+                        {solicitud.estado}
+                      </td>
+                      <td className="px-4 py-3 text-autospot-muted">
+                        {formatearFecha(solicitud.fecha_solicitud)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          to={obtenerUrlDetalle(solicitud)}
+                          className="inline-flex whitespace-nowrap rounded-full bg-autospot-accent px-4 py-2 text-xs font-bold !text-white transition hover:bg-[#5a1420]"
+                        >
+                          Ver documentación
+                        </Link>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
 
-          {/* Lista de cards solo para mobile */}
+          {/* 
+            LISTA MOBILE: Grid de 1 columna para celulares, 
+            se oculta por completo en pantallas grandes (md:hidden)
+          */}
           <ul className="flex w-full flex-col gap-4 md:hidden">
             {solicitudes.map((solicitud, index) => {
               const clave = obtenerClave(solicitud);
@@ -185,70 +205,88 @@ const SolicitudesDocumentacionPage = () => {
                 .toUpperCase();
               const esVehiculo = solicitud.tipo === "VEHICULO";
               const avatarClase = esVehiculo
-                ? "bg-[#1d4ed8] text-white"
-                : "bg-[#92400e] text-white";
+                ? "bg-[#eff6ff] text-[#1d4ed8]"
+                : "bg-[#fef3c7] text-[#92400e]";
+
               return (
-              <li
-                key={`${solicitud.tipo}-${solicitud.recurso_id}`}
-                ref={registrarRef(clave)}
-                className={`overflow-hidden rounded-3xl border bg-autospot-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition ${destacado ? "border-autospot-accent ring-2 ring-autospot-accent" : "border-autospot-border"}`}
-              >
-                {/* Banda de color superior */}
-                <div
-                  className={`h-1.5 w-full ${esVehiculo ? "bg-[#1d4ed8]" : "bg-[#92400e]"}`}
-                  aria-hidden="true"
-                />
-
-                <div className="flex flex-col items-center px-6 pb-6 pt-7">
-                  <span
-                    className={`inline-flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold shadow-[0_8px_20px_rgba(15,23,42,0.15)] ${avatarClase}`}
-                    aria-hidden="true"
-                  >
-                    {inicial}
-                  </span>
-
-                  <span
-                    className={`mt-4 inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${claseChipTipo(solicitud.tipo)}`}
-                  >
-                    {etiquetaTipo(solicitud.tipo)}
-                  </span>
-
-                  <p className="mt-3 break-words text-center font-display text-lg font-bold leading-tight tracking-[-0.02em] text-autospot-black">
-                    {solicitud.resumen}
-                  </p>
-
-                  <p className="mt-1 break-all text-center text-xs text-autospot-muted">
-                    {solicitud.usuario_email}
-                  </p>
-
-                  <div className="mt-5 grid w-full grid-cols-2 gap-3 border-t border-autospot-border pt-4">
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
-                        Ingreso
-                      </p>
-                      <p className="mt-1 text-xs font-bold text-autospot-black">
-                        {formatearFecha(solicitud.fecha_solicitud)}
-                      </p>
+                <li
+                  key={`${solicitud.tipo}-${solicitud.recurso_id}`}
+                  ref={registrarRef(clave)}
+                  className={`overflow-hidden rounded-2xl border bg-autospot-white shadow-sm transition ${
+                    destacado
+                      ? "border-autospot-accent ring-2 ring-autospot-accent bg-[#fff7ed]"
+                      : "border-autospot-border"
+                  }`}
+                >
+                  <div className="p-5">
+                    {/* Encabezado de la Card: Avatar + Información principal */}
+                    <div className="flex items-center gap-3 border-b border-autospot-border pb-3">
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-bold ${avatarClase}`}
+                      >
+                        {inicial}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-autospot-black">
+                          {solicitud.usuario_email}
+                        </p>
+                        <p className="mt-0.5 text-[11px] font-medium text-autospot-muted">
+                          Posición: #{index + 1} en la cola
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${claseChipTipo(solicitud.tipo)}`}
+                      >
+                        {etiquetaTipo(solicitud.tipo)}
+                      </span>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
-                        Estado
-                      </p>
-                      <p className="mt-1 text-xs font-bold text-autospot-black">
-                        {solicitud.estado}
-                      </p>
+
+                    {/* Detalles del trámite en formato formulario responsivo */}
+                    <div className="mt-4 space-y-3 text-xs">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-autospot-muted block mb-0.5">
+                          Recurso / Detalle
+                        </span>
+                        <p className="font-semibold text-autospot-black break-words">
+                          {solicitud.resumen}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-autospot-muted block mb-0.5">
+                            Fecha Ingreso
+                          </span>
+                          <p className="font-medium text-autospot-black">
+                            {formatearFecha(solicitud.fecha_solicitud)}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-autospot-muted block mb-0.5">
+                            Estado Actual
+                          </span>
+                          <p className="font-medium text-autospot-black">
+                            {solicitud.estado}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Acción principal de la Card */}
+                    <div className="mt-5">
+                      <Link
+                        to={obtenerUrlDetalle(solicitud)}
+                        className="inline-flex w-full justify-center rounded-xl bg-autospot-accent py-2.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] shadow-sm"
+                      >
+                        Revisar Documentación
+                      </Link>
                     </div>
                   </div>
-
-                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.1em] text-autospot-muted">
-                    #{index + 1} en la cola
-                  </p>
-                </div>
-              </li>
+                </li>
               );
             })}
           </ul>
-        </>
+        </div>
       )}
     </>
   );
