@@ -443,3 +443,20 @@ def cambiar_disponibilidad_vehiculo(
     db.refresh(vehiculo)
 
     return vehiculo
+
+
+def listar_vehiculos_disponibles(db: Session) -> list[Vehiculo]:
+    """
+    Lista todos los vehículos que están habilitados y disponibles para alquiler,
+    y que tienen un precio por día definido.
+    """
+    return (
+        db.query(Vehiculo)
+        .filter(
+            Vehiculo.estado_registro == "HABILITADO",
+            Vehiculo.disponible == True,
+            Vehiculo.precio_por_dia.isnot(None),
+            Vehiculo.precio_por_dia > 0
+        )
+        .all()
+    )

@@ -236,6 +236,7 @@ class VehiculoPublicoSchema(BaseModel):
     fotos: list[FotoVehiculoPublicoSchema]
     precio_por_dia: Decimal | None = None
     disponible: bool = False
+    estacion: str | None = None
 
     model_config = {"from_attributes": True}
 

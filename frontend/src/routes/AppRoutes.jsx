@@ -15,6 +15,8 @@ import PublicarVehiculoPage from "../features/vehiculos/pages/PublicarVehiculoPa
 import DocumentacionVehiculoPage from "../features/vehiculos/pages/DocumentacionVehiculoPage";
 import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculoPage";
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
+import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
+import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
 import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSolicitudDocumentacionPage";
 import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
@@ -75,6 +77,24 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
               <ClienteDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/catalogo"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <CatalogoVehiculosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/catalogo/:vehiculoId"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <CatalogoDetalleVehiculoPage />
             </ProtectedRoute>
           }
         />
