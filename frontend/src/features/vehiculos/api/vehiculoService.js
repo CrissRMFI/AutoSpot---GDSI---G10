@@ -78,3 +78,13 @@ export const actualizarVehiculo = async (vehiculoId, datosVehiculo) => {
   return response.data;
 };
 
+export const obtenerCatalogoVehiculos = async () => {
+  const response = await httpClient.get(`/vehiculos/catalogo`);
+  return response.data;
+};
+
+export const getDetalleVehiculoCatalogo = async (vehiculoId) => {
+  const response = await httpClient.get(`/vehiculos/catalogo/${vehiculoId}`);
+  return response.data;
+};
+

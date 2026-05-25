@@ -8,6 +8,7 @@ const SECCIONES_POR_ROL = {
       titulo: "Principal",
       items: [
         { to: "/usuario/dashboard", label: "Dashboard", end: true },
+        { to: "/catalogo", label: "Catálogo" },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },
