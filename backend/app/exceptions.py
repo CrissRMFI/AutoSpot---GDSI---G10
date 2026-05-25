@@ -192,3 +192,9 @@ class TipoSolicitudDocumentacionInvalidoError(AutoSpotError):
     """Se lanza cuando el tipo de solicitud no es VEHICULO ni CONDUCTOR."""
     def __init__(self) -> None:
         super().__init__("Tipo de solicitud de documentacion invalido")
+
+
+class MotivoRechazoVacioError(AutoSpotError):
+    """Se lanza cuando se intenta rechazar una solicitud sin proveer un motivo."""
+    def __init__(self) -> None:
+        super().__init__("El motivo de rechazo es obligatorio")

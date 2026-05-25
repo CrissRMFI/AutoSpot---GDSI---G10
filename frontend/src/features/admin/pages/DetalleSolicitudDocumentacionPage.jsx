@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getSolicitudDocumentacionDetalle } from "../api/solicitudesApi";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { getSolicitudDocumentacionDetalle, aprobarSolicitud, rechazarSolicitud } from "../api/solicitudesApi";
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
@@ -206,6 +206,11 @@ const DetalleSolicitudDocumentacionPage = () => {
   const [error, setError] = useState("");
   const [documentoActivo, setDocumentoActivo] = useState(null);
 
+  const [modalRechazo, setModalRechazo] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [procesando, setProcesando] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
     const cargarDetalle = async () => {
       setCargando(true);
@@ -232,6 +237,37 @@ const DetalleSolicitudDocumentacionPage = () => {
 
     cargarDetalle();
   }, [tipo, recursoId]);
+
+  const handleAprobar = async () => {
+    try {
+      setProcesando(true);
+      setError("");
+      await aprobarSolicitud(tipo, recursoId);
+      navigate("/admin/solicitudes-documentacion");
+    } catch (err) {
+      setError("No pudimos aprobar la solicitud.");
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleRechazar = async () => {
+    if (!motivoRechazo.trim()) {
+      setError("El motivo del rechazo es obligatorio.");
+      return;
+    }
+    try {
+      setProcesando(true);
+      setError("");
+      await rechazarSolicitud(tipo, recursoId, motivoRechazo);
+      navigate("/admin/solicitudes-documentacion");
+    } catch (err) {
+      setError("No pudimos rechazar la solicitud.");
+    } finally {
+      setProcesando(false);
+      setModalRechazo(false);
+    }
+  };
 
   const secciones = useMemo(() => {
     if (!detalle) return [];
@@ -473,6 +509,27 @@ const DetalleSolicitudDocumentacionPage = () => {
                 </div>
               )}
             </section>
+
+            {detalle && (detalle.estado === "EN_REVISION" || detalle.estado === "PENDIENTE_REVISION") && (
+              <div className="flex gap-4 border-t border-autospot-border pt-6">
+                <button
+                  type="button"
+                  onClick={() => setModalRechazo(true)}
+                  disabled={procesando}
+                  className="flex-1 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                >
+                  Rechazar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAprobar}
+                  disabled={procesando}
+                  className="flex-1 rounded-xl bg-autospot-accent py-3 text-sm font-bold text-white transition hover:bg-autospot-accent/90 disabled:opacity-50"
+                >
+                  Aprobar
+                </button>
+              </div>
+            )}
           </form>
         </section>
       ) : null}
@@ -481,6 +538,42 @@ const DetalleSolicitudDocumentacionPage = () => {
         documento={documentoActivo}
         onCerrar={() => setDocumentoActivo(null)}
       />
+
+      {modalRechazo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6">
+            <h3 className="mb-4 text-xl font-bold text-autospot-black">Motivo del rechazo</h3>
+            <textarea
+              className={textareaClassName}
+              rows={4}
+              placeholder="Escribe el motivo del rechazo (obligatorio)..."
+              value={motivoRechazo}
+              onChange={(e) => setMotivoRechazo(e.target.value)}
+            />
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalRechazo(false);
+                  setMotivoRechazo("");
+                }}
+                disabled={procesando}
+                className="flex-1 rounded-xl border border-autospot-border py-3 font-bold text-autospot-black hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleRechazar}
+                disabled={procesando || !motivoRechazo.trim()}
+                className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {procesando ? "Procesando..." : "Confirmar rechazo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

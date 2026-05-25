@@ -87,3 +87,11 @@ class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
     categoria_licencia: str | None = None
     fecha_emision: date | None = None
     fecha_vencimiento: date | None = None
+
+
+class ResolucionSolicitudSchema(BaseModel):
+    """
+    Cuerpo para rechazar una solicitud (US 4R).
+    """
+
+    motivo_rechazo: str

@@ -27,12 +27,15 @@ from app.exceptions import (
     TipoSolicitudDocumentacionInvalidoError,
 )
 from app.schemas.solicitud_documentacion import (
+    ResolucionSolicitudSchema,
     SolicitudDocumentacionDetalleSchema,
     SolicitudDocumentacionSchema,
 )
 from app.services.solicitud_documentacion import (
+    aprobar_solicitud_documentacion,
     listar_solicitudes_pendientes,
     obtener_detalle_solicitud_documentacion,
+    rechazar_solicitud_documentacion,
 )
 
 
@@ -109,6 +112,66 @@ def abrir_solicitud_documentacion(
             db=db,
             tipo=tipo,
             recurso_id=recurso_id,
+        )
+    except TipoSolicitudDocumentacionInvalidoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except SolicitudDocumentacionNoEncontradaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/solicitudes-documentacion/{tipo}/{recurso_id}/aprobar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Aprobar solicitud de documentacion",
+    description="Aprueba la documentacion de un vehiculo o conductor y actualiza su estado.",
+)
+def aprobar_solicitud(
+    tipo: str,
+    recurso_id: uuid.UUID,
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+    db: Session = Depends(get_db),
+):
+    """POST /admin/solicitudes-documentacion/{tipo}/{recurso_id}/aprobar"""
+    try:
+        aprobar_solicitud_documentacion(db=db, tipo=tipo, recurso_id=recurso_id)
+    except TipoSolicitudDocumentacionInvalidoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except SolicitudDocumentacionNoEncontradaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/solicitudes-documentacion/{tipo}/{recurso_id}/rechazar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Rechazar solicitud de documentacion",
+    description="Rechaza la documentacion de un vehiculo o conductor y registra el motivo.",
+)
+def rechazar_solicitud(
+    tipo: str,
+    recurso_id: uuid.UUID,
+    resolucion: ResolucionSolicitudSchema,
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+    db: Session = Depends(get_db),
+):
+    """POST /admin/solicitudes-documentacion/{tipo}/{recurso_id}/rechazar"""
+    try:
+        rechazar_solicitud_documentacion(
+            db=db, 
+            tipo=tipo, 
+            recurso_id=recurso_id, 
+            motivo_rechazo=resolucion.motivo_rechazo
         )
     except TipoSolicitudDocumentacionInvalidoError as exc:
         raise HTTPException(

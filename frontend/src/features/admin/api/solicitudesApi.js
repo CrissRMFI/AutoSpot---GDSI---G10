@@ -11,3 +11,18 @@ export const getSolicitudDocumentacionDetalle = async (tipo, recursoId) => {
   );
   return response.data;
 };
+
+export const aprobarSolicitud = async (tipo, recursoId) => {
+  const response = await httpClient.post(
+    `/admin/solicitudes-documentacion/${tipo}/${recursoId}/aprobar`,
+  );
+  return response.data;
+};
+
+export const rechazarSolicitud = async (tipo, recursoId, motivo) => {
+  const response = await httpClient.post(
+    `/admin/solicitudes-documentacion/${tipo}/${recursoId}/rechazar`,
+    { motivo_rechazo: motivo }
+  );
+  return response.data;
+};

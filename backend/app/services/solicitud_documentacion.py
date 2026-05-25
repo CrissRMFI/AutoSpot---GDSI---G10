@@ -18,11 +18,13 @@ US 2R CA2 — los nuevos ingresos quedan automáticamente al final.
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
+    MotivoRechazoVacioError,
     SolicitudDocumentacionNoEncontradaError,
     TipoSolicitudDocumentacionInvalidoError,
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
+    EstadoHabilitacion,
 )
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
@@ -232,3 +234,77 @@ def _obtener_detalle_conductor(
         fecha_vencimiento=documentacion.fecha_vencimiento,
         motivo_rechazo=documentacion.motivo_rechazo,
     )
+
+
+def aprobar_solicitud_documentacion(
+    db: Session,
+    tipo: str,
+    recurso_id,
+) -> None:
+    """
+    Aprueba la solicitud de documentación (US 4R).
+    """
+    tipo_normalizado = tipo.strip().upper()
+
+    if tipo_normalizado == TIPO_SOLICITUD_VEHICULO:
+        vehiculo = db.query(Vehiculo).filter(Vehiculo.id == recurso_id).first()
+        if not vehiculo:
+            raise SolicitudDocumentacionNoEncontradaError()
+        vehiculo.estado_registro = "VALIDADO"
+        vehiculo.motivo_rechazo = None
+        db.commit()
+        return
+
+    if tipo_normalizado == TIPO_SOLICITUD_CONDUCTOR:
+        documentacion = (
+            db.query(DocumentacionHabilitanteConductor)
+            .filter(DocumentacionHabilitanteConductor.id == recurso_id)
+            .first()
+        )
+        if not documentacion:
+            raise SolicitudDocumentacionNoEncontradaError()
+        documentacion.estado_validacion = EstadoHabilitacion.APROBADO
+        documentacion.motivo_rechazo = None
+        db.commit()
+        return
+
+    raise TipoSolicitudDocumentacionInvalidoError()
+
+
+def rechazar_solicitud_documentacion(
+    db: Session,
+    tipo: str,
+    recurso_id,
+    motivo_rechazo: str,
+) -> None:
+    """
+    Rechaza la solicitud de documentación (US 4R).
+    """
+    if not motivo_rechazo or not motivo_rechazo.strip():
+        raise MotivoRechazoVacioError()
+
+    tipo_normalizado = tipo.strip().upper()
+
+    if tipo_normalizado == TIPO_SOLICITUD_VEHICULO:
+        vehiculo = db.query(Vehiculo).filter(Vehiculo.id == recurso_id).first()
+        if not vehiculo:
+            raise SolicitudDocumentacionNoEncontradaError()
+        vehiculo.estado_registro = "RECHAZADO"
+        vehiculo.motivo_rechazo = motivo_rechazo
+        db.commit()
+        return
+
+    if tipo_normalizado == TIPO_SOLICITUD_CONDUCTOR:
+        documentacion = (
+            db.query(DocumentacionHabilitanteConductor)
+            .filter(DocumentacionHabilitanteConductor.id == recurso_id)
+            .first()
+        )
+        if not documentacion:
+            raise SolicitudDocumentacionNoEncontradaError()
+        documentacion.estado_validacion = EstadoHabilitacion.RECHAZADO
+        documentacion.motivo_rechazo = motivo_rechazo
+        db.commit()
+        return
+
+    raise TipoSolicitudDocumentacionInvalidoError()
