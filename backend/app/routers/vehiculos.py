@@ -65,6 +65,11 @@ from app.services.vehiculo import (
     registrar_vehiculo,
     obtener_vehiculo,
     actualizar_vehiculo,
+    listar_vehiculos_disponibles,
+)
+from app.models.documentacion_habilitante_conductor import (
+    DocumentacionHabilitanteConductor,
+    EstadoHabilitacion,
 )
 
 
@@ -252,6 +257,121 @@ def listar_vehiculos_usuario(
         VehiculoPublicoSchema.model_validate(vehiculo)
         for vehiculo in vehiculos
     ]
+
+
+@router.get(
+    "/vehiculos/catalogo",
+    response_model=list[VehiculoPublicoSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Listar vehículos disponibles para alquilar",
+    description=(
+        "Obtiene el catálogo de vehículos habilitados y disponibles para alquiler. "
+        "Requiere autenticación JWT y que el usuario tenga su documentación "
+        "habilitante aprobada."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Catálogo obtenido exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente o inválido.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario no tiene documentación aprobada.",
+        },
+    },
+)
+def listar_catalogo_vehiculos(
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> list[VehiculoPublicoSchema]:
+    """
+    GET /vehiculos/catalogo
+
+    Flujo:
+        1. Valida el JWT del usuario.
+        2. Verifica que el usuario tenga un registro en DocumentacionHabilitanteConductor
+           con estado_validacion == APROBADO.
+        3. Retorna la lista de vehículos habilitados y disponibles.
+    """
+    usuario_id = usuario_actual.get("sub")
+    doc = (
+        db.query(DocumentacionHabilitanteConductor)
+        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
+        .first()
+    )
+
+    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
+        )
+
+    vehiculos = listar_vehiculos_disponibles(db=db)
+    return [
+        VehiculoPublicoSchema.model_validate(vehiculo)
+        for vehiculo in vehiculos
+    ]
+
+
+@router.get(
+    "/vehiculos/catalogo/{vehiculo_id}",
+    response_model=VehiculoPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener detalle de un vehículo del catálogo",
+    description=(
+        "Obtiene el detalle de un vehículo específico del catálogo. "
+        "Requiere autenticación JWT y que el usuario tenga su documentación "
+        "habilitante aprobada. Solo devuelve vehículos habilitados y disponibles."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Detalle del vehículo obtenido exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente o inválido.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario no tiene documentación aprobada.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado o no disponible.",
+        },
+    },
+)
+def obtener_detalle_vehiculo_catalogo(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> VehiculoPublicoSchema:
+    usuario_id = usuario_actual.get("sub")
+    doc = (
+        db.query(DocumentacionHabilitanteConductor)
+        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
+        .first()
+    )
+
+    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
+        )
+
+    try:
+        vehiculo = obtener_vehiculo(db=db, vehiculo_id=vehiculo_id)
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    if vehiculo.estado_registro != "HABILITADO" or not vehiculo.disponible:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El vehículo no está disponible para alquiler.",
+        )
+
+    return VehiculoPublicoSchema.model_validate(vehiculo)
 
 
 @router.get(
@@ -736,4 +856,5 @@ def reemplazar_foto_de_vehiculo(
             detail=str(exc),
         ) from exc
 
+    return FotoVehiculoPublicoSchema.model_validate(foto)
     return FotoVehiculoPublicoSchema.model_validate(foto)
