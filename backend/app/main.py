@@ -24,6 +24,7 @@ from app.routers import upload as router_upload
 from app.routers import usuarios as router_usuarios
 from app.routers import vehiculos as router_vehiculos
 from app.routers import estaciones as router_estaciones
+from app.routers import alquiler as router_alquiler
 
 def obtener_origenes_cors() -> list[str]:
     """
@@ -71,3 +72,4 @@ app.include_router(router_upload.router)
 app.include_router(router_estaciones.router)
 app.include_router(router_solicitudes_documentacion.router)
 app.include_router(router_marcas.router)
+app.include_router(router_alquiler.router)

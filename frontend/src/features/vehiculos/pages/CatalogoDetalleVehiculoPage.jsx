@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
+import { getDetalleVehiculoCatalogo, verificarDisponibilidad } from "../api/vehiculoService";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -17,6 +17,14 @@ const CatalogoDetalleVehiculoPage = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [horaInicio, setHoraInicio] = useState("10:00");
+  const [fechaFin, setFechaFin] = useState("");
+  const [horaFin, setHoraFin] = useState("10:00");
+  const [errorAlquiler, setErrorAlquiler] = useState("");
+  const [verificando, setVerificando] = useState(false);
+  const [resultadoVerificacion, setResultadoVerificacion] = useState(null);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -54,6 +62,46 @@ const CatalogoDetalleVehiculoPage = () => {
 
   const irSiguiente = () => {
     setIndiceActivo((prev) => (prev + 1) % totalFotos);
+  };
+
+  const handleChange = (setter) => (e) => {
+    setter(e.target.value);
+    setResultadoVerificacion(null);
+    setErrorAlquiler("");
+  };
+
+  const getFullDate = (fecha, hora) => {
+    if (!fecha || !hora) return null;
+    return new Date(`${fecha}T${hora}`);
+  };
+
+  const calcularHoras = () => {
+    const inicio = getFullDate(fechaInicio, horaInicio);
+    const fin = getFullDate(fechaFin, horaFin);
+    if (!inicio || !fin) return 0;
+    return (fin - inicio) / (1000 * 60 * 60);
+  };
+
+  const isValidLocal = () => calcularHoras() >= 24;
+
+  const handleVerificar = async () => {
+    if (!isValidLocal()) {
+      setErrorAlquiler("El tiempo mínimo de alquiler es de 1 día");
+      return;
+    }
+    
+    setVerificando(true);
+    setErrorAlquiler("");
+    try {
+      const inicioIso = getFullDate(fechaInicio, horaInicio).toISOString();
+      const finIso = getFullDate(fechaFin, horaFin).toISOString();
+      const data = await verificarDisponibilidad(vehiculoId, inicioIso, finIso);
+      setResultadoVerificacion(data);
+    } catch (err) {
+      setErrorAlquiler(err.response?.data?.detail || "Error al verificar disponibilidad.");
+    } finally {
+      setVerificando(false);
+    }
   };
 
   if (cargando) {
@@ -228,12 +276,91 @@ const CatalogoDetalleVehiculoPage = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="mt-4 inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-            >
-              Iniciar alquiler
-            </button>
+            <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
+                Fechas de alquiler
+              </p>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold !text-white/80">Inicio</label>
+                <input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={handleChange(setFechaInicio)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-autospot-accent focus:outline-none [color-scheme:dark]"
+                />
+                <input
+                  type="time"
+                  value={horaInicio}
+                  onChange={handleChange(setHoraInicio)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-autospot-accent focus:outline-none [color-scheme:dark]"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold !text-white/80">Fin</label>
+                <input
+                  type="date"
+                  value={fechaFin}
+                  onChange={handleChange(setFechaFin)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-autospot-accent focus:outline-none [color-scheme:dark]"
+                />
+                <input
+                  type="time"
+                  value={horaFin}
+                  onChange={handleChange(setHoraFin)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-autospot-accent focus:outline-none [color-scheme:dark]"
+                />
+              </div>
+
+              {fechaInicio && fechaFin && !isValidLocal() && (
+                <div className="mt-1 rounded-xl bg-red-500/10 p-2 text-xs font-bold text-red-400 border border-red-500/20">
+                  El tiempo mínimo de alquiler es de 1 día (24h).
+                </div>
+              )}
+
+              {errorAlquiler && isValidLocal() && (
+                <div className="mt-1 rounded-xl bg-red-500/10 p-2 text-xs font-bold text-red-400 border border-red-500/20">
+                  {errorAlquiler}
+                </div>
+              )}
+
+              {resultadoVerificacion && (
+                <div className="mt-1 rounded-xl bg-green-500/10 p-3 text-sm font-bold text-green-400 border border-green-500/20">
+                  ✓ Disponible por {resultadoVerificacion.dias} día(s) y {resultadoVerificacion.horas} hora(s).
+                </div>
+              )}
+            </div>
+
+            {!resultadoVerificacion ? (
+              <button
+                type="button"
+                onClick={handleVerificar}
+                disabled={verificando || !isValidLocal()}
+                className={`mt-4 inline-flex w-full justify-center rounded-full px-4 py-3 text-sm font-bold transition ${
+                  verificando || !isValidLocal()
+                    ? "bg-autospot-accent/50 !text-white/50 cursor-not-allowed"
+                    : "bg-autospot-accent !text-white hover:bg-[#5a1420]"
+                }`}
+              >
+                {verificando ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verificando...
+                  </span>
+                ) : (
+                  "Verificar disponibilidad"
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="mt-4 inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+              >
+                Continuar con la reserva
+              </button>
+            )}
           </div>
         </aside>
       </section>
