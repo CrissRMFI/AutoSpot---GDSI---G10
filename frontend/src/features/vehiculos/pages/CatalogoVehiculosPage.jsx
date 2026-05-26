@@ -23,7 +23,6 @@ const CatalogoVehiculosPage = () => {
   const [vehiculosOriginales, setVehiculosOriginales] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
-  const [noAutorizado, setNoAutorizado] = useState(false);
 
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -35,16 +34,11 @@ const CatalogoVehiculosPage = () => {
     const cargar = async () => {
       setCargando(true);
       setError("");
-      setNoAutorizado(false);
       try {
         const data = await obtenerCatalogoVehiculos();
         setVehiculosOriginales(data);
-      } catch (err) {
-        if (err.response?.status === 403) {
-          setNoAutorizado(true);
-        } else {
-          setError("No se pudo cargar el catálogo de vehículos.");
-        }
+      } catch {
+        setError("No se pudo cargar el catálogo de vehículos.");
       } finally {
         setCargando(false);
       }
@@ -116,32 +110,6 @@ const CatalogoVehiculosPage = () => {
     setFiltros(filtrosTemp);
     setModalAbierto(false);
   };
-
-  if (noAutorizado) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-5 text-center">
-        <div className="mb-6 rounded-full bg-red-50 p-4">
-          <svg className="h-12 w-12 text-[#b42318]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
-        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
-          Acceso denegado
-        </h2>
-        <p className="mt-3 max-w-md text-sm leading-6 text-autospot-muted">
-          Tu documentación aún no está aprobada. Tenés que cargar o actualizar tu
-          licencia de conducir y esperar a que sea validada para poder explorar
-          los vehículos disponibles.
-        </p>
-        <Link
-          to="/usuario/dashboard"
-          className="mt-6 inline-flex justify-center rounded-full bg-autospot-accent px-6 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-        >
-          Volver al panel
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <>

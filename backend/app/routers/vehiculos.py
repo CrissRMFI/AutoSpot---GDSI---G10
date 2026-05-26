@@ -290,23 +290,8 @@ def listar_catalogo_vehiculos(
 
     Flujo:
         1. Valida el JWT del usuario.
-        2. Verifica que el usuario tenga un registro en DocumentacionHabilitanteConductor
-           con estado_validacion == APROBADO.
-        3. Retorna la lista de vehículos habilitados y disponibles.
+        2. Retorna la lista de vehículos habilitados y disponibles.
     """
-    usuario_id = usuario_actual.get("sub")
-    doc = (
-        db.query(DocumentacionHabilitanteConductor)
-        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
-        .first()
-    )
-
-    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
-        )
-
     vehiculos = listar_vehiculos_disponibles(db=db)
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
@@ -344,18 +329,6 @@ def obtener_detalle_vehiculo_catalogo(
     usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> VehiculoPublicoSchema:
-    usuario_id = usuario_actual.get("sub")
-    doc = (
-        db.query(DocumentacionHabilitanteConductor)
-        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
-        .first()
-    )
-
-    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
-        )
 
     try:
         vehiculo = obtener_vehiculo(db=db, vehiculo_id=vehiculo_id)
