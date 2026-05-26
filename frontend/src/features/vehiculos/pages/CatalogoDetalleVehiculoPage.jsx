@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
-import { useAuth } from "../../auth/hooks/useAuth";
-import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -20,10 +18,6 @@ const CatalogoDetalleVehiculoPage = () => {
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
 
-  const { usuario } = useAuth();
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [validandoDocumentacion, setValidandoDocumentacion] = useState(false);
-
   useEffect(() => {
     if (!vehiculoId) return;
 
@@ -36,7 +30,9 @@ const CatalogoDetalleVehiculoPage = () => {
         setVehiculo(data);
         setIndiceActivo(0);
       } catch (err) {
-        if (err.response?.status === 404) {
+        if (err.response?.status === 403) {
+          setError("No tenés permiso para ver el catálogo.");
+        } else if (err.response?.status === 404) {
           setError("El vehículo no existe o no está disponible.");
         } else {
           setError("No se pudo cargar el vehículo.");
@@ -58,24 +54,6 @@ const CatalogoDetalleVehiculoPage = () => {
 
   const irSiguiente = () => {
     setIndiceActivo((prev) => (prev + 1) % totalFotos);
-  };
-
-  const handleAlquilar = async () => {
-    setValidandoDocumentacion(true);
-    try {
-      const doc = await obtenerDocumentacionHabilitante(usuario.id);
-      if (doc.estado_validacion === "APROBADO") {
-        // Acá iría el flujo normal de alquiler
-        console.log("Puede alquilar");
-      } else {
-        setModalAbierto(true);
-      }
-    } catch {
-      // 404 significa que no cargó nada aún u otro error
-      setModalAbierto(true);
-    } finally {
-      setValidandoDocumentacion(false);
-    }
   };
 
   if (cargando) {
@@ -252,47 +230,13 @@ const CatalogoDetalleVehiculoPage = () => {
 
             <button
               type="button"
-              onClick={handleAlquilar}
-              disabled={validandoDocumentacion}
-              className="mt-4 inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
             >
-              {validandoDocumentacion ? "Validando..." : "Iniciar alquiler"}
+              Iniciar alquiler
             </button>
           </div>
         </aside>
       </section>
-
-      {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl sm:p-8 text-center">
-            <div className="mb-4 inline-flex rounded-full bg-red-50 p-3 text-[#b42318]">
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-              Documentación requerida
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-autospot-muted">
-              Para alquilar un vehículo, debes tener tu licencia de conducir cargada y validada por nuestro equipo.
-            </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <Link
-                to="/documentacion-habilitante"
-                className="inline-flex justify-center rounded-full bg-autospot-accent px-6 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-              >
-                Cargar documentación
-              </Link>
-              <button
-                onClick={() => setModalAbierto(false)}
-                className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-6 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 };

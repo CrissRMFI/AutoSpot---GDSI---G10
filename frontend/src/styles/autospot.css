@@ -51,7 +51,7 @@ html {
 
 body {
   margin: 0;
-  overflow-x: clip;
+  overflow-x: hidden;
   background: var(--cream);
   color: var(--black);
   font-family: "DM Sans", sans-serif;
