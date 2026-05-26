@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getSolicitudDocumentacionDetalle } from "../api/solicitudesApi";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import {
+  getSolicitudDocumentacionDetalle,
+  aprobarSolicitudDocumentacion,
+  rechazarSolicitudDocumentacion,
+} from "../api/solicitudesApi";
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
@@ -201,10 +205,43 @@ const ModalDocumento = ({ documento, onCerrar }) => {
 
 const DetalleSolicitudDocumentacionPage = () => {
   const { tipo, recursoId } = useParams();
+  const navigate = useNavigate();
   const [detalle, setDetalle] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [documentoActivo, setDocumentoActivo] = useState(null);
+  const [procesando, setProcesando] = useState(false);
+  const [mostrarRechazo, setMostrarRechazo] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [errorRechazo, setErrorRechazo] = useState("");
+
+  const handleAprobar = async () => {
+    try {
+      setProcesando(true);
+      await aprobarSolicitudDocumentacion(tipo, recursoId);
+      navigate("/admin/solicitudes-documentacion");
+    } catch (err) {
+      console.error("Detalle del error:", err);
+      setError("Ocurrió un error al aprobar la solicitud.");
+      setProcesando(false);
+    }
+  };
+
+  const handleRechazar = async () => {
+    if (!motivoRechazo.trim()) {
+      setErrorRechazo("Debe escribir el motivo del rechazo de la solicitud");
+      return;
+    }
+    try {
+      setProcesando(true);
+      await rechazarSolicitudDocumentacion(tipo, recursoId, motivoRechazo);
+      navigate("/admin/solicitudes-documentacion");
+    } catch (err) {
+      console.error("Detalle del error:", err);
+      setError("Ocurrió un error al rechazar la solicitud.");
+      setProcesando(false);
+    }
+  };
 
   useEffect(() => {
     const cargarDetalle = async () => {
@@ -473,6 +510,75 @@ const DetalleSolicitudDocumentacionPage = () => {
                 </div>
               )}
             </section>
+
+            {(detalle.estado === "EN_REVISION" || detalle.estado === "PENDIENTE_REVISION") && (
+              <section className="mt-8 border-t border-autospot-border pt-8">
+                <div className="flex flex-wrap items-center gap-4">
+                  {!mostrarRechazo ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleAprobar}
+                        disabled={procesando}
+                        className="inline-flex items-center justify-center rounded-full bg-[#166534] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#14532d] disabled:opacity-50"
+                      >
+                        {procesando ? "Procesando..." : "Aprobar solicitud"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMostrarRechazo(true)}
+                        disabled={procesando}
+                        className="inline-flex items-center justify-center rounded-full border border-[#fecaca] bg-[#fef2f2] px-6 py-3 text-sm font-bold text-[#b42318] transition hover:bg-[#fee2e2] disabled:opacity-50"
+                      >
+                        Rechazar solicitud
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full flex flex-col gap-3">
+                      <label htmlFor="input-motivo" className={labelClassName}>
+                        Motivo del rechazo
+                      </label>
+                      <textarea
+                        id="input-motivo"
+                        value={motivoRechazo}
+                        onChange={(e) => {
+                          setMotivoRechazo(e.target.value);
+                          if (e.target.value.trim()) setErrorRechazo("");
+                        }}
+                        placeholder="Escribí detalladamente por qué se rechaza la documentación..."
+                        rows={3}
+                        className={`${textareaClassName} ${errorRechazo ? "border-[#b42318]" : ""}`}
+                        disabled={procesando}
+                      />
+                      {errorRechazo && (
+                        <p className="text-sm font-bold text-[#b42318]">{errorRechazo}</p>
+                      )}
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          onClick={handleRechazar}
+                          disabled={procesando}
+                          className="inline-flex items-center justify-center rounded-full bg-[#b42318] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#991b1b] disabled:opacity-50"
+                        >
+                          {procesando ? "Procesando..." : "Confirmar rechazo"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMostrarRechazo(false);
+                            setErrorRechazo("");
+                          }}
+                          disabled={procesando}
+                          className="inline-flex items-center justify-center rounded-full border border-autospot-border bg-white px-6 py-3 text-sm font-bold text-autospot-black transition hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
           </form>
         </section>
       ) : null}

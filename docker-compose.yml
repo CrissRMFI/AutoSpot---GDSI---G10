@@ -50,7 +50,10 @@ services:
     env_file:
       - .env
     environment:
-      # DATABASE_URL viene de .env y apunta a la base PostgreSQL en la nube.
+      # En Compose siempre usamos el PostgreSQL local. Si .env define una
+      # DATABASE_URL de deploy, esta variable la pisa para evitar migraciones
+      # accidentales contra una base remota.
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       # DB_HOST/DB_PORT se sobreescriben acá para que la suite de tests
       # (que usa autospot_test_db) hable con el servicio `db` del Compose.
       DB_HOST: db
