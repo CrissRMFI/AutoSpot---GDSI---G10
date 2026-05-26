@@ -88,3 +88,11 @@ export const getDetalleVehiculoCatalogo = async (vehiculoId) => {
   return response.data;
 };
 
+export const verificarDisponibilidad = async (vehiculoId, fechaInicio, fechaFin) => {
+  const response = await httpClient.post("/alquiler/simular-tiempo", {
+    fecha_inicio: fechaInicio,
+    fecha_fin: fechaFin,
+  });
+  return response.data;
+};
+
