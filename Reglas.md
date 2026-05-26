@@ -53,6 +53,68 @@ git checkout -b fix/login-token
 git checkout -b chore/readme
 ```
 
+## Regla 3.1 — Base de datos local vs Render
+
+El archivo `.env` local debe usar la base local. No poner la URL de Render en `DATABASE_URL` para trabajar, testear o levantar Docker.
+
+Configuración esperada en desarrollo:
+
+```env
+DATABASE_URL=
+DB_USER=autospot_user
+DB_PASSWORD=autospot_pass
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=autospot_db
+DB_NAME_TEST=autospot_test_db
+```
+
+En Docker Compose, el backend usa siempre el servicio local `db` aunque el puerto publicado en la máquina sea `5433`.
+
+### Actualizar la base local con datos de Render
+
+Esto reemplaza la base local con una copia de Render. No modifica ni borra datos de la base remota.
+
+La idea es:
+
+- `pg_dump` se conecta a Render solo para leer y crear un backup.
+- `pg_restore` escribe ese backup en la base local.
+- Después de restaurar, lo que hagas en local no se sube a Render.
+- Todos los integrantes que corran estos pasos quedan con una copia local de los datos remotos de ese momento.
+
+```bash
+docker compose down
+docker compose up -d db
+```
+
+Esta URL no se arma con el usuario y contraseña local: se copia desde Render.
+
+Pegar esa URL real solo en la terminal:
+
+```bash
+export RENDER_DATABASE_URL='lo que les pase por whatsapp'
+```
+
+Crear el backup de Render. Este comando lee la base remota y guarda una copia en `/tmp/autospot_render.dump`:
+
+```bash
+pg_dump "$RENDER_DATABASE_URL" -Fc -f /tmp/autospot_render.dump
+```
+
+Restaurar ese backup en la base local. Este comando escribe sobre `localhost:5433/autospot_db`, no sobre Render:
+
+```bash
+pg_restore --clean --if-exists --no-owner --no-privileges \
+  --dbname="postgresql://autospot_user:autospot_pass@localhost:5433/autospot_db" \
+  /tmp/autospot_render.dump
+```
+
+Levantar todo nuevamente:
+
+```bash
+docker compose up --build -d
+```
+
 # Regla 4
 
 Antes de abrir un **Pull Request** hacia **develop**, correr en la raiz:
