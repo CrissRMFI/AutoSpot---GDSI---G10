@@ -18,6 +18,7 @@ import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage
 import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
 import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
+import DetalleEstacionPublicoPage from "../features/estaciones/pages/DetalleEstacionPublicoPage";
 import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSolicitudDocumentacionPage";
 import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
 
@@ -51,6 +52,7 @@ const AppRoutes = () => {
 
       <Route element={<AuthenticatedShell />}>
         <Route path="/estaciones" element={<EstacionesPage />} />
+        <Route path="/estaciones/:id" element={<DetalleEstacionPublicoPage />} />
 
         <Route path="/dashboard" element={<DashboardRedirect />} />
 

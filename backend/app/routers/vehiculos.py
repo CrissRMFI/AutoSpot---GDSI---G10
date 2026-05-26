@@ -266,8 +266,7 @@ def listar_vehiculos_usuario(
     summary="Listar vehículos disponibles para alquilar",
     description=(
         "Obtiene el catálogo de vehículos habilitados y disponibles para alquiler. "
-        "Requiere autenticación JWT y que el usuario tenga su documentación "
-        "habilitante aprobada."
+        "Requiere autenticación JWT."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -275,9 +274,6 @@ def listar_vehiculos_usuario(
         },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Token ausente o inválido.",
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "El usuario no tiene documentación aprobada.",
         },
     },
 )
@@ -290,23 +286,8 @@ def listar_catalogo_vehiculos(
 
     Flujo:
         1. Valida el JWT del usuario.
-        2. Verifica que el usuario tenga un registro en DocumentacionHabilitanteConductor
-           con estado_validacion == APROBADO.
-        3. Retorna la lista de vehículos habilitados y disponibles.
+        2. Retorna la lista de vehículos habilitados y disponibles.
     """
-    usuario_id = usuario_actual.get("sub")
-    doc = (
-        db.query(DocumentacionHabilitanteConductor)
-        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
-        .first()
-    )
-
-    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
-        )
-
     vehiculos = listar_vehiculos_disponibles(db=db)
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
@@ -321,8 +302,7 @@ def listar_catalogo_vehiculos(
     summary="Obtener detalle de un vehículo del catálogo",
     description=(
         "Obtiene el detalle de un vehículo específico del catálogo. "
-        "Requiere autenticación JWT y que el usuario tenga su documentación "
-        "habilitante aprobada. Solo devuelve vehículos habilitados y disponibles."
+        "Requiere autenticación JWT. Solo devuelve vehículos habilitados y disponibles."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -330,9 +310,6 @@ def listar_catalogo_vehiculos(
         },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Token ausente o inválido.",
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "El usuario no tiene documentación aprobada.",
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "Vehículo no encontrado o no disponible.",
@@ -344,19 +321,6 @@ def obtener_detalle_vehiculo_catalogo(
     usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
 ) -> VehiculoPublicoSchema:
-    usuario_id = usuario_actual.get("sub")
-    doc = (
-        db.query(DocumentacionHabilitanteConductor)
-        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
-        .first()
-    )
-
-    if not doc or doc.estado_validacion != EstadoHabilitacion.APROBADO:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu documentación aún no está aprobada. No estás autorizado a ver el catálogo."
-        )
-
     try:
         vehiculo = obtener_vehiculo(db=db, vehiculo_id=vehiculo_id)
     except VehiculoNoEncontradoError as exc:

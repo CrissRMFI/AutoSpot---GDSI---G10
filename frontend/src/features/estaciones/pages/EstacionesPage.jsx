@@ -4,15 +4,19 @@ import {
   getDetalleEstacion,
   getEstacionesActivas,
 } from "../api/estacionesApi";
+import { obtenerCatalogoVehiculos } from "../../vehiculos/api/vehiculoService";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
+import MapaEstacionesCABA from "../components/MapaEstacionesCABA";
 
 const EstacionesPage = () => {
   const location = useLocation();
   const { usuario } = useAuth();
 
   const [estaciones, setEstaciones] = useState([]);
+  const [vehiculos, setVehiculos] = useState([]);
   const [estacionSeleccionada, setEstacionSeleccionada] = useState(null);
+  const [barrioSeleccionado, setBarrioSeleccionado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [error, setError] = useState("");
@@ -47,18 +51,27 @@ const EstacionesPage = () => {
   }, [usuario?.id, usuario?.rol]);
 
   useEffect(() => {
-    const fetchEstaciones = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getEstacionesActivas();
-        setEstaciones(data);
+        const [estacionesData, vehiculosData] = await Promise.all([
+          getEstacionesActivas(),
+          obtenerCatalogoVehiculos()
+        ]);
+
+        const estacionesOrdenadas = estacionesData.sort((a, b) => 
+          a.nombre.localeCompare(b.nombre)
+        );
+
+        setEstaciones(estacionesOrdenadas);
+        setVehiculos(vehiculosData);
       } catch (err) {
         console.error(err);
-        setError("Error al cargar las estaciones. Intenta nuevamente más tarde.");
+        setError("Error al cargar las estaciones o los vehículos. Intenta nuevamente más tarde.");
       } finally {
         setLoading(false);
       }
     };
-    fetchEstaciones();
+    fetchData();
   }, []);
 
   const handleSeleccionarEstacion = async (id) => {
@@ -76,27 +89,20 @@ const EstacionesPage = () => {
     }
   };
 
-  return (
-    <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            Volver al Panel
-          </Link>
-        </div>
-      </header>
+  const handleBarrioSelect = (barrio) => {
+    setBarrioSeleccionado(barrio === barrioSeleccionado ? null : barrio);
+    setEstacionSeleccionada(null);
+  };
 
-      <section className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
-        <div className="mb-8">
+  const estacionesFiltradas = (barrioSeleccionado
+    ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
+    : estaciones)
+    .filter((estacion) => vehiculos.some((v) => v.estacion === estacion.nombre))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  return (
+    <>
+      <div className="mb-8">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
             Red Logística
           </p>
@@ -104,9 +110,7 @@ const EstacionesPage = () => {
             Estaciones Habilitadas
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-autospot-muted sm:text-base">
-            {soloVisualizacion
-              ? "Podés explorar las estaciones de la red, pero no podrás seleccionar ninguna hasta que tu documentación sea aprobada."
-              : "Seleccioná una estación de retiro para visualizar las instrucciones necesarias para la operatividad de tu Activo."}
+            Explorá el mapa interactivo de la Ciudad de Buenos Aires para encontrar vehículos disponibles en tu barrio. Seleccioná una estación para ver sus instrucciones de retiro.
           </p>
         </div>
 
@@ -136,87 +140,162 @@ const EstacionesPage = () => {
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-autospot-border border-t-autospot-accent"></div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {estaciones.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
-                <p className="text-sm font-bold text-autospot-muted">No hay estaciones activas en este momento.</p>
-              </div>
-            ) : (
-              estaciones.map((estacion) => {
-                const estaSeleccionada = estacionSeleccionada?.id === estacion.id;
-                const cargandoDetalle = loadingDetalle && !estaSeleccionada;
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 items-start">
+            {/* Mapa Interactivo */}
+            <div className="rounded-[28px] bg-white p-6 shadow-sm border border-autospot-border sticky top-24">
+              <h2 className="font-display text-xl font-bold mb-4">Mapa de CABA</h2>
+              <MapaEstacionesCABA 
+                onBarrioSelect={handleBarrioSelect}
+                barrioSeleccionado={barrioSeleccionado}
+                datosEstaciones={estaciones}
+              />
+            </div>
 
-                return (
-                  <article
-                    key={estacion.id}
-                    onClick={() => handleSeleccionarEstacion(estacion.id)}
-                    className={
-                      soloVisualizacion
-                        ? "overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] opacity-80"
-                        : "cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
-                    }
+            {/* Listado de estaciones y autos */}
+            <div className="flex flex-col gap-4">
+              {barrioSeleccionado && (
+                <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3">
+                  <span className="text-sm font-bold text-autospot-black">
+                    Barrio: {barrioSeleccionado}
+                  </span>
+                  <button 
+                    onClick={() => setBarrioSeleccionado(null)}
+                    className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-3 py-1.5 text-xs font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
                   >
-                    {estacion.imagen_url && (
-                      <img
-                        src={estacion.imagen_url}
-                        alt={estacion.nombre}
-                        className="h-40 w-full object-cover"
-                        loading="lazy"
-                      />
-                    )}
+                    Ver todas
+                  </button>
+                </div>
+              )}
 
-                    <div className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
-                            {estacion.nombre}
-                          </h3>
-                          <p className="mt-1 text-sm text-autospot-muted">
-                            Zona: {estacion.zona}
-                          </p>
+              {estacionesFiltradas.length === 0 ? (
+                <div className="rounded-[22px] border border-dashed border-autospot-border bg-white/70 px-5 py-8 text-center">
+                  <p className="text-sm font-bold text-autospot-muted">
+                    No hay estaciones ni vehículos en {barrioSeleccionado || "este momento"}.
+                  </p>
+                </div>
+              ) : (
+                estacionesFiltradas.map((estacion) => {
+                  const estaSeleccionada = estacionSeleccionada?.id === estacion.id;
+                  const cargandoDetalle = loadingDetalle && !estaSeleccionada;
+                  
+                  // Autos de esta estación
+                  const autosEstacion = vehiculos.filter(v => v.estacion === estacion.nombre);
+
+                  return (
+                    <article
+                      key={estacion.id}
+                      onClick={() => handleSeleccionarEstacion(estacion.id)}
+                      className={
+                        soloVisualizacion
+                          ? "overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] opacity-80"
+                          : "cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+                      }
+                    >
+                      {estacion.imagen_url && (
+                        <img
+                          src={estacion.imagen_url}
+                          alt={estacion.nombre}
+                          className="h-40 w-full object-cover"
+                          loading="lazy"
+                        />
+                      )}
+
+                      <div className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <Link 
+                              to={`/estaciones/${estacion.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black hover:text-autospot-accent hover:underline"
+                            >
+                              {estacion.nombre}
+                            </Link>
+                            <p className="mt-1 text-sm text-autospot-muted">
+                              Zona: {estacion.zona}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center rounded-full bg-[#f0fdf4] px-2.5 py-1 text-xs font-bold text-[#166534] border border-[#bbf7d0]">
+                            Operativa
+                          </span>
                         </div>
-                        <span className="inline-flex items-center rounded-full bg-[#f0fdf4] px-2.5 py-1 text-xs font-bold text-[#166534] border border-[#bbf7d0]">
-                          Operativa
-                        </span>
+
+                        {/* Listado de Autos disponibles en la estación */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted mb-3">
+                            Vehículos Disponibles ({autosEstacion.length})
+                          </p>
+                          
+                          {autosEstacion.length === 0 ? (
+                            <p className="text-sm text-autospot-muted italic">No hay autos disponibles para alquiler.</p>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {autosEstacion.map(auto => (
+                                <Link 
+                                  key={auto.id}
+                                  to={`/catalogo/${auto.id}`}
+                                  onClick={(e) => e.stopPropagation()} // Para no disparar el click de la estación
+                                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition border border-transparent hover:border-gray-200"
+                                >
+                                  <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                                    {auto.fotos?.[0]?.url ? (
+                                      <img src={auto.fotos[0].url} alt={auto.modelo} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-autospot-black leading-tight">
+                                      {auto.marca} {auto.modelo} ({auto.anio})
+                                    </p>
+                                    <p className="text-xs text-autospot-accent font-semibold mt-1">
+                                      ${auto.precio_por_dia} / día
+                                    </p>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {soloVisualizacion && (
+                          <p className="mt-4 text-xs text-autospot-muted italic">
+                            Tu documentación está pendiente — solo visualización
+                          </p>
+                        )}
+
+                        {!soloVisualizacion && estaSeleccionada && (
+                          <div className="mt-5 rounded-xl bg-[#f9fafb] p-4 border border-autospot-border">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                              Dirección Exacta
+                            </p>
+                            <p className="mb-4 font-display text-base font-bold text-autospot-black">
+                              {estacionSeleccionada.direccion}
+                            </p>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                              Instrucciones de Retiro
+                            </p>
+                            <p className="text-sm text-autospot-black">
+                              {estacionSeleccionada.instrucciones_acceso}
+                            </p>
+                          </div>
+                        )}
+
+                        {!soloVisualizacion && cargandoDetalle && (
+                          <div className="mt-4 flex justify-center">
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-autospot-border border-t-autospot-accent"></div>
+                          </div>
+                        )}
                       </div>
-
-                      {soloVisualizacion && (
-                        <p className="mt-3 text-xs text-autospot-muted italic">
-                          Documentación pendiente — solo visualización
-                        </p>
-                      )}
-
-                      {!soloVisualizacion && estaSeleccionada && (
-                        <div className="mt-5 rounded-xl bg-[#f9fafb] p-4 border border-autospot-border">
-                          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                            Dirección Exacta
-                          </p>
-                          <p className="mb-4 font-display text-base font-bold text-autospot-black">
-                            {estacionSeleccionada.direccion}
-                          </p>
-                          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-                            Instrucciones de Retiro
-                          </p>
-                          <p className="text-sm text-autospot-black">
-                            {estacionSeleccionada.instrucciones_acceso}
-                          </p>
-                        </div>
-                      )}
-
-                      {!soloVisualizacion && cargandoDetalle && (
-                        <div className="mt-4 flex justify-center">
-                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-autospot-border border-t-autospot-accent"></div>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })
-            )}
+                    </article>
+                  );
+                })
+              )}
+            </div>
           </div>
         )}
-      </section>
-    </main>
+    </>
   );
 };
 
