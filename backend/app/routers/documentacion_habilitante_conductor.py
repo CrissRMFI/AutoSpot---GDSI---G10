@@ -217,3 +217,30 @@ def actualizar_documentacion_habilitante_conductor(
         ) from exc
 
     return DocumentacionHabilitanteConductorPublicoSchema.model_validate(documentacion)
+
+@router.put(
+    "/{usuario_id}/documentacion-habilitante/debug-toggle",
+    status_code=status.HTTP_200_OK,
+    summary="[DEBUG] Alternar estado de validación",
+    description="Alterna el estado de validación de la documentación entre APROBADO y PENDIENTE_REVISION para facilitar pruebas locales.",
+)
+def debug_toggle_estado_documentacion(
+    usuario_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    from app.models.documentacion_habilitante_conductor import DocumentacionHabilitanteConductor, EstadoHabilitacion
+    doc = db.query(DocumentacionHabilitanteConductor).filter_by(usuario_id=usuario_id).first()
+    
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El usuario no tiene documentación cargada aún."
+        )
+        
+    if doc.estado_validacion == EstadoHabilitacion.APROBADO:
+        doc.estado_validacion = EstadoHabilitacion.PENDIENTE_REVISION
+    else:
+        doc.estado_validacion = EstadoHabilitacion.APROBADO
+        
+    db.commit()
+    return {"mensaje": "Estado actualizado exitosamente", "nuevo_estado": doc.estado_validacion.value}

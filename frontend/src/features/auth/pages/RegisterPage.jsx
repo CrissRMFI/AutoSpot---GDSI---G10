@@ -279,7 +279,7 @@ const RegisterPage = () => {
                 mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
               }
               aria-pressed={mostrarPassword}
-              className="absolute inset-y-0 right-0 flex items-center px-3 !text-autospot-muted transition hover:!text-autospot-accent"
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-autospot-cream/50 text-autospot-muted transition hover:bg-autospot-accent/10 hover:text-autospot-accent"
             >
               {mostrarPassword ? (
                 <IconoOjoTachado className="h-5 w-5" />

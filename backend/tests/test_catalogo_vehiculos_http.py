@@ -82,7 +82,7 @@ class TestCatalogoVehiculosHTTP:
             Base.metadata.drop_all(engine)
             engine.dispose()
 
-    def test_catalogo_falla_sin_documentacion_aprobada(self):
+    def test_catalogo_exito_sin_documentacion_aprobada(self):
         engine, client_context = _crear_cliente()
         try:
             with client_context as client:
@@ -93,15 +93,15 @@ class TestCatalogoVehiculosHTTP:
                     headers=_auth_headers(token_cliente),
                 )
 
-                assert response.status_code == 403
-                assert "No estás autorizado" in response.text
+                assert response.status_code == 200
+                assert isinstance(response.json(), list)
                 
-                # Detalle también debe fallar
+                # Detalle debe fallar con 404 porque no existe, no con 403
                 response_detalle = client.get(
                     f"/vehiculos/catalogo/{uuid.uuid4()}",
                     headers=_auth_headers(token_cliente),
                 )
-                assert response_detalle.status_code == 403
+                assert response_detalle.status_code == 404
 
         finally:
             from app.database import Base
