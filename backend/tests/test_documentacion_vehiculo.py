@@ -9,7 +9,10 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from app.exceptions import VehiculoNoEncontradoError
+from app.exceptions import (
+    DocumentacionVehiculoNoEditableError,
+    VehiculoNoEncontradoError,
+)
 from app.schemas.usuario import RegistroUsuarioSchema
 from app.schemas.vehiculo import (
     DocumentacionVehiculoSchema,
@@ -150,6 +153,35 @@ class TestErroresDocumentacionVehiculo:
                 vehiculo_id=uuid.uuid4(),
                 schema=schema,
             )
+
+    def test_no_carga_documentacion_si_vehiculo_habilitado(self, db_session):
+        vehiculo = crear_vehiculo_base(db_session)
+        vehiculo.estado_registro = "HABILITADO"
+        db_session.commit()
+        schema = payload_documentacion_valido()
+
+        with pytest.raises(DocumentacionVehiculoNoEditableError):
+            cargar_documentacion_vehiculo(
+                db=db_session,
+                vehiculo_id=vehiculo.id,
+                schema=schema,
+            )
+
+    def test_carga_documentacion_si_vehiculo_rechazado(self, db_session):
+        vehiculo = crear_vehiculo_base(db_session)
+        vehiculo.estado_registro = "RECHAZADO"
+        vehiculo.motivo_rechazo = "Documento ilegible"
+        db_session.commit()
+        schema = payload_documentacion_valido()
+
+        vehiculo_actualizado = cargar_documentacion_vehiculo(
+            db=db_session,
+            vehiculo_id=vehiculo.id,
+            schema=schema,
+        )
+
+        assert vehiculo_actualizado.estado_registro == "EN_REVISION"
+        assert vehiculo_actualizado.motivo_rechazo is None
 
     @pytest.mark.parametrize(
         "campo",

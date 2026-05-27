@@ -140,6 +140,43 @@ class TestCargaDocumentacionVehiculoHTTP:
         assert body["descripcion"] == "Documentación cargada para revisión."
         assert body["estado_registro"] == "EN_REVISION"
 
+    def test_no_permite_cargar_documentacion_si_vehiculo_habilitado(
+        self,
+        client,
+        db_session,
+    ):
+        vehiculo, token = crear_vehiculo_base(db_session)
+        vehiculo.estado_registro = "HABILITADO"
+        db_session.commit()
+
+        response = client.patch(
+            f"/vehiculos/{vehiculo.id}/documentacion",
+            json=payload_documentacion_valido(),
+            headers=auth_headers(token),
+        )
+
+        assert response.status_code == 409
+        assert "no puede modificarse" in response.json()["detail"]
+
+    def test_permite_corregir_documentacion_si_vehiculo_rechazado(
+        self,
+        client,
+        db_session,
+    ):
+        vehiculo, token = crear_vehiculo_base(db_session)
+        vehiculo.estado_registro = "RECHAZADO"
+        vehiculo.motivo_rechazo = "Documento ilegible"
+        db_session.commit()
+
+        response = client.patch(
+            f"/vehiculos/{vehiculo.id}/documentacion",
+            json=payload_documentacion_valido(),
+            headers=auth_headers(token),
+        )
+
+        assert response.status_code == 200
+        assert response.json()["estado_registro"] == "EN_REVISION"
+
 
 class TestErroresDocumentacionVehiculoHTTP:
     """

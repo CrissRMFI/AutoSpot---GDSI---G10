@@ -46,6 +46,9 @@ const DetalleVehiculoPage = () => {
     vehiculo?.estado_registro === "EN_REVISION" ||
     vehiculo?.estado_registro === "RECHAZADO" ||
     vehiculo?.estado_registro === "PENDIENTE_DOCUMENTACION";
+  const puedeCargarDocumentacion =
+    vehiculo?.estado_registro === "PENDIENTE_DOCUMENTACION" ||
+    vehiculo?.estado_registro === "RECHAZADO";
 
   const handleToggleDisponible = async () => {
     if (!vehiculo) return;
@@ -394,7 +397,7 @@ const DetalleVehiculoPage = () => {
                 className="hidden"
               />
 
-              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <div className="mt-6 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={handleSeleccionarFoto}
@@ -562,19 +565,25 @@ const DetalleVehiculoPage = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex flex-col gap-2">
                 <Link
                   to={`/modificar-datos/${vehiculo.id}`}
-                  className="inline-flex flex-1 justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
+                  className="inline-flex w-full justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
                 >
                   Modificar datos
                 </Link>
-                <Link
-                  to={`/vehiculos/${vehiculo.id}/documentacion`}
-                  className="inline-flex flex-1 justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-                >
-                  Documentación
-                </Link>
+                {puedeCargarDocumentacion ? (
+                  <Link
+                    to={`/vehiculos/${vehiculo.id}/documentacion`}
+                    className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                  >
+                    Documentación
+                  </Link>
+                ) : (
+                  <span className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55">
+                    Documentación no editable
+                  </span>
+                )}
               </div>
             </div>
           )}

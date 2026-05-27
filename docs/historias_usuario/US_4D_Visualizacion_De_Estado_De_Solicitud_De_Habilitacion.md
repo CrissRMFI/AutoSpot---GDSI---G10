@@ -25,3 +25,28 @@
 **Dado que** mi estado es "En Revision" o "Rechazado",  
 **cuando** intento acceder a "Habilitar auto" o "Definir disponibilidad",  
 **entonces** esas opciones permanecen inactivas.
+
+### CA 4
+**Dado que** el administrador aprobó o rechazó la solicitud de habilitación de mi auto,
+**cuando** ingreso a la plataforma como propietario,
+**entonces** veo una notificación indicando si el auto fue habilitado o rechazado.
+
+### CA 5
+**Dado que** ya abrí la notificación de resolución de mi auto,
+**cuando** vuelvo a consultar mis notificaciones,
+**entonces** esa notificación no vuelve a aparecer.
+
+### CA 6
+**Dado que** tengo un auto registrado con documentación pendiente,
+**cuando** ingreso a la plataforma como propietario,
+**entonces** veo una notificación persistente por cada auto que todavía requiere carga de documentación.
+
+### CA 7
+**Dado que** veo una notificación persistente de documentación pendiente,
+**cuando** abro la campana de notificaciones,
+**entonces** la notificación permanece visible hasta que cargue la documentación del auto.
+
+### CA 8
+**Dado que** cargué la documentación requerida de un auto,
+**cuando** vuelvo a consultar mis notificaciones,
+**entonces** la notificación de documentación pendiente de ese auto deja de aparecer.
