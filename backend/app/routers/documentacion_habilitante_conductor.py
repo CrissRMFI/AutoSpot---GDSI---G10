@@ -40,6 +40,7 @@ from app.services.documentacion_habilitante_conductor import (
     actualizar_documentacion_habilitante,
     obtener_documentacion_habilitante,
     registrar_documentacion_habilitante,
+    aprobar_documentacion_habilitante,
 )
 
 
@@ -204,6 +205,40 @@ def actualizar_documentacion_habilitante_conductor(
             db=db,
             usuario_id=usuario_id,
             schema=payload,
+        )
+    except UsuarioNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DocumentacionHabilitanteNoRegistradaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return DocumentacionHabilitanteConductorPublicoSchema.model_validate(documentacion)
+
+
+@router.get(
+    "/{usuario_id}/documentacion-habilitante/aprobar",
+    response_model=DocumentacionHabilitanteConductorPublicoSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Aprobar documentacion habilitante del Conductor (Atajo)",
+    description=(
+        "Endpoint GET de atajo para aprobar la documentación de un conductor "
+        "desde la barra de direcciones del navegador."
+    ),
+)
+def aprobar_documentacion_habilitante_conductor_endpoint(
+    usuario_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> DocumentacionHabilitanteConductorPublicoSchema:
+    """GET /usuarios/{usuario_id}/documentacion-habilitante/aprobar"""
+    try:
+        documentacion = aprobar_documentacion_habilitante(
+            db=db,
+            usuario_id=usuario_id,
         )
     except UsuarioNoEncontradoError as exc:
         raise HTTPException(

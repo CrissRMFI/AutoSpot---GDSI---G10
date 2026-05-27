@@ -195,17 +195,12 @@ const ClienteDashboardPage = () => {
           <p className="mb-5 text-sm leading-6 text-autospot-muted">
             {estaHabilitado
               ? "Explorá la flota de vehículos disponibles para alquiler en toda nuestra red."
-              : "Tu documentación debe estar aprobada para poder ver el catálogo de vehículos."}
+              : "Explorá la flota de vehículos. Recordá que para alquilar necesitás tener tu documentación aprobada."}
           </p>
 
           <Link
             to="/catalogo"
-            className={`inline-flex w-full justify-center rounded-full px-5 py-3 text-sm font-bold transition sm:w-auto ${
-              estaHabilitado
-                ? "bg-autospot-accent !text-white hover:bg-[#5a1420]"
-                : "border border-autospot-border bg-gray-100 !text-gray-400 cursor-not-allowed pointer-events-none"
-            }`}
-            tabIndex={estaHabilitado ? 0 : -1}
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
           >
             Ver catálogo
           </Link>

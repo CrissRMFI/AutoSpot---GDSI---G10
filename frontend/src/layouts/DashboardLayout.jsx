@@ -43,7 +43,7 @@ const DashboardLayout = ({ secciones = [], children }) => {
   const rolLabel = etiquetaRol(usuario?.rol);
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="min-h-screen w-full max-w-full bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
       {/* Topbar mobile */}
       <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
         <Link

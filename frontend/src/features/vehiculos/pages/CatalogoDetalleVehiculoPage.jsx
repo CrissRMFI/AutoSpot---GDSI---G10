@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getDetalleVehiculoCatalogo, verificarDisponibilidad } from "../api/vehiculoService";
+import { useAuth } from "../../auth/hooks/useAuth";
+import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -13,10 +15,14 @@ const LADO_LABEL = {
 
 const CatalogoDetalleVehiculoPage = () => {
   const { vehiculoId } = useParams();
+  const { usuario } = useAuth();
   const [vehiculo, setVehiculo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+
+  const [estaHabilitado, setEstaHabilitado] = useState(false);
+  const [mostrarModalDocs, setMostrarModalDocs] = useState(false);
 
   const [fechaInicio, setFechaInicio] = useState("");
   const [horaInicio, setHoraInicio] = useState("10:00");
@@ -53,6 +59,15 @@ const CatalogoDetalleVehiculoPage = () => {
     cargarVehiculo();
   }, [vehiculoId]);
 
+  useEffect(() => {
+    if (!usuario?.id) return;
+    obtenerDocumentacionHabilitante(usuario.id)
+      .then((data) => {
+        setEstaHabilitado(data?.estado_validacion === "APROBADO");
+      })
+      .catch(() => setEstaHabilitado(false));
+  }, [usuario?.id]);
+
   const fotos = vehiculo?.fotos ?? [];
   const totalFotos = fotos.length;
 
@@ -85,6 +100,11 @@ const CatalogoDetalleVehiculoPage = () => {
   const isValidLocal = () => calcularHoras() >= 24;
 
   const handleVerificar = async () => {
+    if (!estaHabilitado) {
+      setMostrarModalDocs(true);
+      return;
+    }
+
     if (!isValidLocal()) {
       setErrorAlquiler("El tiempo mínimo de alquiler es de 1 día");
       return;
@@ -106,33 +126,29 @@ const CatalogoDetalleVehiculoPage = () => {
 
   if (cargando) {
     return (
-      <main className="min-h-screen bg-autospot-cream text-autospot-black">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 lg:px-10">
-          <div className="animate-pulse rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
-            <div className="h-8 w-1/2 rounded bg-gray-200" />
-            <div className="mt-4 h-4 w-1/3 rounded bg-gray-200" />
-            <div className="mt-8 h-72 w-full rounded-2xl bg-gray-200" />
-          </div>
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 lg:px-10 w-full">
+        <div className="animate-pulse rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
+          <div className="h-8 w-1/2 rounded bg-gray-200" />
+          <div className="mt-4 h-4 w-1/3 rounded bg-gray-200" />
+          <div className="mt-8 h-72 w-full rounded-2xl bg-gray-200" />
         </div>
-      </main>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-autospot-cream text-autospot-black">
-        <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8">
-          <h1 className="font-display text-2xl font-bold text-autospot-black sm:text-3xl">
-            {error}
-          </h1>
-          <Link
-            to="/catalogo"
-            className="mt-6 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
-      </main>
+      <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8 w-full">
+        <h1 className="font-display text-2xl font-bold text-autospot-black sm:text-3xl">
+          {error}
+        </h1>
+        <Link
+          to="/catalogo"
+          className="mt-6 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+        >
+          Volver al catálogo
+        </Link>
+      </div>
     );
   }
 
@@ -141,26 +157,20 @@ const CatalogoDetalleVehiculoPage = () => {
   const fotoActiva = fotos[indiceActivo];
 
   return (
-    <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
+    <>
+      <div className="mx-auto max-w-6xl w-full px-5 pt-8 sm:px-8 lg:px-10">
+        <Link
+          to="/catalogo"
+          className="mb-2 inline-flex items-center gap-2 rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver al catálogo
+        </Link>
+      </div>
 
-          <Link
-            to="/catalogo"
-            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
-      </header>
-
-      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-12">
+      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-4 sm:px-8 sm:pb-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:pb-12">
         <article className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
             Galería
@@ -364,7 +374,40 @@ const CatalogoDetalleVehiculoPage = () => {
           </div>
         </aside>
       </section>
-    </main>
+
+      {/* Modal Documentación Faltante */}
+      {mostrarModalDocs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl sm:p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-[#b42318]">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="font-display text-2xl font-black tracking-[-0.04em] text-autospot-black">
+              Falta documentación
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-autospot-muted">
+              Para poder alquilar vehículos en AutoSpot, primero necesitás tener tu documentación habilitante aprobada.
+            </p>
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setMostrarModalDocs(false)}
+                className="flex-1 rounded-full border border-autospot-border bg-white px-4 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent"
+              >
+                Cancelar
+              </button>
+              <Link
+                to="/documentacion-habilitante"
+                className="flex-1 rounded-full bg-autospot-accent px-4 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] inline-flex items-center justify-center"
+              >
+                Cargar ahora
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
