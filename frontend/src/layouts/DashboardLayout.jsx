@@ -45,7 +45,7 @@ const DashboardLayout = ({ secciones = [], children }) => {
   return (
     <div className="min-h-screen w-full max-w-full bg-autospot-cream text-autospot-black lg:grid lg:grid-cols-[260px_1fr]">
       {/* Topbar mobile */}
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-[80] flex items-center justify-between gap-3 border-b border-autospot-border bg-autospot-cream/95 px-5 py-4 backdrop-blur-xl lg:hidden">
         <Link
           to="/"
           className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
@@ -186,7 +186,7 @@ const DashboardLayout = ({ secciones = [], children }) => {
       {/* Main */}
       <div className="flex min-w-0 flex-col">
         {/* Topbar desktop con campanita */}
-        <div className="sticky top-0 z-30 hidden items-center justify-between gap-4 border-b border-autospot-border bg-autospot-cream/95 px-10 py-4 backdrop-blur-xl lg:flex">
+        <div className="sticky top-0 z-[80] hidden items-center justify-between gap-4 border-b border-autospot-border bg-autospot-cream/95 px-10 py-4 backdrop-blur-xl lg:flex">
           <div className="flex items-center gap-3 text-sm text-autospot-muted">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-autospot-accent text-xs font-bold !text-white">
               {iniciales}

@@ -224,6 +224,8 @@ http://localhost:5173
     GET   /usuarios/{propietario_id}/vehiculos
     PATCH /vehiculos/{vehiculo_id}/precio
     PATCH /vehiculos/{vehiculo_id}/documentacion
+    GET   /notificaciones
+    POST  /notificaciones/{notificacion_id}/vista
     POST  /usuarios/logout
     ```
     Reglas se seguridad:

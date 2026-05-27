@@ -154,6 +154,15 @@ class VehiculoConReservaActivaError(AutoSpotError):
         super().__init__("No es posible deshabilitar el auto mientras haya una reserva o alquiler en curso")
 
 
+class DocumentacionVehiculoNoEditableError(AutoSpotError):
+    """
+    Se lanza cuando se intenta cargar o modificar documentación de un vehículo
+    cuyo estado no permite cambios documentales.
+    """
+    def __init__(self) -> None:
+        super().__init__("La documentación del vehículo no puede modificarse en este estado")
+
+
 class MarcaNoEncontradaError(AutoSpotError):
     """Se lanza al referenciar una marca inexistente en el catálogo."""
     def __init__(self) -> None:
@@ -192,3 +201,9 @@ class TipoSolicitudDocumentacionInvalidoError(AutoSpotError):
     """Se lanza cuando el tipo de solicitud no es VEHICULO ni CONDUCTOR."""
     def __init__(self) -> None:
         super().__init__("Tipo de solicitud de documentacion invalido")
+
+
+class NotificacionNoEncontradaError(AutoSpotError):
+    """Se lanza cuando una notificación no existe o no pertenece al usuario."""
+    def __init__(self) -> None:
+        super().__init__("Notificacion no encontrada")

@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { subirFotoDocumentoVehiculo } from "../../../api/uploadService";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
-import { cargarDocumentacionVehiculo } from "../api/vehiculoService";
+import {
+  cargarDocumentacionVehiculo,
+  getDetalleVehiculo,
+} from "../api/vehiculoService";
 
 const CAMPOS_DOCUMENTACION = [
   {
@@ -56,9 +59,13 @@ const ARCHIVOS_DOCUMENTACION = [
 ];
 
 const inputClassName =
-  "w-full rounded-xl border border-autospot-border bg-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]";
+  "w-full rounded-xl border border-autospot-border bg-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
+const ESTADOS_DOCUMENTACION_EDITABLE = new Set([
+  "PENDIENTE_DOCUMENTACION",
+  "RECHAZADO",
+]);
 
 const DocumentacionVehiculoPage = () => {
   const { vehiculoId } = useParams();
@@ -79,6 +86,9 @@ const DocumentacionVehiculoPage = () => {
 
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
+  const [cargandoInicial, setCargandoInicial] = useState(true);
+  const [vehiculo, setVehiculo] = useState(null);
+  const [estadoRegistro, setEstadoRegistro] = useState("");
   const [subiendoArchivo, setSubiendoArchivo] = useState({
     cedula: false,
     poliza: false,
@@ -86,6 +96,57 @@ const DocumentacionVehiculoPage = () => {
   });
   const [estaciones, setEstaciones] = useState([]);
   const [cargandoEstaciones, setCargandoEstaciones] = useState(true);
+
+  const documentacionEditable =
+    ESTADOS_DOCUMENTACION_EDITABLE.has(estadoRegistro);
+  const vehiculoTitulo = vehiculo
+    ? `${vehiculo.marca} ${vehiculo.modelo}`
+    : "Vehículo seleccionado";
+  const fotoFrente = vehiculo?.fotos?.find((foto) => foto.lado === "FRENTE");
+
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarVehiculo = async () => {
+      try {
+        const data = await getDetalleVehiculo(vehiculoId);
+        if (cancelado) return;
+
+        setVehiculo(data);
+        setEstadoRegistro(data.estado_registro || "");
+        setForm({
+          patente: data.patente || "",
+          chasis: data.chasis || "",
+          motor: data.motor || "",
+          titular: data.titular || "",
+          cedula: data.cedula || "",
+          poliza: data.poliza || "",
+          vtv: data.vtv || "",
+          estacion: data.estacion || "",
+          telefono: data.telefono || "",
+          descripcion: data.descripcion || "",
+        });
+      } catch (error) {
+        console.error("Error al cargar documentación del vehículo:", error);
+        if (!cancelado) {
+          setFeedback({
+            message: "No pudimos cargar los datos de documentación del vehículo.",
+            type: "error",
+          });
+        }
+      } finally {
+        if (!cancelado) setCargandoInicial(false);
+      }
+    };
+
+    if (vehiculoId) {
+      cargarVehiculo();
+    }
+
+    return () => {
+      cancelado = true;
+    };
+  }, [vehiculoId]);
 
   useEffect(() => {
     const cargarEstaciones = async () => {
@@ -113,10 +174,12 @@ const DocumentacionVehiculoPage = () => {
   };
 
   const handleSeleccionarArchivoDocumento = (name) => {
+    if (!documentacionEditable) return;
     fileInputRefs.current[name]?.click();
   };
 
   const handleArchivoSeleccionadoDocumento = async (name, tipo, evento) => {
+    if (!documentacionEditable) return;
     const archivo = evento.target.files?.[0];
     if (!archivo) return;
 
@@ -175,6 +238,14 @@ const DocumentacionVehiculoPage = () => {
   const enviarFormulario = async (evento) => {
     evento.preventDefault();
 
+    if (!documentacionEditable) {
+      setFeedback({
+        message: "La documentación de este vehículo no puede modificarse en su estado actual.",
+        type: "error",
+      });
+      return;
+    }
+
     if (!validarFormulario()) {
       return;
     }
@@ -230,26 +301,18 @@ const DocumentacionVehiculoPage = () => {
     }
   };
 
+  if (cargandoInicial) {
+    return (
+      <main className="min-h-screen bg-autospot-cream text-autospot-black flex items-center justify-center">
+        <p className="text-autospot-black font-bold">
+          Cargando documentación del vehículo...
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
-
-          <Link
-            to="/propietario/dashboard"
-            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            Volver al panel
-          </Link>
-        </div>
-      </header>
-
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
         <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8 lg:sticky lg:top-28 lg:h-fit">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
@@ -271,9 +334,21 @@ const DocumentacionVehiculoPage = () => {
             </p>
 
             <p className="mt-2 break-words text-sm leading-6 !text-white/65">
-              ID: {vehiculoId}
+              {vehiculoTitulo}
             </p>
           </div>
+
+          {!documentacionEditable && (
+            <div className="mt-4 rounded-2xl border border-[#fef3c7]/40 bg-[#fef3c7]/10 p-5">
+              <p className="text-sm font-bold !text-autospot-accent-2">
+                Documentación bloqueada
+              </p>
+              <p className="mt-2 text-sm leading-6 !text-white/65">
+                Solo podés cargar o corregir documentación si está pendiente o
+                rechazada.
+              </p>
+            </div>
+          )}
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-5">
             <p className="text-sm font-bold !text-autospot-white">
@@ -288,6 +363,30 @@ const DocumentacionVehiculoPage = () => {
 
         <section className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
           <form onSubmit={enviarFormulario} className="space-y-8">
+            <section className="-mx-5 border-b border-autospot-border bg-autospot-cream/55 px-5 pb-6 pt-1 sm:-mx-8 sm:px-8 sm:pb-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="h-44 w-full overflow-hidden rounded-2xl bg-gray-100 sm:h-32 sm:w-48 sm:flex-shrink-0">
+                  {fotoFrente?.url ? (
+                    <img
+                      src={fotoFrente.url}
+                      alt={`Foto frontal de ${vehiculoTitulo}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-bold text-autospot-muted">
+                      Sin foto de referencia
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="break-words font-display text-2xl font-black leading-tight tracking-[-0.04em] text-autospot-black sm:text-3xl">
+                    {vehiculoTitulo}
+                  </h2>
+                </div>
+              </div>
+            </section>
+
             <section>
               <div className="mb-6">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
@@ -318,13 +417,19 @@ const DocumentacionVehiculoPage = () => {
                         className={inputClassName}
                         value={form[name]}
                         onChange={actualizarCampo}
-                        disabled={cargandoEstaciones}
+                        disabled={cargandoEstaciones || !documentacionEditable}
                       >
                         <option value="">
                           {cargandoEstaciones
                             ? "Cargando estaciones..."
                             : "Seleccioná una estación"}
                         </option>
+                        {form.estacion &&
+                          !estaciones.some((e) => e.nombre === form.estacion) && (
+                            <option value={form.estacion}>
+                              {form.estacion} (actual)
+                            </option>
+                          )}
                         {estaciones.map((estacion) => (
                           <option key={estacion.id} value={estacion.nombre}>
                             {estacion.nombre} ({estacion.zona})
@@ -339,6 +444,7 @@ const DocumentacionVehiculoPage = () => {
                         placeholder={placeholder}
                         value={form[name]}
                         onChange={actualizarCampo}
+                        disabled={!documentacionEditable}
                       />
                     )}
                   </div>
@@ -419,7 +525,7 @@ const DocumentacionVehiculoPage = () => {
                           <button
                             type="button"
                             onClick={() => handleSeleccionarArchivoDocumento(name)}
-                            disabled={subiendo}
+                            disabled={subiendo || !documentacionEditable}
                             className={`inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto ${
                               url
                                 ? "border border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent"
@@ -452,6 +558,7 @@ const DocumentacionVehiculoPage = () => {
                 placeholder="Observaciones sobre la documentación o el estado legal del vehículo"
                 value={form.descripcion}
                 onChange={actualizarCampo}
+                disabled={!documentacionEditable}
                 rows={4}
               />
             </section>
@@ -468,7 +575,7 @@ const DocumentacionVehiculoPage = () => {
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6">
               <Link
                 to="/propietario/dashboard"
                 className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
@@ -482,11 +589,16 @@ const DocumentacionVehiculoPage = () => {
                   cargando ||
                   subiendoArchivo.cedula ||
                   subiendoArchivo.poliza ||
-                  subiendoArchivo.vtv
+                  subiendoArchivo.vtv ||
+                  !documentacionEditable
                 }
                 className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
               >
-                {cargando ? "Guardando..." : "Guardar documentación"}
+                {cargando
+                  ? "Guardando..."
+                  : documentacionEditable
+                    ? "Guardar documentación"
+                    : "Documentación no editable"}
               </button>
             </div>
           </form>

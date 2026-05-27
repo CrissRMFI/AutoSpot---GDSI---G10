@@ -240,6 +240,24 @@ class VehiculoPublicoSchema(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+class VehiculoDetallePropietarioSchema(VehiculoPublicoSchema):
+    """
+    Detalle completo para vistas de gestión del propietario.
+
+    Incluye datos documentales que no se exponen en el catálogo público.
+    """
+
+    patente: str | None = None
+    chasis: str | None = None
+    motor: str | None = None
+    titular: str | None = None
+    cedula: str | None = None
+    poliza: str | None = None
+    vtv: str | None = None
+    telefono: str | None = None
+    descripcion: str | None = None
+
 class DocumentacionVehiculoSchema(BaseModel):
     """
     Payload de entrada para cargar documentación legal del vehículo.

@@ -34,6 +34,7 @@ from app.schemas.solicitud_documentacion import (
     TIPO_SOLICITUD_CONDUCTOR,
     TIPO_SOLICITUD_VEHICULO,
 )
+from app.services.notificacion import crear_notificacion_resolucion_vehiculo
 
 
 ESTADO_VEHICULO_EN_REVISION = "EN_REVISION"
@@ -273,6 +274,13 @@ def resolver_solicitud(
         else:
             vehiculo.estado_registro = "RECHAZADO"
             vehiculo.motivo_rechazo = motivo_rechazo.strip()
+
+        crear_notificacion_resolucion_vehiculo(
+            db=db,
+            vehiculo=vehiculo,
+            aprobada=aprobada,
+            motivo_rechazo=vehiculo.motivo_rechazo,
+        )
             
         db.commit()
         return
@@ -295,4 +303,3 @@ def resolver_solicitud(
         return
 
     raise TipoSolicitudDocumentacionInvalidoError()
-
