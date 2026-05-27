@@ -66,18 +66,6 @@ const AdminDashboardPage = () => {
           </a>
         </article>
 
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-1">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-            Próximamente
-          </p>
-          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Aprobar / rechazar
-          </h2>
-          <p className="text-sm leading-6 text-autospot-muted">
-            Las acciones de aprobación y rechazo de solicitudes llegarán en las
-            próximas US (3R y 4R).
-          </p>
-        </article>
       </section>
     </>
   );
