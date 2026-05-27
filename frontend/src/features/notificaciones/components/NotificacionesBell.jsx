@@ -60,6 +60,33 @@ const IconoConductor = (props) => (
 
 const presentacionItem = (item) => {
   const tipo = item?.raw?.tipo;
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    tipo === "VEHICULO_DOCUMENTACION_PENDIENTE"
+  ) {
+    return {
+      label: "Documentación",
+      Icono: IconoVehiculo,
+      iconoBg: "bg-[#fef3c7] text-[#92400e]",
+      acento: "bg-[#92400e]",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "VEHICULO_HABILITADO") {
+    return {
+      label: "Habilitado",
+      Icono: IconoVehiculo,
+      iconoBg: "bg-[#dcfce7] text-[#166534]",
+      acento: "bg-[#166534]",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "VEHICULO_RECHAZADO") {
+    return {
+      label: "Rechazado",
+      Icono: IconoVehiculo,
+      iconoBg: "bg-[#fee2e2] text-[#b42318]",
+      acento: "bg-[#b42318]",
+    };
+  }
   if (item.fuente === "SOLICITUD_DOCUMENTACION" && tipo === "VEHICULO") {
     return {
       label: "Vehículo",
@@ -92,12 +119,15 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
     cargando,
     error,
     refrescar,
+    marcarVista,
     hayMasItems,
     rutaVerTodas,
+    textoVerTodas,
   } = useNotificaciones();
 
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef(null);
+  const notificacionesVistasRef = useRef(new Set());
 
   useEffect(() => {
     if (!abierto) return undefined;
@@ -120,6 +150,23 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
     };
   }, [abierto]);
 
+  useEffect(() => {
+    if (!abierto || cargando || itemsResumen.length === 0) return;
+
+    itemsResumen.forEach((item) => {
+      const notificacionId = item?.raw?.id;
+      if (item.fuente !== "NOTIFICACION_USUARIO" || !notificacionId) return;
+      if (notificacionesVistasRef.current.has(notificacionId)) return;
+
+      notificacionesVistasRef.current.add(notificacionId);
+      void marcarVista(item, { ocultarLocalmente: false }).then((ok) => {
+        if (!ok) {
+          notificacionesVistasRef.current.delete(notificacionId);
+        }
+      });
+    });
+  }, [abierto, cargando, itemsResumen, marcarVista]);
+
   const toggle = () => {
     const proximo = !abierto;
     setAbierto(proximo);
@@ -132,8 +179,9 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
     ? "border-white/20 bg-white/[0.06] text-white hover:bg-white/[0.12]"
     : "border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent";
 
-  const irAItem = (item) => {
+  const irAItem = async (item) => {
     setAbierto(false);
+    await marcarVista(item);
     navigate(item.href);
   };
 
@@ -178,13 +226,13 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
             tabIndex={-1}
             aria-hidden="true"
             onClick={() => setAbierto(false)}
-            className="fixed inset-0 z-40 cursor-default bg-autospot-black/30 backdrop-blur-[2px] sm:hidden"
+            className="fixed inset-0 z-[90] cursor-default bg-autospot-black/30 backdrop-blur-[2px] sm:hidden"
           />
 
           <div
             role="dialog"
             aria-label="Notificaciones"
-            className="fixed left-3 right-3 top-[4.5rem] z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-autospot-border bg-autospot-white text-autospot-black shadow-[0_16px_40px_rgba(15,23,42,0.18)] sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[26rem] sm:w-[22rem]"
+            className="fixed left-3 right-3 top-[4.5rem] z-[100] flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-autospot-border bg-autospot-white text-autospot-black shadow-[0_16px_40px_rgba(15,23,42,0.18)] sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[26rem] sm:w-[22rem]"
           >
             <header className="flex items-center justify-between border-b border-autospot-border px-4 py-2.5">
               <p className="font-display text-sm font-bold tracking-[-0.02em] text-autospot-black">
@@ -261,7 +309,7 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
                   onClick={() => setAbierto(false)}
                   className="text-[11px] font-bold !text-autospot-accent hover:underline"
                 >
-                  Ver todas las solicitudes →
+                  {textoVerTodas}
                 </Link>
               </footer>
             )}

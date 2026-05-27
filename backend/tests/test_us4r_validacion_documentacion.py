@@ -13,6 +13,7 @@ def test_aprobar_vehiculo_cambia_estado_a_habilitado():
     
     assert vehiculo_mock.estado_registro == "HABILITADO"
     assert vehiculo_mock.motivo_rechazo is None
+    db_mock.add.assert_called_once()
     db_mock.commit.assert_called_once()
 
 def test_rechazar_vehiculo_guarda_motivo_y_cambia_estado():
@@ -24,6 +25,7 @@ def test_rechazar_vehiculo_guarda_motivo_y_cambia_estado():
     
     assert vehiculo_mock.estado_registro == "RECHAZADO"
     assert vehiculo_mock.motivo_rechazo == "Documentos ilegibles"
+    db_mock.add.assert_called_once()
     db_mock.commit.assert_called_once()
 
 def test_rechazar_sin_motivo_lanza_excepcion():

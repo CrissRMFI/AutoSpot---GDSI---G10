@@ -14,6 +14,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
+    DocumentacionVehiculoNoEditableError,
     FotoVehiculoNoEncontradaError,
     MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
@@ -30,6 +31,22 @@ from app.schemas.vehiculo import (
     ActualizarVehiculoPayloadSchema,
 )
 from app.services.marca_service import validar_combo_marca_modelo
+from app.services.notificacion import (
+    cerrar_notificacion_documentacion_pendiente,
+    crear_notificacion_documentacion_pendiente,
+)
+
+
+ESTADOS_DOCUMENTACION_EDITABLE = {"PENDIENTE_DOCUMENTACION", "RECHAZADO"}
+ESTADO_DOCUMENTACION_CORREGIBLE = "RECHAZADO"
+CAMBIOS_DOCUMENTALES_ACTUALIZACION = (
+    "patente",
+    "chasis",
+    "motor",
+    "titular",
+    "estacion",
+    "telefono",
+)
 
 def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     """
@@ -86,6 +103,8 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     ]
 
     db.add(vehiculo)
+    db.flush()
+    crear_notificacion_documentacion_pendiente(db=db, vehiculo=vehiculo)
     db.commit()
     db.refresh(vehiculo)
 
@@ -110,6 +129,17 @@ def actualizar_vehiculo(
 
     if vehiculo is None:
         raise VehiculoNoEncontradoError()
+
+    cambios_documentales = any(
+        getattr(schema, campo) is not None
+        and getattr(schema, campo) != getattr(vehiculo, campo)
+        for campo in CAMBIOS_DOCUMENTALES_ACTUALIZACION
+    )
+    if (
+        cambios_documentales
+        and vehiculo.estado_registro != ESTADO_DOCUMENTACION_CORREGIBLE
+    ):
+        raise DocumentacionVehiculoNoEditableError()
 
     # Se actualizan las características generales, ignorando marca y modelo
     vehiculo.anio = schema.anio
@@ -370,6 +400,9 @@ def cargar_documentacion_vehiculo(
     if vehiculo is None:
         raise VehiculoNoEncontradoError()
 
+    if vehiculo.estado_registro not in ESTADOS_DOCUMENTACION_EDITABLE:
+        raise DocumentacionVehiculoNoEditableError()
+
     vehiculo.patente = schema.patente
     vehiculo.chasis = schema.chasis
     vehiculo.motor = schema.motor
@@ -385,6 +418,7 @@ def cargar_documentacion_vehiculo(
     vehiculo.estado_registro = "EN_REVISION"
     # Si estaba rechazado, limpiamos el motivo
     vehiculo.motivo_rechazo = None
+    cerrar_notificacion_documentacion_pendiente(db=db, vehiculo=vehiculo)
 
     db.commit()
     db.refresh(vehiculo)

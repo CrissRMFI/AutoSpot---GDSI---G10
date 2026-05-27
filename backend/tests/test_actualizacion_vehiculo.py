@@ -4,6 +4,7 @@ import uuid
 from pydantic import ValidationError
 
 from app.exceptions import (
+    DocumentacionVehiculoNoEditableError,
     UsuarioNoEncontradoError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
@@ -96,7 +97,6 @@ class TestActualizarVehiculoService:
             categoria="HATCHBACK",
             tipo_combustible="GNC",
             pets_friendly=False,
-            patente="AB123CD",
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",
@@ -148,12 +148,90 @@ class TestActualizarVehiculoService:
         assert vehiculo_actualizado.categoria == "HATCHBACK"
         assert vehiculo_actualizado.tipo_combustible == "GNC"
         assert vehiculo_actualizado.pets_friendly is False
-        assert vehiculo_actualizado.patente == "AB123CD"
 
         # Verificar que se reemplazaron las fotos
         assert len(vehiculo_actualizado.fotos) == 5
         url_fotos = [f.url for f in vehiculo_actualizado.fotos]
         assert "nuevo_frente.jpg" in url_fotos
+
+    def test_actualizar_datos_documentales_rechazado_es_valido(
+        self,
+        db_session,
+        usuario_y_vehiculo,
+    ):
+        _, vehiculo = usuario_y_vehiculo
+        vehiculo.estado_registro = "RECHAZADO"
+        db_session.commit()
+
+        payload_actualizacion = ActualizarVehiculoPayloadSchema(
+            marca="Toyota",
+            modelo="Corolla",
+            anio=2020,
+            tipo_transmision="AUTOMATICA",
+            capacidad=5,
+            categoria="SEDAN",
+            tipo_combustible="NAFTA",
+            pets_friendly=True,
+            patente="AB123CD",
+            chasis="CHASIS123",
+            motor="MOTOR123",
+            titular="Juan Propietario",
+            estacion="Palermo",
+            telefono="1122334455",
+            fotos=[
+                FotoVehiculoSchema(lado="FRENTE", url="f.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="TRASERA", url="t.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="LATERAL_IZQUIERDO", url="i.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="LATERAL_DERECHO", url="d.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="INTERIOR", url="int.jpg", formato="jpg", tamanio_bytes=100),
+            ],
+        )
+
+        vehiculo_actualizado = actualizar_vehiculo(
+            db=db_session,
+            vehiculo_id=vehiculo.id,
+            schema=payload_actualizacion,
+        )
+
+        assert vehiculo_actualizado.patente == "AB123CD"
+        assert vehiculo_actualizado.chasis == "CHASIS123"
+        assert vehiculo_actualizado.motor == "MOTOR123"
+
+    def test_actualizar_datos_documentales_habilitado_lanza_error(
+        self,
+        db_session,
+        usuario_y_vehiculo,
+    ):
+        _, vehiculo = usuario_y_vehiculo
+        vehiculo.estado_registro = "HABILITADO"
+        vehiculo.patente = "AA111AA"
+        db_session.commit()
+
+        payload_actualizacion = ActualizarVehiculoPayloadSchema(
+            marca="Toyota",
+            modelo="Corolla",
+            anio=2020,
+            tipo_transmision="AUTOMATICA",
+            capacidad=5,
+            categoria="SEDAN",
+            tipo_combustible="NAFTA",
+            pets_friendly=True,
+            patente="BB222BB",
+            fotos=[
+                FotoVehiculoSchema(lado="FRENTE", url="f.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="TRASERA", url="t.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="LATERAL_IZQUIERDO", url="i.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="LATERAL_DERECHO", url="d.jpg", formato="jpg", tamanio_bytes=100),
+                FotoVehiculoSchema(lado="INTERIOR", url="int.jpg", formato="jpg", tamanio_bytes=100),
+            ],
+        )
+
+        with pytest.raises(DocumentacionVehiculoNoEditableError):
+            actualizar_vehiculo(
+                db=db_session,
+                vehiculo_id=vehiculo.id,
+                schema=payload_actualizacion,
+            )
 
     def test_actualizar_vehiculo_inexistente_lanza_error(self, db_session):
         payload_actualizacion = ActualizarVehiculoPayloadSchema(
@@ -222,4 +300,3 @@ class TestActualizarVehiculoService:
                 vehiculo_id=uuid.uuid4(),
                 disponible=True
             )
-

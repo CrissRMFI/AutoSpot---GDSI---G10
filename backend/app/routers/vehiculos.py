@@ -32,6 +32,7 @@ from app.dependencies.auth import (
     validar_usuario_autenticado_coincide_con_id,
 )
 from app.exceptions import (
+    DocumentacionVehiculoNoEditableError,
     FotoVehiculoNoEncontradaError,
     MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
@@ -52,6 +53,7 @@ from app.schemas.vehiculo import (
     RegistroVehiculoPayloadSchema,
     RegistroVehiculoSchema,
     VehiculoDocumentacionResponseSchema,
+    VehiculoDetallePropietarioSchema,
     VehiculoPublicoSchema,
     ActualizarVehiculoPayloadSchema,
 )
@@ -340,7 +342,7 @@ def obtener_detalle_vehiculo_catalogo(
 
 @router.get(
     "/vehiculos/{vehiculo_id}",
-    response_model=VehiculoPublicoSchema,
+    response_model=VehiculoDetallePropietarioSchema,
     status_code=status.HTTP_200_OK,
     summary="Obtener detalle de un vehículo",
     description=(
@@ -372,7 +374,7 @@ def obtener_detalle_vehiculo(
     vehiculo_id: uuid.UUID,
     usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
-) -> VehiculoPublicoSchema:
+) -> VehiculoDetallePropietarioSchema:
     """
     GET /vehiculos/{vehiculo_id}
 
@@ -396,7 +398,7 @@ def obtener_detalle_vehiculo(
             detail=str(exc),
         ) from exc
 
-    return VehiculoPublicoSchema.model_validate(vehiculo)
+    return VehiculoDetallePropietarioSchema.model_validate(vehiculo)
 
 
 @router.patch(
@@ -533,6 +535,11 @@ def cargar_documentacion_legal_vehiculo(
     except VehiculoNoEncontradoError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DocumentacionVehiculoNoEditableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
 
@@ -678,6 +685,11 @@ def actualizar_datos_vehiculo(
     except VehiculoNoEncontradoError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DocumentacionVehiculoNoEditableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
 

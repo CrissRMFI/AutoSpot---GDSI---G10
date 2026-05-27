@@ -21,6 +21,7 @@ from app.models.foto_vehiculo import FotoVehiculo
 from app.models.token_blacklist import TokenBlacklist
 from app.models.estacion import Estacion
 from app.models.documentacion_habilitante_conductor import DocumentacionHabilitanteConductor
+from app.models.notificacion import Notificacion
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

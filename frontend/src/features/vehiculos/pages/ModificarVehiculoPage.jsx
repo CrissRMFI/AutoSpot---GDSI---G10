@@ -88,6 +88,9 @@ const ModificarVehiculoPage = () => {
 
   const marcaSeleccionada = catalogo.find((m) => m.nombre === form.marca);
   const modelosDeMarcaSeleccionada = marcaSeleccionada?.modelos ?? [];
+  const puedeEditarDatosDocumentales = estadoRegistro === "RECHAZADO";
+  const datosDocumentalesBloqueados =
+    Boolean(estadoRegistro) && !puedeEditarDatosDocumentales;
 
   const mostrarFeedback = (message, type) => {
     setFeedback({ message, type });
@@ -102,6 +105,9 @@ const ModificarVehiculoPage = () => {
           patente: datos.patente || "",
           chasis: datos.chasis || "",
           motor: datos.motor || "",
+          titular: datos.titular || "",
+          estacion: datos.estacion || "",
+          telefono: datos.telefono || "",
         });
         setForm({
           marca: datos.marca || "",
@@ -267,11 +273,14 @@ const ModificarVehiculoPage = () => {
     const docsChanged =
       datosVehiculo.patente !== originalData.patente ||
       datosVehiculo.chasis !== originalData.chasis ||
-      datosVehiculo.motor !== originalData.motor;
+      datosVehiculo.motor !== originalData.motor ||
+      datosVehiculo.titular !== originalData.titular ||
+      datosVehiculo.estacion !== originalData.estacion ||
+      datosVehiculo.telefono !== originalData.telefono;
 
-    if (docsChanged && estadoRegistro !== "EN_REVISION") {
+    if (docsChanged && !puedeEditarDatosDocumentales) {
       mostrarFeedback(
-        "Para modificar la patente, chasis o número de motor, debés contactar a un administrador.",
+        "Solo podés modificar los datos documentales cuando la documentación fue rechazada.",
         "error"
       );
       return;
@@ -606,8 +615,13 @@ const ModificarVehiculoPage = () => {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-autospot-muted">
-                  Actualizá los datos de tu vehículo. Si el auto no está en revisión, necesitarás contactar a un administrador para cambiar patente, chasis o motor.
+                  Los datos documentales quedan bloqueados si el vehículo fue aprobado o está en revisión. Si la documentación fue rechazada, podés corregirlos.
                 </p>
+                {datosDocumentalesBloqueados && (
+                  <p className="mt-3 rounded-xl border border-[#fef3c7] bg-[#fffbeb] px-4 py-3 text-sm font-bold text-[#92400e]">
+                    Documentación no editable en estado {estadoRegistro}.
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -623,6 +637,7 @@ const ModificarVehiculoPage = () => {
                     placeholder="Ej. AB123CD"
                     value={form.patente}
                     onChange={actualizarCampo}
+                    disabled={!puedeEditarDatosDocumentales}
                   />
                 </div>
 
@@ -638,6 +653,7 @@ const ModificarVehiculoPage = () => {
                     placeholder="Ej. 123456789"
                     value={form.motor}
                     onChange={actualizarCampo}
+                    disabled={!puedeEditarDatosDocumentales}
                   />
                 </div>
 
@@ -653,6 +669,7 @@ const ModificarVehiculoPage = () => {
                     placeholder="Ej. 987654321"
                     value={form.chasis}
                     onChange={actualizarCampo}
+                    disabled={!puedeEditarDatosDocumentales}
                   />
                 </div>
 
@@ -668,6 +685,7 @@ const ModificarVehiculoPage = () => {
                     placeholder="Ej. Juan Pérez"
                     value={form.titular}
                     onChange={actualizarCampo}
+                    disabled={!puedeEditarDatosDocumentales}
                   />
                 </div>
 
@@ -681,7 +699,7 @@ const ModificarVehiculoPage = () => {
                     className={inputClassName}
                     value={form.estacion}
                     onChange={actualizarCampo}
-                    disabled={cargandoEstaciones}
+                    disabled={cargandoEstaciones || !puedeEditarDatosDocumentales}
                   >
                     <option value="">
                       {cargandoEstaciones
@@ -714,6 +732,7 @@ const ModificarVehiculoPage = () => {
                     placeholder="Ej. +54 9 11 1234-5678"
                     value={form.telefono}
                     onChange={actualizarCampo}
+                    disabled={!puedeEditarDatosDocumentales}
                   />
                 </div>
               </div>
@@ -806,7 +825,7 @@ const ModificarVehiculoPage = () => {
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-autospot-border pt-6">
               <Link
                 to="/propietario/dashboard"
                 className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
