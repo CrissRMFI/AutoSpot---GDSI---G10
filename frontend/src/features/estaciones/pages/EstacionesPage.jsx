@@ -97,7 +97,6 @@ const EstacionesPage = () => {
   const estacionesFiltradas = (barrioSeleccionado
     ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
     : estaciones)
-    .filter((estacion) => vehiculos.some((v) => v.estacion === estacion.nombre))
     .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   return (
