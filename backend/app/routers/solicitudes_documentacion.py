@@ -27,12 +27,14 @@ from app.exceptions import (
     TipoSolicitudDocumentacionInvalidoError,
 )
 from app.schemas.solicitud_documentacion import (
+    ResolucionRechazoSchema,
     SolicitudDocumentacionDetalleSchema,
     SolicitudDocumentacionSchema,
 )
 from app.services.solicitud_documentacion import (
     listar_solicitudes_pendientes,
     obtener_detalle_solicitud_documentacion,
+    resolver_solicitud,
 )
 
 
@@ -120,3 +122,48 @@ def abrir_solicitud_documentacion(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+
+@router.post(
+    "/solicitudes-documentacion/{tipo}/{recurso_id}/aprobar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Aprobar documentación",
+    description="Aprueba la solicitud de documentación habilitando al conductor o al vehículo.",
+)
+def aprobar_solicitud(
+    tipo: str,
+    recurso_id: uuid.UUID,
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+    db: Session = Depends(get_db),
+):
+    """POST /admin/solicitudes-documentacion/{tipo}/{recurso_id}/aprobar"""
+    try:
+        resolver_solicitud(db, tipo, recurso_id, aprobada=True)
+    except TipoSolicitudDocumentacionInvalidoError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except SolicitudDocumentacionNoEncontradaError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post(
+    "/solicitudes-documentacion/{tipo}/{recurso_id}/rechazar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Rechazar documentación",
+    description="Rechaza la solicitud de documentación indicando un motivo.",
+)
+def rechazar_solicitud(
+    tipo: str,
+    recurso_id: uuid.UUID,
+    payload: ResolucionRechazoSchema,
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+    db: Session = Depends(get_db),
+):
+    """POST /admin/solicitudes-documentacion/{tipo}/{recurso_id}/rechazar"""
+    try:
+        resolver_solicitud(db, tipo, recurso_id, aprobada=False, motivo_rechazo=payload.motivo_rechazo)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    except TipoSolicitudDocumentacionInvalidoError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except SolicitudDocumentacionNoEncontradaError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

@@ -390,3 +390,31 @@ class TestActualizacionYObtencionHTTP:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
+
+    def test_aprobar_documentacion_endpoint_devuelve_200(self):
+        engine, client_context = _crear_cliente()
+
+        try:
+            with client_context as client:
+                usuario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="cond.aprobar.endpoint@autospot.com",
+                )
+
+                client.put(
+                    f"/usuarios/{usuario_id}/documentacion-habilitante",
+                    json=PAYLOAD_VALIDO,
+                    headers=_auth_headers(token),
+                )
+
+                response = client.get(
+                    f"/usuarios/{usuario_id}/documentacion-habilitante/aprobar"
+                )
+
+                assert response.status_code == 200, response.text
+                body = response.json()
+                assert body["estado_validacion"] == "APROBADO"
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()

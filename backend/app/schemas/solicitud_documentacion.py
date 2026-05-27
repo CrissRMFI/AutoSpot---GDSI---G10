@@ -87,3 +87,11 @@ class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
     categoria_licencia: str | None = None
     fecha_emision: date | None = None
     fecha_vencimiento: date | None = None
+
+
+class ResolucionRechazoSchema(BaseModel):
+    """
+    Payload esperado al rechazar una solicitud de documentación (US 4R).
+    """
+
+    motivo_rechazo: str

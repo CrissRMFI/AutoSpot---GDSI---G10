@@ -21,6 +21,7 @@ from app.exceptions import (
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
+    EstadoHabilitacion,
 )
 from app.models.usuario import Usuario
 from app.schemas.documentacion_habilitante_conductor import (
@@ -135,6 +136,34 @@ def actualizar_documentacion_habilitante(
     documentacion.fecha_vencimiento = schema.fecha_vencimiento
     documentacion.foto_licencia_frente_url = schema.foto_licencia_frente_url
     documentacion.foto_licencia_dorso_url = schema.foto_licencia_dorso_url
+
+    db.commit()
+    db.refresh(documentacion)
+
+    return documentacion
+
+
+def aprobar_documentacion_habilitante(
+    db: Session,
+    usuario_id: uuid.UUID,
+) -> DocumentacionHabilitanteConductor:
+    """
+    Aprueba la documentación habilitante de un Conductor.
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario is None:
+        raise UsuarioNoEncontradoError()
+
+    documentacion = (
+        db.query(DocumentacionHabilitanteConductor)
+        .filter(DocumentacionHabilitanteConductor.usuario_id == usuario_id)
+        .first()
+    )
+    if documentacion is None:
+        raise DocumentacionHabilitanteNoRegistradaError()
+
+    documentacion.estado_validacion = EstadoHabilitacion.APROBADO
+    documentacion.motivo_rechazo = None
 
     db.commit()
     db.refresh(documentacion)

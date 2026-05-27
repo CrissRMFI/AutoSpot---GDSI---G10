@@ -286,3 +286,41 @@ class TestObtenerDocumentacion:
                 db=db_session,
                 usuario_id=usuario.id,
             )
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Aprobar documentación habilitante (Atajo)
+# ══════════════════════════════════════════════════════════════════════════════
+class TestAprobarDocumentacion:
+    def test_aprueba_documentacion_registrada(self, db_session):
+        usuario = _crear_usuario_de_prueba(
+            db_session,
+            email="conductor.aprobar@autospot.com",
+        )
+
+        registrar_documentacion_habilitante(
+            db=db_session,
+            usuario_id=usuario.id,
+            schema=DocumentacionHabilitanteConductorSchema(**PAYLOAD_VALIDO),
+        )
+
+        from app.services.documentacion_habilitante_conductor import aprobar_documentacion_habilitante
+        documentacion_aprobada = aprobar_documentacion_habilitante(
+            db=db_session,
+            usuario_id=usuario.id,
+        )
+
+        assert documentacion_aprobada.usuario_id == usuario.id
+        assert documentacion_aprobada.estado_validacion == "APROBADO"
+
+    def test_lanza_excepcion_si_no_hay_documentacion_para_aprobar(self, db_session):
+        usuario = _crear_usuario_de_prueba(
+            db_session,
+            email="conductor.aprobar.empty@autospot.com",
+        )
+
+        from app.services.documentacion_habilitante_conductor import aprobar_documentacion_habilitante
+        with pytest.raises(DocumentacionHabilitanteNoRegistradaError):
+            aprobar_documentacion_habilitante(
+                db=db_session,
+                usuario_id=usuario.id,
+            )

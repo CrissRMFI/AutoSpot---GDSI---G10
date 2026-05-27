@@ -23,6 +23,7 @@ from app.exceptions import (
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
+    EstadoHabilitacion,
 )
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
@@ -232,3 +233,66 @@ def _obtener_detalle_conductor(
         fecha_vencimiento=documentacion.fecha_vencimiento,
         motivo_rechazo=documentacion.motivo_rechazo,
     )
+
+
+def resolver_solicitud(
+    db: Session,
+    tipo: str,
+    recurso_id,
+    aprobada: bool,
+    motivo_rechazo: str | None = None,
+) -> None:
+    """
+    Resuelve una solicitud de documentación (aprueba o rechaza).
+    
+    Args:
+        db: Sesion activa.
+        tipo: VEHICULO o CONDUCTOR.
+        recurso_id: UUID del recurso.
+        aprobada: Booleano, True si se aprueba, False si se rechaza.
+        motivo_rechazo: Texto con el motivo (obligatorio si aprobada es False).
+        
+    Raises:
+        ValueError: Si se rechaza y el motivo_rechazo es vacío.
+        TipoSolicitudDocumentacionInvalidoError: Si el tipo no es soportado.
+        SolicitudDocumentacionNoEncontradaError: Si el recurso no existe.
+    """
+    tipo_normalizado = tipo.strip().upper()
+
+    if not aprobada and (not motivo_rechazo or not motivo_rechazo.strip()):
+        raise ValueError("El motivo de rechazo es obligatorio para rechazar la solicitud.")
+
+    if tipo_normalizado == TIPO_SOLICITUD_VEHICULO:
+        vehiculo = db.query(Vehiculo).filter(Vehiculo.id == recurso_id).first()
+        if not vehiculo:
+            raise SolicitudDocumentacionNoEncontradaError()
+            
+        if aprobada:
+            vehiculo.estado_registro = "HABILITADO"
+            vehiculo.motivo_rechazo = None
+        else:
+            vehiculo.estado_registro = "RECHAZADO"
+            vehiculo.motivo_rechazo = motivo_rechazo.strip()
+            
+        db.commit()
+        return
+
+    if tipo_normalizado == TIPO_SOLICITUD_CONDUCTOR:
+        conductor = db.query(DocumentacionHabilitanteConductor).filter(
+            DocumentacionHabilitanteConductor.id == recurso_id
+        ).first()
+        if not conductor:
+            raise SolicitudDocumentacionNoEncontradaError()
+            
+        if aprobada:
+            conductor.estado_validacion = EstadoHabilitacion.APROBADO
+            conductor.motivo_rechazo = None
+        else:
+            conductor.estado_validacion = EstadoHabilitacion.RECHAZADO
+            conductor.motivo_rechazo = motivo_rechazo.strip()
+            
+        db.commit()
+        return
+
+    raise TipoSolicitudDocumentacionInvalidoError()
+
