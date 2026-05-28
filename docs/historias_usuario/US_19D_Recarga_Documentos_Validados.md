@@ -1,6 +1,6 @@
 # US 19D: Recarga de documentos ya validados
 
-**Sprint:** 4
+**Sprint:** 5
 **Actor:** Propietario
 **Prioridad:** Baja
 

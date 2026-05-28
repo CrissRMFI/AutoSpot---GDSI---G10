@@ -1,6 +1,6 @@
 # US 14D: Historial de clientes por auto
 
-**Sprint:** 4
+**Sprint:** 5
 **Actor:** Propietario
 **Prioridad:** Baja
 

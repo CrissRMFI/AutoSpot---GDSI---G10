@@ -1,6 +1,6 @@
 # US 8R: Rellenar formulario de Checkout
 
-**Sprint:** 5
+**Sprint:** 4
 **Actor:** Recepcionista
 **Prioridad:** Media
 

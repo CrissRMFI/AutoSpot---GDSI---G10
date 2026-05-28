@@ -1,6 +1,6 @@
 # US 7R: Recepción
 
-**Sprint:** 5
+**Sprint:** 4
 **Actor:** Recepcionista
 **Prioridad:** Alta
 

@@ -48,28 +48,29 @@ Fuente oficial de planificación vigente. Solo incluye las US que entran en el a
 
 | Sprint | US | Título | Estimación | Implementada |
 | --- | --- | --- | ---: | :---: |
-| 4 | 5R | Verificar código de reserva | 3 | ❌ |
-| 4 | 6R | Entrega | 2 | ❌ |
-| 4 | 11C | Suministro de información logística de retiro | 2 | ❌ |
+| 4 | 13C | Alquiler de auto | 5 | ❌ |
 | 4 | 14C | Obtener código de reserva | 3 | ❌ |
+| 4 | 11C | Suministro de información logística de retiro | 2 | ❌ |
+| 4 | 5R | Verificar código de reserva | 3 | ❌ |
 | 4 | 15C | Registro del estado inicial del activo (Check-in) | 2 | ❌ |
+| 4 | 8R | Rellenar formulario de Checkout | 2 | ❌ |
+| 4 | 6R | Entrega | 2 | ❌ |
+| 4 | 7R | Recepción | 3 | ❌ |
 | 4 | 18D | Visualización de ubicación del auto | 2 | ❌ |
-| 4 | 14D | Historial de clientes por auto | 3 | ❌ |
-| 4 | 19D | Recarga de documentos ya validados | 1 | ❌ |
-| **TOTAL** |  |  | **18** |  |
+| **TOTAL** |  |  | **24** |  |
 
 ## Sprint 5
 
 | Sprint | US | Título | Estimación | Implementada |
 | --- | --- | --- | ---: | :---: |
-| 5 | 7R | Recepción | 3 | ❌ |
-| 5 | 8R | Rellenar formulario de Checkout | 2 | ❌ |
-| 5 | 8C | Motor de filtrado de catálogo por puntuación | 3 | ❌ |
-| 5 | 18C | Testimonio descriptivo de la experiencia | 3 | ❌ |
 | 5 | 17C | Valoración cuantitativa del servicio | 3 | ❌ |
+| 5 | 18C | Testimonio descriptivo de la experiencia | 3 | ❌ |
 | 5 | 10C | Suministro histórico de valoraciones y reputación del activo | 3 | ❌ |
+| 5 | 8C | Motor de filtrado de catálogo por puntuación | 3 | ❌ |
+| 5 | 14D | Historial de clientes por auto | 3 | ❌ |
+| 5 | 19D | Recarga de documentos ya validados | 1 | ❌ |
 | 5 | 22C | Entrega del auto | 2 | ❌ |
-| **TOTAL** |  |  | **19** |  |
+| **TOTAL** |  |  | **18** |  |
 
 ## Sprint 6
 
