@@ -48,7 +48,6 @@ Fuente oficial de planificación vigente. Solo incluye las US que entran en el a
 
 | Sprint | US | Título | Estimación | Implementada |
 | --- | --- | --- | ---: | :---: |
-| 4 | 13C | Alquiler de auto | 5 | ❌ |
 | 4 | 14C | Obtener código de reserva | 3 | ❌ |
 | 4 | 11C | Suministro de información logística de retiro | 2 | ❌ |
 | 4 | 5R | Verificar código de reserva | 3 | ❌ |
@@ -57,7 +56,7 @@ Fuente oficial de planificación vigente. Solo incluye las US que entran en el a
 | 4 | 6R | Entrega | 2 | ❌ |
 | 4 | 7R | Recepción | 3 | ❌ |
 | 4 | 18D | Visualización de ubicación del auto | 2 | ❌ |
-| **TOTAL** |  |  | **24** |  |
+| **TOTAL** |  |  | **19** |  |
 
 ## Sprint 5
 
