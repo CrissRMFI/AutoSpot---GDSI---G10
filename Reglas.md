@@ -101,12 +101,56 @@ Crear el backup de Render. Este comando lee la base remota y guarda una copia en
 pg_dump "$RENDER_DATABASE_URL" -Fc -f /tmp/autospot_render.dump
 ```
 
+Si aparece un error de version similar a `server version mismatch`, significa que la base remota usa una version mas nueva de PostgreSQL que el `pg_dump` local. En ese caso usar el cliente de PostgreSQL 18 desde Docker:
+
+```bash
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -e RENDER_DATABASE_URL \
+  -v /tmp:/backup \
+  postgres:18 \
+  sh -lc 'pg_dump "$RENDER_DATABASE_URL" -Fc -f /backup/autospot_render.dump'
+```
+
 Restaurar ese backup en la base local. Este comando escribe sobre `localhost:5433/autospot_db`, no sobre Render:
 
 ```bash
 pg_restore --clean --if-exists --no-owner --no-privileges \
   --dbname="postgresql://autospot_user:autospot_pass@localhost:5433/autospot_db" \
   /tmp/autospot_render.dump
+```
+
+Si el backup fue creado con el contenedor `postgres:18`, restaurarlo tambien con `pg_restore` de PostgreSQL 18:
+
+```bash
+docker run --rm --network host \
+  -v /tmp:/backup \
+  postgres:18 \
+  pg_restore --clean --if-exists --no-owner --no-privileges \
+  --dbname="postgresql://autospot_user:autospot_pass@localhost:5433/autospot_db" \
+  /backup/autospot_render.dump
+```
+
+Si al restaurar aparece solo este error:
+
+```txt
+ERROR:  unrecognized configuration parameter "transaction_timeout"
+Command was: SET transaction_timeout = 0;
+pg_restore: warning: errors ignored on restore: 1
+```
+
+es una diferencia entre `pg_restore` 18 y el PostgreSQL local 16. Si el contador indica `errors ignored on restore: 1`, normalmente se puede continuar y verificar que las tablas/datos hayan quedado restaurados.
+
+Verificar restauracion local:
+
+```bash
+docker compose exec db psql -U autospot_user -d autospot_db -c "\dt"
+```
+
+Y, opcionalmente, contar registros principales:
+
+```bash
+docker compose exec db psql -U autospot_user -d autospot_db -c "select count(*) from usuarios; select count(*) from vehiculos;"
 ```
 
 Levantar todo nuevamente:
