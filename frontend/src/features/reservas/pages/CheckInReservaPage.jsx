@@ -1,8 +1,6 @@
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const CheckInReservaPage = () => {
-  const { reservaId } = useParams();
-
   return (
     <section className="w-full min-w-0 px-5 py-8 sm:px-8 lg:px-10">
       <Link
