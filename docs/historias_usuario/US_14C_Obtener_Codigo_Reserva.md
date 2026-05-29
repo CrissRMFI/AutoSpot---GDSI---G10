@@ -6,7 +6,7 @@
 
 ## Descripción
 **Como** conductor,
-**quiero** tener mi código de reserva en formato QR,
+**quiero** tener mi código de reserva,
 **para** efectuar el retiro físico del auto de manera segura y eficiente.
 
 ## Criterios de Aceptación
@@ -17,11 +17,11 @@
 **entonces** el sistema debe garantizar que la información suministrada corresponda estrictamente a la unidad y características pactadas originalmente.
 
 ### CA 2
-**Dado que** no ingresé mi medio de pago,
-**cuando** pago,
-**entonces** se me informa que debo seleccionar un medio de pago.
+**Dado que** tengo una reserva confirmada,
+**cuando** accedo a "Mis reservas",
+**entonces** puedo volver a visualizar el código de reserva y los datos pactados del retiro.
 
 ### CA 3
-**Dado que** el pago ha sido confirmado,
+**Dado que** la reserva ha sido confirmada,
 **cuando** el conductor se presenta para retirar el auto,
-**entonces** el sistema debe generar una credencial única y temporal en formato QR que funcione como validación, permitiendo al personal autorizar la entrega del auto.
+**entonces** el sistema debe generar una credencial única en formato de código de reserva que funcione como validación, permitiendo al personal autorizar la entrega del auto.

@@ -9,6 +9,7 @@ const SECCIONES_POR_ROL = {
       items: [
         { to: "/usuario/dashboard", label: "Dashboard", end: true },
         { to: "/catalogo", label: "Catálogo" },
+        { to: "/usuario/reservas", label: "Mis reservas" },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },
@@ -43,6 +44,10 @@ const SECCIONES_POR_ROL = {
         {
           to: "/admin/solicitudes-documentacion",
           label: "Solicitudes de documentación",
+        },
+        {
+          to: "/admin/reservas/verificar",
+          label: "Verificar reservas",
         },
         { to: "/estaciones", label: "Estaciones" },
       ],

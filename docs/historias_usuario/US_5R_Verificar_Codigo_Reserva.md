@@ -20,3 +20,6 @@
 **Dado que** el recepcionista ingresa un código que existe en el sistema,
 **cuando** la reserva asociada a ese código se encuentra en estado "Cancelada", "Finalizada" o la fecha de inicio ya expiró,
 **entonces** el sistema debe mostrar el detalle de la reserva pero bloquear cualquier botón de "Entregar auto".
+
+### Comportamiento operativo agregado
+Cuando se genera una reserva, el sistema debe crear una notificación persistente para los usuarios administradores/recepcionistas. Al hacer clic en la notificación, debe abrirse la pantalla dedicada de verificación de código con la reserva precargada. La notificación debe mantenerse visible hasta que el código de reserva sea verificado correctamente.
