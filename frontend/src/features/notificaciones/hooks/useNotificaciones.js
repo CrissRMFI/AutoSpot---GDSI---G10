@@ -18,8 +18,7 @@ export const useNotificaciones = () => {
   const { usuario, estaAutenticado } = useAuth();
   const rol = (usuario?.rol || "").toUpperCase();
   const debeConsultarSolicitudes = estaAutenticado && rol === "ADMIN";
-  const debeConsultarNotificacionesUsuario =
-    estaAutenticado && rol !== "ADMIN";
+  const debeConsultarNotificacionesUsuario = estaAutenticado;
 
   const [estado, setEstado] = useState({
     solicitudes: [],
@@ -103,8 +102,14 @@ export const useNotificaciones = () => {
 
     const { ocultarLocalmente = true } = opciones;
     const notificacionId = item.raw.id;
-    const esPersistente =
-      item.raw.tipo === "VEHICULO_DOCUMENTACION_PENDIENTE";
+    const esPersistente = [
+      "VEHICULO_DOCUMENTACION_PENDIENTE",
+      "RESERVA_PENDIENTE_VERIFICACION",
+    ].includes(item.raw.tipo);
+
+    if (item.raw.tipo === "RESERVA_PENDIENTE_VERIFICACION") {
+      return true;
+    }
 
     if (ocultarLocalmente && !esPersistente) {
       setEstado((previo) => ({
@@ -149,10 +154,21 @@ export const useNotificaciones = () => {
     titulo: notificacion.titulo,
     detalle: notificacion.mensaje,
     sujeto:
-      notificacion.recurso_tipo === "VEHICULO" ? "Tu vehículo" : "AutoSpot",
+      notificacion.recurso_tipo === "VEHICULO"
+        ? "Tu vehículo"
+        : notificacion.recurso_tipo === "RESERVA"
+          ? "Reserva"
+          : "AutoSpot",
     fecha: notificacion.created_at,
     href:
-      notificacion.tipo === "VEHICULO_DOCUMENTACION_PENDIENTE" &&
+      notificacion.tipo === "RESERVA_PENDIENTE_VERIFICACION" &&
+      notificacion.recurso_id
+        ? `/admin/reservas/verificar?reservaId=${notificacion.recurso_id}`
+        : (notificacion.tipo === "RESERVA_APROBADA" ||
+            notificacion.tipo === "RESERVA_RECHAZADA") &&
+          notificacion.recurso_id
+          ? `/usuario/reservas?focus=${notificacion.recurso_id}`
+          : notificacion.tipo === "VEHICULO_DOCUMENTACION_PENDIENTE" &&
       notificacion.recurso_id
         ? `/vehiculos/${notificacion.recurso_id}/documentacion`
         : notificacion.recurso_tipo === "VEHICULO" && notificacion.recurso_id

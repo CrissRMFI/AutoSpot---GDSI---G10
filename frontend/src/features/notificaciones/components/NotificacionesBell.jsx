@@ -87,6 +87,33 @@ const presentacionItem = (item) => {
       acento: "bg-[#b42318]",
     };
   }
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    tipo === "RESERVA_PENDIENTE_VERIFICACION"
+  ) {
+    return {
+      label: "Reserva",
+      Icono: IconoConductor,
+      iconoBg: "bg-[#dbeafe] text-[#1d4ed8]",
+      acento: "bg-[#1d4ed8]",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "RESERVA_APROBADA") {
+    return {
+      label: "Reserva aprobada",
+      Icono: IconoConductor,
+      iconoBg: "bg-autospot-black text-white",
+      acento: "bg-autospot-black",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "RESERVA_RECHAZADA") {
+    return {
+      label: "Reserva rechazada",
+      Icono: IconoConductor,
+      iconoBg: "bg-autospot-cream text-autospot-muted border border-autospot-border",
+      acento: "bg-autospot-muted",
+    };
+  }
   if (item.fuente === "SOLICITUD_DOCUMENTACION" && tipo === "VEHICULO") {
     return {
       label: "Vehículo",
@@ -156,6 +183,7 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
     itemsResumen.forEach((item) => {
       const notificacionId = item?.raw?.id;
       if (item.fuente !== "NOTIFICACION_USUARIO" || !notificacionId) return;
+      if (item.raw.tipo === "RESERVA_PENDIENTE_VERIFICACION") return;
       if (notificacionesVistasRef.current.has(notificacionId)) return;
 
       notificacionesVistasRef.current.add(notificacionId);

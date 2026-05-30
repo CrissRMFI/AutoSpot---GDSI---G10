@@ -17,10 +17,14 @@ import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculo
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
 import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
+import MisReservasPage from "../features/reservas/pages/MisReservasPage";
+import AlquilerStepperPage from "../features/reservas/pages/AlquilerStepperPage";
+import CheckInReservaPage from "../features/reservas/pages/CheckInReservaPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
 import DetalleEstacionPublicoPage from "../features/estaciones/pages/DetalleEstacionPublicoPage";
 import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSolicitudDocumentacionPage";
 import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
+import VerificarReservaPage from "../features/admin/pages/VerificarReservaPage";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -102,6 +106,33 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/catalogo/:vehiculoId/alquilar"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <AlquilerStepperPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/usuario/reservas"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <MisReservasPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/usuario/reservas/:reservaId/checkin"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <CheckInReservaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/propietario/dashboard"
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
@@ -169,6 +200,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <SolicitudesDocumentacionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/reservas/verificar"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <VerificarReservaPage />
             </ProtectedRoute>
           }
         />

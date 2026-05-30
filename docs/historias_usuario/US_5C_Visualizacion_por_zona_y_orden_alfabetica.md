@@ -1,7 +1,9 @@
 # US 5C: Visualización por zona y orden alfabética para la selección de estación
 
-**Estimación:** 3
+**Sprint:** 3
+**Actor:** Conductor
 **Prioridad:** Media
+**Estimación:** 3
 
 ## Descripción
 **Como** conductor,

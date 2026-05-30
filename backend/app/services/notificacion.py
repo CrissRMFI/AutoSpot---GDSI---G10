@@ -9,12 +9,18 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import NotificacionNoEncontradaError
 from app.models.notificacion import Notificacion
+from app.models.reserva import Reserva
+from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 
 
+TIPO_RESERVA_PENDIENTE_VERIFICACION = "RESERVA_PENDIENTE_VERIFICACION"
+TIPO_RESERVA_APROBADA = "RESERVA_APROBADA"
+TIPO_RESERVA_RECHAZADA = "RESERVA_RECHAZADA"
 TIPO_VEHICULO_DOCUMENTACION_PENDIENTE = "VEHICULO_DOCUMENTACION_PENDIENTE"
 TIPO_VEHICULO_HABILITADO = "VEHICULO_HABILITADO"
 TIPO_VEHICULO_RECHAZADO = "VEHICULO_RECHAZADO"
+RECURSO_RESERVA = "RESERVA"
 RECURSO_VEHICULO = "VEHICULO"
 ESTADO_VEHICULO_PENDIENTE_DOCUMENTACION = "PENDIENTE_DOCUMENTACION"
 
@@ -39,6 +45,132 @@ def _buscar_notificacion_vehiculo(
         )
         .first()
     )
+
+
+def _buscar_notificacion_reserva(
+    db: Session,
+    usuario_id: uuid.UUID,
+    reserva_id: uuid.UUID,
+    tipo: str,
+) -> Notificacion | None:
+    return (
+        db.query(Notificacion)
+        .filter(
+            Notificacion.usuario_id == usuario_id,
+            Notificacion.tipo == tipo,
+            Notificacion.recurso_tipo == RECURSO_RESERVA,
+            Notificacion.recurso_id == reserva_id,
+        )
+        .first()
+    )
+
+
+def crear_notificaciones_reserva_pendiente_verificacion(
+    db: Session,
+    reserva: Reserva,
+) -> list[Notificacion]:
+    """
+    Crea una notificación persistente para cada admin por una reserva nueva.
+
+    No hace commit: la reserva y sus notificaciones se persisten juntas.
+    """
+    admins = (
+        db.query(Usuario)
+        .filter(
+            Usuario.rol == "ADMIN",
+            Usuario.is_active.is_(True),
+        )
+        .all()
+    )
+    creadas: list[Notificacion] = []
+
+    for admin in admins:
+        existente = _buscar_notificacion_reserva(
+            db=db,
+            usuario_id=admin.id,
+            reserva_id=reserva.id,
+            tipo=TIPO_RESERVA_PENDIENTE_VERIFICACION,
+        )
+        if existente is not None:
+            creadas.append(existente)
+            continue
+
+        notificacion = Notificacion(
+            usuario_id=admin.id,
+            tipo=TIPO_RESERVA_PENDIENTE_VERIFICACION,
+            titulo="Reserva pendiente de verificación",
+            mensaje=f"Hay una reserva con código {reserva.codigo} pendiente de verificación.",
+            recurso_tipo=RECURSO_RESERVA,
+            recurso_id=reserva.id,
+        )
+        db.add(notificacion)
+        creadas.append(notificacion)
+
+    return creadas
+
+
+def cerrar_notificaciones_reserva_pendiente_verificacion(
+    db: Session,
+    reserva: Reserva,
+) -> None:
+    """Oculta las notificaciones de la reserva cuando el código ya fue verificado."""
+    ahora = datetime.now(timezone.utc)
+    notificaciones = (
+        db.query(Notificacion)
+        .filter(
+            Notificacion.tipo == TIPO_RESERVA_PENDIENTE_VERIFICACION,
+            Notificacion.recurso_tipo == RECURSO_RESERVA,
+            Notificacion.recurso_id == reserva.id,
+            Notificacion.vista_at.is_(None),
+        )
+        .all()
+    )
+
+    for notificacion in notificaciones:
+        notificacion.vista_at = ahora
+
+
+def crear_notificacion_reserva_aprobada(
+    db: Session,
+    reserva: Reserva,
+) -> Notificacion:
+    """Notifica al conductor que su reserva fue aprobada en estación."""
+    nombre_vehiculo = _nombre_vehiculo(reserva.vehiculo)
+    notificacion = Notificacion(
+        usuario_id=reserva.conductor_id,
+        tipo=TIPO_RESERVA_APROBADA,
+        titulo="Reserva aprobada",
+        mensaje=(
+            f"Tu reserva para el {nombre_vehiculo} fue aprobada. "
+            "Ya podés iniciar el check-in."
+        ),
+        recurso_tipo=RECURSO_RESERVA,
+        recurso_id=reserva.id,
+    )
+    db.add(notificacion)
+    return notificacion
+
+
+def crear_notificacion_reserva_rechazada(
+    db: Session,
+    reserva: Reserva,
+    motivo: str,
+) -> Notificacion:
+    """Notifica al conductor que su reserva fue rechazada con un motivo."""
+    nombre_vehiculo = _nombre_vehiculo(reserva.vehiculo)
+    notificacion = Notificacion(
+        usuario_id=reserva.conductor_id,
+        tipo=TIPO_RESERVA_RECHAZADA,
+        titulo="Reserva rechazada",
+        mensaje=(
+            f"Tu reserva para el {nombre_vehiculo} fue rechazada. "
+            f"Motivo: {motivo}"
+        ),
+        recurso_tipo=RECURSO_RESERVA,
+        recurso_id=reserva.id,
+    )
+    db.add(notificacion)
+    return notificacion
 
 
 def crear_notificacion_documentacion_pendiente(
