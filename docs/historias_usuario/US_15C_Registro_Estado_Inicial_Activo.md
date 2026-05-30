@@ -30,3 +30,8 @@
 **Dado que** no he terminado de realizar el check-in,
 **cuando** intento salir de la estación,
 **entonces** no puedo porque necesito completar el formulario.
+
+### CA 5
+**Dado que**  mi check-in fue rechazado,
+**cuando** entro a la página veo una notificación con los detalles del rechazo,
+**entonces** debo volver a hacer el check-in.
