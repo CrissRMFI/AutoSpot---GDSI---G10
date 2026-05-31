@@ -13,13 +13,13 @@ export const reenviarCheckin = async (checkinId, payload) => {
 export const subirFotoCheckin = async (file) => {
   const formData = new FormData();
   formData.append("archivo", file);
-  
+
   const response = await httpClient.post("/upload/foto-checkin", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   });
-  
+
   return response.data;
 };
 
@@ -29,11 +29,16 @@ export const listarCheckinsPendientes = async () => {
 };
 
 export const aprobarCheckin = async (checkinId) => {
-  const response = await httpClient.post(`/admin/checkins/${checkinId}/aprobar`);
+  const response = await httpClient.post(
+    `/admin/checkins/${checkinId}/aprobar`,
+  );
   return response.data;
 };
 
 export const rechazarCheckin = async (checkinId, motivo) => {
-  const response = await httpClient.post(`/admin/checkins/${checkinId}/rechazar`, { motivo });
+  const response = await httpClient.post(
+    `/admin/checkins/${checkinId}/rechazar`,
+    { motivo },
+  );
   return response.data;
 };
