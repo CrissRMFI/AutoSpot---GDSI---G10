@@ -269,3 +269,50 @@ async def subir_foto_licencia_endpoint(
         ) from exc
 
     return FotoSubidaResponseSchema(**resultado)
+
+
+@router.post(
+    "/upload/foto-checkin",
+    response_model=FotoSubidaResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir foto para el check-in del vehículo",
+    description=(
+        "Recibe un archivo de imagen y lo sube a Cloudinary bajo la carpeta "
+        "autospot/checkins y devuelve la URL pública. Requiere autenticación JWT."
+    ),
+    responses={
+        status.HTTP_201_CREATED: {"description": "Foto subida exitosamente."},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Formato o tamaño inválido.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido o expirado.",
+        },
+    },
+)
+async def subir_foto_checkin_endpoint(
+    archivo: UploadFile,
+    _usuario: dict = Depends(get_usuario_actual),
+) -> FotoSubidaResponseSchema:
+    """POST /upload/foto-checkin"""
+    contenido = await archivo.read()
+
+    try:
+        resultado = subir_imagen(
+            contenido=contenido,
+            nombre_archivo=archivo.filename or "checkin.jpg",
+            folder="autospot/checkins",
+            tags=["checkin"],
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al subir la imagen. Intentá de nuevo.",
+        ) from exc
+
+    return FotoSubidaResponseSchema(**resultado)
