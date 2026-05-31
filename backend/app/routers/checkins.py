@@ -35,7 +35,7 @@ def crear_checkin_endpoint(
     return crear_checkin(
         db=db,
         schema=payload,
-        conductor_id=usuario_actual["id"],
+        conductor_id=uuid.UUID(usuario_actual["sub"]),
     )
 
 
@@ -58,7 +58,7 @@ def re_enviar_checkin_endpoint(
         db=db,
         checkin_id=checkin_id,
         schema=payload,
-        conductor_id=usuario_actual["id"],
+        conductor_id=uuid.UUID(usuario_actual["sub"]),
     )
 
 
