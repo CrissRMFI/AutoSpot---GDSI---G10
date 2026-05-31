@@ -25,6 +25,7 @@ import DetalleEstacionPublicoPage from "../features/estaciones/pages/DetalleEsta
 import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSolicitudDocumentacionPage";
 import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
 import VerificarReservaPage from "../features/admin/pages/VerificarReservaPage";
+import RevisionCheckinPage from "../features/admin/pages/RevisionCheckinPage";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -209,6 +210,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <VerificarReservaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/checkins/revision"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <RevisionCheckinPage />
             </ProtectedRoute>
           }
         />
