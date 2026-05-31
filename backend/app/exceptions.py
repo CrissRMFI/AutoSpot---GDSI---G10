@@ -154,6 +154,42 @@ class VehiculoConReservaActivaError(AutoSpotError):
         super().__init__("No es posible deshabilitar el auto mientras haya una reserva o alquiler en curso")
 
 
+class VehiculoNoDisponibleParaReservaError(AutoSpotError):
+    """Se lanza cuando un vehículo no puede reservarse desde el catálogo."""
+    def __init__(self) -> None:
+        super().__init__("El vehículo no está disponible para reservar")
+
+
+class ReservaActivaExistenteError(AutoSpotError):
+    """Se lanza cuando ya existe una reserva activa para el vehículo."""
+    def __init__(self) -> None:
+        super().__init__("El vehículo ya tiene una reserva activa")
+
+
+class ReservaNoEncontradaError(AutoSpotError):
+    """Se lanza cuando no existe una reserva para el código informado."""
+    def __init__(self) -> None:
+        super().__init__("Reserva no encontrada")
+
+
+class ReservaCodigoYaVerificadoError(AutoSpotError):
+    """Se lanza cuando se intenta verificar un código ya usado previamente."""
+    def __init__(self) -> None:
+        super().__init__("El código de reserva ya fue utilizado")
+
+
+class ReservaNoRechazableError(AutoSpotError):
+    """Se lanza cuando una reserva ya no puede rechazarse por su estado actual."""
+    def __init__(self) -> None:
+        super().__init__("La reserva no puede rechazarse en su estado actual")
+
+
+class MotivoRechazoRequeridoError(AutoSpotError):
+    """Se lanza cuando se rechaza una reserva sin motivo."""
+    def __init__(self) -> None:
+        super().__init__("Debes ingresar un motivo para rechazar la reserva")
+
+
 class DocumentacionVehiculoNoEditableError(AutoSpotError):
     """
     Se lanza cuando se intenta cargar o modificar documentación de un vehículo

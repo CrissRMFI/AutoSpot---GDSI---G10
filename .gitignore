@@ -80,4 +80,4 @@ temp/
 *.bak
 *.backup
 
-backend/scripts/
+scripts/
