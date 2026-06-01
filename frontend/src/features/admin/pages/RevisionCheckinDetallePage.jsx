@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
-  Container, Box, Button, CircularProgress, Alert, Stack,
+  Box, Button, CircularProgress, Alert, Stack,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
@@ -103,7 +103,7 @@ const RevisionCheckinDetallePage = () => {
   const pendiente = estado === "PENDIENTE";
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <section className="w-full min-w-0">
       <Button startIcon={<ArrowBackIcon />} onClick={volverAlListado} sx={{ mb: 3 }}>
         Volver al listado
       </Button>
@@ -182,7 +182,7 @@ const RevisionCheckinDetallePage = () => {
         mensaje={mensaje?.mensaje}
         onClose={() => setMensaje(null)}
       />
-    </Container>
+    </section>
   );
 };
 

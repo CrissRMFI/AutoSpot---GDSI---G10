@@ -68,18 +68,18 @@ const EntregaAutosPage = () => {
 
   if (isLoading)
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4, width: "100%" }}>
         <CircularProgress />
       </Box>
     );
 
   return (
-    <div className="w-full p-5">
+    <section className="w-full min-w-0">
       <Typography
         variant="h4"
         sx={{ mb: 1, fontWeight: 700, color: "var(--text)" }}
       >
-        Entrega de Autos
+        Entrega de autos
       </Typography>
       <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>
         Reservas con check-in aprobado, listas para entregar al conductor.
@@ -96,69 +96,83 @@ const EntregaAutosPage = () => {
       ) : (
         <Box
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            gap: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
           }}
         >
           {reservas.map((reserva) => (
             <Card
               key={reserva.id}
-              sx={{ borderRadius: 4, boxShadow: "var(--shadow-autospot-soft)" }}
+              sx={{
+                width: "100%",
+                borderRadius: 2,
+                boxShadow: "var(--shadow-autospot-soft)",
+              }}
             >
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold">
-                  {reserva.vehiculo?.marca} {reserva.vehiculo?.modelo}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  sx={{ mb: 2 }}
-                >
-                  Reserva {reserva.codigo_reserva}
-                  {reserva.vehiculo?.patente
-                    ? ` — ${reserva.vehiculo.patente}`
-                    : ""}
-                </Typography>
+              <CardContent
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "minmax(0,1.35fr) minmax(160px,0.7fr) minmax(180px,0.8fr) auto",
+                  },
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="h6" fontWeight="bold" noWrap>
+                    {reserva.vehiculo?.marca} {reserva.vehiculo?.modelo}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Reserva {reserva.codigo_reserva}
+                    {reserva.vehiculo?.patente
+                      ? ` - ${reserva.vehiculo.patente}`
+                      : ""}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    Estación
+                  </Typography>
+                  <Typography variant="body1">
+                    {reserva.estacion_retiro}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    Inicio pactado
+                  </Typography>
+                  <Typography variant="body1">
+                    {new Date(reserva.fecha_inicio).toLocaleString()}
+                  </Typography>
+                </Box>
 
                 <Box
                   sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 2,
-                    mb: 2,
+                    display: "flex",
+                    justifyContent: { xs: "stretch", md: "flex-end" },
                   }}
                 >
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Estación
-                    </Typography>
-                    <Typography variant="body1">
-                      {reserva.estacion_retiro}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Inicio pactado
-                    </Typography>
-                    <Typography variant="body1">
-                      {new Date(reserva.fecha_inicio).toLocaleString()}
-                    </Typography>
-                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={() => setConfirmacion(reserva)}
+                    sx={{
+                      width: { xs: "100%", md: "auto" },
+                      bgcolor: "var(--accent)",
+                      fontWeight: 700,
+                      borderRadius: 8,
+                      whiteSpace: "nowrap",
+                      "&:hover": { bgcolor: "var(--accent-dark)" },
+                    }}
+                  >
+                    Registrar salida
+                  </Button>
                 </Box>
-
-                <Button
-                  variant="contained"
-                  onClick={() => setConfirmacion(reserva)}
-                  sx={{
-                    bgcolor: "var(--accent)",
-                    fontWeight: 700,
-                    borderRadius: 8,
-                    "&:hover": { bgcolor: "var(--accent-dark)" },
-                  }}
-                >
-                  Registrar salida (entregar)
-                </Button>
               </CardContent>
             </Card>
           ))}
@@ -186,7 +200,7 @@ const EntregaAutosPage = () => {
         mensaje={mensaje?.mensaje}
         onClose={() => setMensaje(null)}
       />
-    </div>
+    </section>
   );
 };
 
