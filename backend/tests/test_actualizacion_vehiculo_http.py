@@ -36,8 +36,16 @@ def _crear_cliente():
     app.dependency_overrides[get_db] = _override_get_db_factory(TestingSessionLocal)
     return engine, TestClient(app)
 
-def _registrar_y_loguear_usuario(client: TestClient, email: str, password: str = "password123") -> tuple[str, str]:
-    client.post("/usuarios/registro", json={"email": email, "password": password})
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str,
+    password: str = "password123",
+    rol: str = "PROPIETARIO",
+) -> tuple[str, str]:
+    client.post(
+        "/usuarios/registro",
+        json={"email": email, "password": password, "rol": rol},
+    )
     response = client.post("/usuarios/login", json={"email": email, "password": password})
     return response.json()["id"], response.json()["access_token"]
 

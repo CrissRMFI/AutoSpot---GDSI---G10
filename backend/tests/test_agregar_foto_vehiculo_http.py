@@ -63,9 +63,11 @@ def _registrar_y_loguear_usuario(
     client: TestClient,
     email: str,
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> tuple[str, str]:
     response = client.post(
-        "/usuarios/registro", json={"email": email, "password": password}
+        "/usuarios/registro",
+        json={"email": email, "password": password, "rol": rol},
     )
     assert response.status_code == 201, response.text
     usuario_id = response.json()["id"]

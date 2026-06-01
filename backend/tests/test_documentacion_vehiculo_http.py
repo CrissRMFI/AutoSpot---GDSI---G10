@@ -26,6 +26,7 @@ def crear_vehiculo_base(db_session):
         schema=RegistroUsuarioSchema(
             email="propietario.documentacion.http@autospot.com",
             password="password123",
+            rol="PROPIETARIO",
         ),
     )
 

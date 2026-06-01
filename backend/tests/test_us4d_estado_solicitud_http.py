@@ -219,7 +219,11 @@ class TestSeguridadUS4DHTTP:
                 vehiculo, _ = _registrar_vehiculo(client, "propietario4d@autospot.com")
                 
                 from tests.test_us9d_habilitar_auto_http import _registrar_y_loguear_usuario
-                _, token_ajeno = _registrar_y_loguear_usuario(client, "espia4d@autospot.com")
+                _, token_ajeno = _registrar_y_loguear_usuario(
+                    client,
+                    "espia4d@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 response = client.get(
                     f"/vehiculos/{vehiculo['id']}",
@@ -237,7 +241,11 @@ class TestSeguridadUS4DHTTP:
         try:
             with client_context as client:
                 from tests.test_us9d_habilitar_auto_http import _registrar_y_loguear_usuario
-                _, token = _registrar_y_loguear_usuario(client, "seg404@autospot.com")
+                _, token = _registrar_y_loguear_usuario(
+                    client,
+                    "seg404@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 vehiculo_id_inexistente = str(uuid.uuid4())
                 response = client.get(

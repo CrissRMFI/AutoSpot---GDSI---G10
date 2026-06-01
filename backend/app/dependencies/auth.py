@@ -176,3 +176,30 @@ def requerir_rol_cliente(
         )
 
     return usuario_actual
+
+
+def requerir_rol_propietario(
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Verifica que el usuario autenticado tenga rol PROPIETARIO.
+
+    Se usa para acciones propias de publicación y administración de vehículos.
+    """
+    usuario_id = usuario_actual.get("sub")
+    if not usuario_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
+    if usuario is None or (usuario.rol or "").upper() != "PROPIETARIO":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operación reservada al rol PROPIETARIO",
+        )
+
+    return usuario_actual
