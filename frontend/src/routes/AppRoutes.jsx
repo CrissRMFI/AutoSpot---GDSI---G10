@@ -53,13 +53,44 @@ const DashboardRedirect = () => {
   return <Navigate to={rutaPorRol(usuario?.rol)} replace />;
 };
 
+const PublicOnlyRoute = ({ children }) => {
+  const { estaAutenticado, usuario } = useAuth();
+
+  if (estaAutenticado) {
+    return <Navigate to={rutaPorRol(usuario?.rol)} replace />;
+  }
+
+  return children;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route
+        path="/"
+        element={
+          <PublicOnlyRoute>
+            <LandingPage />
+          </PublicOnlyRoute>
+        }
+      />
 
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/registro" element={<RegisterPage />} />
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <LoginPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/registro"
+        element={
+          <PublicOnlyRoute>
+            <RegisterPage />
+          </PublicOnlyRoute>
+        }
+      />
 
       <Route element={<AuthenticatedShell />}>
         <Route path="/estaciones" element={<EstacionesPage />} />

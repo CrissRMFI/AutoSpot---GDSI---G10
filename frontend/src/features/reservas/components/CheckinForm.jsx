@@ -29,6 +29,7 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
 
   const [uploadingState, setUploadingState] = useState({});
   const [error, setError] = useState(null);
+  const [submitBloqueado, setSubmitBloqueado] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,8 +81,10 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading || submitBloqueado) return;
+
     if (formData.tiene_danios && !formData.descripcion_danios.trim()) {
       setError("Debe proporcionar una descripción de los daños.");
       return;
@@ -90,7 +93,13 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
       setError("Debe subir al menos una foto de los daños reportados.");
       return;
     }
-    onSubmit(formData);
+
+    setSubmitBloqueado(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setSubmitBloqueado(false);
+    }
   };
 
   const renderPhotoUploadField = ({ label, fieldName, isMultiple = false }) => {
@@ -273,7 +282,7 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
       <Button
         type="submit"
         variant="contained"
-        disabled={isLoading || Object.values(uploadingState).some(Boolean)}
+        disabled={isLoading || submitBloqueado || Object.values(uploadingState).some(Boolean)}
         sx={{ 
           width: "100%", 
           py: 1.5, 
@@ -283,7 +292,7 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
           "&:hover": { bgcolor: "var(--accent-dark)" } 
         }}
       >
-        {isLoading ? <CircularProgress size={24} color="inherit" /> : (initialData ? "Re-enviar Check-in" : "Enviar Check-in")}
+        {isLoading || submitBloqueado ? <CircularProgress size={24} color="inherit" /> : (initialData ? "Re-enviar Check-in" : "Enviar Check-in")}
       </Button>
     </Box>
   );
