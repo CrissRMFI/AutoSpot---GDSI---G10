@@ -2,20 +2,34 @@
 Controlador HTTP — US 15C: Check-in de Vehículo.
 """
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import get_usuario_actual
+from app.dependencies.auth import get_usuario_actual, requerir_rol_admin
 from app.schemas.checkin_vehiculo import (
     CheckinCreatePayloadSchema,
     CheckinResponseSchema,
     CheckinUpdatePayloadSchema,
 )
-from app.services.checkin_service import crear_checkin, re_enviar_checkin
+from app.services.checkin_service import (
+    aprobar_checkin,
+    crear_checkin,
+    listar_checkins,
+    listar_checkins_pendientes,
+    obtener_checkin,
+    re_enviar_checkin,
+    rechazar_checkin,
+)
 
 
 router = APIRouter(tags=["checkins"])
+
+
+def _obtener_usuario_id(usuario_actual: dict) -> uuid.UUID:
+    usuario_id = usuario_actual.get("sub") or usuario_actual.get("id")
+    return uuid.UUID(str(usuario_id))
 
 
 @router.post(
@@ -35,7 +49,7 @@ def crear_checkin_endpoint(
     return crear_checkin(
         db=db,
         schema=payload,
-        conductor_id=uuid.UUID(usuario_actual["sub"]),
+        conductor_id=_obtener_usuario_id(usuario_actual),
     )
 
 
@@ -58,8 +72,21 @@ def re_enviar_checkin_endpoint(
         db=db,
         checkin_id=checkin_id,
         schema=payload,
-        conductor_id=uuid.UUID(usuario_actual["sub"]),
+        conductor_id=_obtener_usuario_id(usuario_actual),
     )
+
+
+@router.get(
+    "/admin/checkins",
+    response_model=list[CheckinResponseSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Listar todos los check-ins",
+)
+def listar_checkins_endpoint(
+    db: Session = Depends(get_db),
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+):
+    return listar_checkins(db)
 
 
 @router.get(
@@ -70,14 +97,26 @@ def re_enviar_checkin_endpoint(
 )
 def listar_checkins_pendientes_endpoint(
     db: Session = Depends(get_db),
-    usuario_actual: dict = Depends(get_usuario_actual),
+    _usuario_actual: dict = Depends(requerir_rol_admin),
 ):
-    from fastapi import HTTPException
-    from app.services.checkin_service import listar_checkins_pendientes
-    if usuario_actual.get("rol") != "ADMIN":
-        raise HTTPException(status_code=403, detail="Acceso denegado")
-    
     return listar_checkins_pendientes(db)
+
+
+@router.get(
+    "/admin/checkins/{checkin_id}",
+    response_model=CheckinResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener un check-in por id",
+)
+def obtener_checkin_endpoint(
+    checkin_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+):
+    checkin = obtener_checkin(db, checkin_id)
+    if checkin is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Check-in no encontrado")
+    return checkin
 
 
 @router.post(
@@ -88,19 +127,14 @@ def listar_checkins_pendientes_endpoint(
 def aprobar_checkin_endpoint(
     checkin_id: uuid.UUID,
     db: Session = Depends(get_db),
-    usuario_actual: dict = Depends(get_usuario_actual),
+    _usuario_actual: dict = Depends(requerir_rol_admin),
 ):
-    from fastapi import HTTPException
-    from app.services.checkin_service import aprobar_checkin
-    if usuario_actual.get("rol") != "ADMIN":
-        raise HTTPException(status_code=403, detail="Acceso denegado")
-    
     return aprobar_checkin(db, checkin_id)
 
 
-from pydantic import BaseModel
 class RechazarPayload(BaseModel):
     motivo: str
+
 
 @router.post(
     "/admin/checkins/{checkin_id}/rechazar",
@@ -111,11 +145,6 @@ def rechazar_checkin_endpoint(
     checkin_id: uuid.UUID,
     payload: RechazarPayload,
     db: Session = Depends(get_db),
-    usuario_actual: dict = Depends(get_usuario_actual),
+    _usuario_actual: dict = Depends(requerir_rol_admin),
 ):
-    from fastapi import HTTPException
-    from app.services.checkin_service import rechazar_checkin
-    if usuario_actual.get("rol") != "ADMIN":
-        raise HTTPException(status_code=403, detail="Acceso denegado")
-    
     return rechazar_checkin(db, checkin_id, payload.motivo)

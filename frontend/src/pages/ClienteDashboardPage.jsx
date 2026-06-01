@@ -205,6 +205,25 @@ const ClienteDashboardPage = () => {
             Ver catálogo
           </Link>
         </article>
+
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)] md:col-span-2 xl:col-span-1">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+            Alquileres
+          </p>
+          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+            Mis alquileres
+          </h2>
+          <p className="mb-5 text-sm leading-6 text-autospot-muted">
+            Consultá tus alquileres activos, checkout pendiente e historial.
+          </p>
+
+          <Link
+            to="/usuario/alquileres"
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+          >
+            Ver alquileres
+          </Link>
+        </article>
       </section>
     </>
   );

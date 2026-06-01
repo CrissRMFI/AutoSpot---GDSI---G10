@@ -38,6 +38,8 @@ from app.models.documentacion_habilitante_conductor import (  # noqa: F401
 )
 from app.models.estacion import Estacion  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.checkin_vehiculo import CheckinVehiculo  # noqa: F401
+from app.models.checkout_vehiculo import CheckoutVehiculo  # noqa: F401
 from app.models.marca import Marca, Modelo  # noqa: F401
 from app.models.notificacion import Notificacion  # noqa: F401
 from app.models.reserva import Reserva  # noqa: F401

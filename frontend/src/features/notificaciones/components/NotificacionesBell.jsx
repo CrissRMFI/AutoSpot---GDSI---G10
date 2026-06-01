@@ -98,6 +98,14 @@ const presentacionItem = (item) => {
       acento: "bg-[#1d4ed8]",
     };
   }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "CHECKIN_PENDIENTE") {
+    return {
+      label: "Check-in",
+      Icono: IconoConductor,
+      iconoBg: "bg-[#fef3c7] text-[#92400e]",
+      acento: "bg-[#92400e]",
+    };
+  }
   if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "RESERVA_APROBADA") {
     return {
       label: "Reserva aprobada",
@@ -112,6 +120,39 @@ const presentacionItem = (item) => {
       Icono: IconoConductor,
       iconoBg: "bg-autospot-cream text-autospot-muted border border-autospot-border",
       acento: "bg-autospot-muted",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "AUTO_DEVUELTO") {
+    return {
+      label: "Recepción",
+      Icono: IconoVehiculo,
+      iconoBg: "bg-[#fef3c7] text-[#92400e]",
+      acento: "bg-[#92400e]",
+    };
+  }
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    tipo === "CHECKOUT_PENDIENTE_CONFIRMACION"
+  ) {
+    return {
+      label: "Checkout",
+      Icono: IconoConductor,
+      iconoBg: "bg-[#dbeafe] text-[#1d4ed8]",
+      acento: "bg-[#1d4ed8]",
+    };
+  }
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    (tipo === "CHECKOUT_CONFIRMADO" || tipo === "CHECKOUT_RECHAZADO")
+  ) {
+    return {
+      label: tipo === "CHECKOUT_CONFIRMADO" ? "Confirmado" : "Rechazado",
+      Icono: IconoVehiculo,
+      iconoBg:
+        tipo === "CHECKOUT_CONFIRMADO"
+          ? "bg-[#dcfce7] text-[#166534]"
+          : "bg-[#fee2e2] text-[#b42318]",
+      acento: tipo === "CHECKOUT_CONFIRMADO" ? "bg-[#166534]" : "bg-[#b42318]",
     };
   }
   if (item.fuente === "SOLICITUD_DOCUMENTACION" && tipo === "VEHICULO") {
@@ -183,7 +224,16 @@ const NotificacionesBell = ({ tonoClaro = false }) => {
     itemsResumen.forEach((item) => {
       const notificacionId = item?.raw?.id;
       if (item.fuente !== "NOTIFICACION_USUARIO" || !notificacionId) return;
-      if (item.raw.tipo === "RESERVA_PENDIENTE_VERIFICACION") return;
+      if (
+        [
+          "RESERVA_PENDIENTE_VERIFICACION",
+          "AUTO_DEVUELTO",
+          "CHECKOUT_PENDIENTE_CONFIRMACION",
+          "CHECKOUT_RECHAZADO",
+        ].includes(item.raw.tipo)
+      ) {
+        return;
+      }
       if (notificacionesVistasRef.current.has(notificacionId)) return;
 
       notificacionesVistasRef.current.add(notificacionId);

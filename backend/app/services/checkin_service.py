@@ -165,7 +165,36 @@ def re_enviar_checkin(
 
 
 def listar_checkins_pendientes(db: Session):
-    return db.query(CheckinVehiculo).options(joinedload(CheckinVehiculo.reserva)).filter(CheckinVehiculo.estado == "PENDIENTE").all()
+    return (
+        db.query(CheckinVehiculo)
+        .options(joinedload(CheckinVehiculo.reserva))
+        .filter(CheckinVehiculo.estado == "PENDIENTE")
+        .order_by(CheckinVehiculo.created_at.asc())
+        .all()
+    )
+
+
+def listar_checkins(db: Session):
+    """Todos los check-ins, con los PENDIENTE primero y luego por fecha desc."""
+    return (
+        db.query(CheckinVehiculo)
+        .options(joinedload(CheckinVehiculo.reserva))
+        .order_by(
+            (CheckinVehiculo.estado != "PENDIENTE"),
+            CheckinVehiculo.created_at.desc(),
+        )
+        .all()
+    )
+
+
+def obtener_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo | None:
+    """Obtiene un check-in por id, en cualquier estado (para la vista de detalle)."""
+    return (
+        db.query(CheckinVehiculo)
+        .options(joinedload(CheckinVehiculo.reserva))
+        .filter(CheckinVehiculo.id == checkin_id)
+        .first()
+    )
 
 
 def aprobar_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo:

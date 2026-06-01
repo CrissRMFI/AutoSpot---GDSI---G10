@@ -10,6 +10,7 @@ const SECCIONES_POR_ROL = {
         { to: "/usuario/dashboard", label: "Dashboard", end: true },
         { to: "/catalogo", label: "Catálogo" },
         { to: "/usuario/reservas", label: "Mis reservas" },
+        { to: "/usuario/alquileres", label: "Mis alquileres" },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },
@@ -48,6 +49,18 @@ const SECCIONES_POR_ROL = {
         {
           to: "/admin/reservas/verificar",
           label: "Verificar reservas",
+        },
+        {
+          to: "/admin/checkins/revision",
+          label: "Revisión de check-ins",
+        },
+        {
+          to: "/admin/entrega",
+          label: "Entrega de autos",
+        },
+        {
+          to: "/admin/recepcion",
+          label: "Recepción de autos",
         },
         { to: "/estaciones", label: "Estaciones" },
       ],

@@ -105,6 +105,9 @@ export const useNotificaciones = () => {
     const esPersistente = [
       "VEHICULO_DOCUMENTACION_PENDIENTE",
       "RESERVA_PENDIENTE_VERIFICACION",
+      "AUTO_DEVUELTO",
+      "CHECKOUT_PENDIENTE_CONFIRMACION",
+      "CHECKOUT_RECHAZADO",
     ].includes(item.raw.tipo);
 
     if (item.raw.tipo === "RESERVA_PENDIENTE_VERIFICACION") {
@@ -148,6 +151,51 @@ export const useNotificaciones = () => {
     raw: solicitud,
   }));
 
+  const hrefNotificacion = (notificacion) => {
+    if (notificacion.tipo === "CHECKIN_PENDIENTE") {
+      return "/admin/checkins/revision";
+    }
+    if (notificacion.tipo === "AUTO_DEVUELTO" && notificacion.recurso_id) {
+      return `/admin/recepcion?focus=${notificacion.recurso_id}`;
+    }
+    if (
+      (notificacion.tipo === "CHECKOUT_CONFIRMADO" ||
+        notificacion.tipo === "CHECKOUT_RECHAZADO") &&
+      notificacion.recurso_id
+    ) {
+      return `/admin/recepcion?focus=${notificacion.recurso_id}`;
+    }
+    if (
+      notificacion.tipo === "CHECKOUT_PENDIENTE_CONFIRMACION" &&
+      notificacion.recurso_id
+    ) {
+      return `/usuario/alquileres?focus=${notificacion.recurso_id}`;
+    }
+    if (
+      notificacion.tipo === "RESERVA_PENDIENTE_VERIFICACION" &&
+      notificacion.recurso_id
+    ) {
+      return `/admin/reservas/verificar?reservaId=${notificacion.recurso_id}`;
+    }
+    if (
+      (notificacion.tipo === "RESERVA_APROBADA" ||
+        notificacion.tipo === "RESERVA_RECHAZADA") &&
+      notificacion.recurso_id
+    ) {
+      return `/usuario/reservas?focus=${notificacion.recurso_id}`;
+    }
+    if (
+      notificacion.tipo === "VEHICULO_DOCUMENTACION_PENDIENTE" &&
+      notificacion.recurso_id
+    ) {
+      return `/vehiculos/${notificacion.recurso_id}/documentacion`;
+    }
+    if (notificacion.recurso_tipo === "VEHICULO" && notificacion.recurso_id) {
+      return `/vehiculos/${notificacion.recurso_id}/detalle`;
+    }
+    return "/dashboard";
+  };
+
   const itemsUsuario = notificaciones.map((notificacion) => ({
     id: `notificacion:${notificacion.id}`,
     fuente: "NOTIFICACION_USUARIO",
@@ -160,20 +208,7 @@ export const useNotificaciones = () => {
           ? "Reserva"
           : "AutoSpot",
     fecha: notificacion.created_at,
-    href:
-      notificacion.tipo === "RESERVA_PENDIENTE_VERIFICACION" &&
-      notificacion.recurso_id
-        ? `/admin/reservas/verificar?reservaId=${notificacion.recurso_id}`
-        : (notificacion.tipo === "RESERVA_APROBADA" ||
-            notificacion.tipo === "RESERVA_RECHAZADA") &&
-          notificacion.recurso_id
-          ? `/usuario/reservas?focus=${notificacion.recurso_id}`
-          : notificacion.tipo === "VEHICULO_DOCUMENTACION_PENDIENTE" &&
-      notificacion.recurso_id
-        ? `/vehiculos/${notificacion.recurso_id}/documentacion`
-        : notificacion.recurso_tipo === "VEHICULO" && notificacion.recurso_id
-          ? `/vehiculos/${notificacion.recurso_id}/detalle`
-          : "/dashboard",
+    href: hrefNotificacion(notificacion),
     raw: notificacion,
   }));
 
@@ -193,12 +228,12 @@ export const useNotificaciones = () => {
         ? "/admin/solicitudes-documentacion"
         : rol === "PROPIETARIO"
           ? "/propietario/vehiculos"
-          : null,
+          : "/usuario/alquileres",
     textoVerTodas:
       rol === "ADMIN"
         ? "Ver todas las solicitudes →"
         : rol === "PROPIETARIO"
           ? "Ver mis vehículos →"
-          : "",
+          : "Ver mis alquileres →",
   };
 };
