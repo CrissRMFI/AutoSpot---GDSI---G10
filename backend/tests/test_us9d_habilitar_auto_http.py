@@ -51,8 +51,16 @@ def _crear_cliente():
     return engine, TestClient(app)
 
 
-def _registrar_usuario(client: TestClient, email: str = "us9d@autospot.com", password: str = "password123") -> str:
-    response = client.post("/usuarios/registro", json={"email": email, "password": password})
+def _registrar_usuario(
+    client: TestClient,
+    email: str = "us9d@autospot.com",
+    password: str = "password123",
+    rol: str = "CLIENTE",
+) -> str:
+    response = client.post(
+        "/usuarios/registro",
+        json={"email": email, "password": password, "rol": rol},
+    )
     return response.json()["id"]
 
 
@@ -61,8 +69,18 @@ def _login_usuario(client: TestClient, email: str = "us9d@autospot.com", passwor
     return response.json()["access_token"]
 
 
-def _registrar_y_loguear_usuario(client: TestClient, email: str = "us9d@autospot.com", password: str = "password123") -> tuple[str, str]:
-    usuario_id = _registrar_usuario(client=client, email=email, password=password)
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str = "us9d@autospot.com",
+    password: str = "password123",
+    rol: str = "CLIENTE",
+) -> tuple[str, str]:
+    usuario_id = _registrar_usuario(
+        client=client,
+        email=email,
+        password=password,
+        rol=rol,
+    )
     token = _login_usuario(client=client, email=email, password=password)
     return usuario_id, token
 
@@ -92,7 +110,11 @@ def _payload_vehiculo_valido():
 
 
 def _registrar_vehiculo(client: TestClient, email: str = "us9d@autospot.com") -> tuple[dict, str]:
-    propietario_id, token = _registrar_y_loguear_usuario(client, email=email)
+    propietario_id, token = _registrar_y_loguear_usuario(
+        client,
+        email=email,
+        rol="PROPIETARIO",
+    )
     response = client.post(
         f"/usuarios/{propietario_id}/vehiculos",
         json=_payload_vehiculo_valido(),
@@ -285,7 +307,11 @@ class TestSeguridad_CambiarDisponibilidadHTTP:
                 _forzar_estado_vehiculo(engine, vehiculo["id"], "HABILITADO")
 
                 # Creamos otro usuario malicioso
-                _, token_ajeno = _registrar_y_loguear_usuario(client, "malicioso@autospot.com")
+                _, token_ajeno = _registrar_y_loguear_usuario(
+                    client,
+                    "malicioso@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 response = client.patch(
                     f"/vehiculos/{vehiculo['id']}/disponibilidad",
@@ -303,7 +329,11 @@ class TestSeguridad_CambiarDisponibilidadHTTP:
         engine, client_context = _crear_cliente()
         try:
             with client_context as client:
-                _, token = _registrar_y_loguear_usuario(client, "seguridad3@autospot.com")
+                _, token = _registrar_y_loguear_usuario(
+                    client,
+                    "seguridad3@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 vehiculo_id_inexistente = str(uuid.uuid4())
                 response = client.patch(

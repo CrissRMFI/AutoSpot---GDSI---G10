@@ -68,6 +68,7 @@ def _registrar_usuario(
     client: TestClient,
     email: str = "propietario.us5d.http@autospot.com",
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> str:
     """
     Helper: registra un Usuario base y retorna su id.
@@ -77,6 +78,7 @@ def _registrar_usuario(
         json={
             "email": email,
             "password": password,
+            "rol": rol,
         },
     )
 
@@ -116,6 +118,7 @@ def _registrar_y_loguear_usuario(
     client: TestClient,
     email: str = "propietario.us5d.http@autospot.com",
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> tuple[str, str]:
     """
     Helper: registra y autentica un usuario.
@@ -127,6 +130,7 @@ def _registrar_y_loguear_usuario(
         client=client,
         email=email,
         password=password,
+        rol=rol,
     )
     token = _login_usuario(
         client=client,

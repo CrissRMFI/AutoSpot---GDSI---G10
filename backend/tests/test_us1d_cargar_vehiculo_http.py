@@ -72,6 +72,7 @@ def _registrar_usuario(
     client: TestClient,
     email: str = "propietario.vehiculo.http@autospot.com",
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> str:
     """
     Helper: registra un Usuario base usando el endpoint existente de US 5U
@@ -82,6 +83,7 @@ def _registrar_usuario(
         json={
             "email": email,
             "password": password,
+            "rol": rol,
         },
     )
 
@@ -121,6 +123,7 @@ def _registrar_y_loguear_usuario(
     client: TestClient,
     email: str = "propietario.vehiculo.http@autospot.com",
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> tuple[str, str]:
     """
     Helper: registra y autentica un usuario.
@@ -132,6 +135,7 @@ def _registrar_y_loguear_usuario(
         client=client,
         email=email,
         password=password,
+        rol=rol,
     )
     token = _login_usuario(
         client=client,
@@ -351,6 +355,35 @@ class TestErroresRegistroVehiculoHTTP:
                     response.json()["detail"]
                     == "No puede operar sobre otro usuario"
                 )
+
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_usuario_cliente_no_puede_registrar_vehiculo(self):
+        """
+        Si el usuario autenticado no es PROPIETARIO,
+        no puede publicar vehículos aunque opere sobre su propio id.
+        """
+        engine, client_context = _crear_cliente()
+
+        try:
+            with client_context as client:
+                usuario_id, token = _registrar_y_loguear_usuario(
+                    client=client,
+                    email="cliente.no.publica@autospot.com",
+                    rol="CLIENTE",
+                )
+
+                response = client.post(
+                    f"/usuarios/{usuario_id}/vehiculos",
+                    json=_payload_vehiculo_valido(),
+                    headers=_auth_headers(token),
+                )
+
+                assert response.status_code == 403
+                assert response.json()["detail"] == "Operación reservada al rol PROPIETARIO"
 
         finally:
             app.dependency_overrides.clear()
