@@ -108,3 +108,52 @@ def test_re_enviar_checkin_endpoint_exitoso():
         mock_service.assert_called_once()
         
     app.dependency_overrides.clear()
+
+
+def test_obtener_mi_checkin_de_reserva_endpoint_exitoso():
+    app.dependency_overrides[get_usuario_actual] = mock_get_usuario_actual
+    reserva_id = str(uuid.uuid4())
+
+    with patch("app.routers.checkins.obtener_checkin_de_reserva_conductor") as mock_service:
+        mock_service.return_value.id = uuid.uuid4()
+        mock_service.return_value.reserva_id = uuid.UUID(reserva_id)
+        mock_service.return_value.conductor_id = uuid.UUID("123e4567-e89b-12d3-a456-426614174000")
+        mock_service.return_value.estado = "PENDIENTE"
+        mock_service.return_value.motivo_rechazo = None
+        mock_service.return_value.created_at = "2024-01-01T00:00:00Z"
+        mock_service.return_value.updated_at = "2024-01-01T00:00:00Z"
+        mock_service.return_value.nivel_combustible = "Lleno"
+        mock_service.return_value.kilometraje_actual = 12000
+        mock_service.return_value.esta_limpio = True
+        mock_service.return_value.tiene_danios = False
+        mock_service.return_value.descripcion_danios = None
+        mock_service.return_value.url_foto_frente = "frente.jpg"
+        mock_service.return_value.url_foto_trasera = "trasera.jpg"
+        mock_service.return_value.url_foto_lateral_izq = "izq.jpg"
+        mock_service.return_value.url_foto_lateral_der = "der.jpg"
+        mock_service.return_value.url_foto_panel = "panel.jpg"
+        mock_service.return_value.urls_fotos_danios = []
+        mock_service.return_value.url_foto_extra = None
+        mock_service.return_value.notas_adicionales = None
+
+        response = client.get(f"/checkins/reservas/{reserva_id}")
+
+        assert response.status_code == 200
+        assert response.json()["reserva_id"] == reserva_id
+        assert response.json()["estado"] == "PENDIENTE"
+        mock_service.assert_called_once()
+
+    app.dependency_overrides.clear()
+
+
+def test_obtener_mi_checkin_de_reserva_endpoint_sin_checkin_devuelve_404():
+    app.dependency_overrides[get_usuario_actual] = mock_get_usuario_actual
+    reserva_id = str(uuid.uuid4())
+
+    with patch("app.routers.checkins.obtener_checkin_de_reserva_conductor", return_value=None):
+        response = client.get(f"/checkins/reservas/{reserva_id}")
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Check-in no encontrado."
+
+    app.dependency_overrides.clear()

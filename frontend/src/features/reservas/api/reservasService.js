@@ -114,18 +114,6 @@ export const listarReservasParaEntregar = async () => {
   return response.data;
 };
 
-export const listarReservasEnCurso = async () => {
-  const response = await httpClient.get("/alquiler/reservas/admin/en-curso");
-
-  return response.data;
-};
-
-export const listarReservasDevueltas = async () => {
-  const response = await httpClient.get("/alquiler/reservas/admin/devueltas");
-
-  return response.data;
-};
-
 export const listarRecepcionAutos = async ({ page = 1, size = 10 } = {}) => {
   const response = await httpClient.get("/alquiler/reservas/admin/recepcion", {
     params: { page, size },

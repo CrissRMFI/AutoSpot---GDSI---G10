@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
-import { Check, ChevronRight, KeyRound, X } from "lucide-react";
+import { Check, ChevronRight, Clock, KeyRound, X } from "lucide-react";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
-const ReservaCodigoModal = ({ reserva, onClose }) => {
+const ReservaCodigoModal = ({ reserva, verificandoCheckin = false, onClose }) => {
   if (!reserva) return null;
 
   const vehiculo = reserva.vehiculo;
   const estado = (reserva.estado || "").toUpperCase();
-  const codigoVerificado = Boolean(reserva.codigo_verificado_at) || estado === "VERIFICADA";
+  const checkinEstado = (reserva.checkin?.estado || "").toUpperCase();
+  const puedeHacerCheckin = estado === "VERIFICADA";
+  const tieneVerificacionRegistrada = Boolean(reserva.codigo_verificado_at);
   const estaRechazada = estado === "RECHAZADA";
   const tituloVehiculo = vehiculo
     ? `${vehiculo.marca} ${vehiculo.modelo}`
@@ -23,11 +25,21 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
     codigoContenedorClass = "border border-autospot-border bg-autospot-cream/60";
     codigoMensaje = "Esta reserva fue rechazada por el personal de estación.";
     codigoTextClass = "text-autospot-muted line-through decoration-2";
-  } else if (codigoVerificado) {
+  } else if (puedeHacerCheckin) {
     chipEncabezadoTexto = "Reserva aprobada";
     codigoContenedorClass = "border border-autospot-black bg-autospot-black text-white";
     codigoMensaje = "Código verificado en estación. Ya podés iniciar el check-in.";
     codigoTextClass = "text-white";
+
+    if (verificandoCheckin) {
+      codigoMensaje = "Verificando si ya existe un check-in para esta reserva.";
+    } else if (checkinEstado === "PENDIENTE") {
+      codigoMensaje = "Check-in enviado. Esperá la revisión del administrador.";
+    } else if (checkinEstado === "APROBADO") {
+      codigoMensaje = "Check-in aprobado. Esperá la entrega del auto en estación.";
+    } else if (checkinEstado === "RECHAZADO") {
+      codigoMensaje = "Check-in rechazado. Corregí la información y reenvialo.";
+    }
   }
 
   return (
@@ -62,7 +74,7 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
 
         <div className={`mt-5 rounded-2xl p-5 text-center ${codigoContenedorClass}`}>
           <p className={`flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.1em] ${
-            codigoVerificado && !estaRechazada ? "text-white/70" : "text-autospot-muted"
+            puedeHacerCheckin && !estaRechazada ? "text-white/70" : "text-autospot-muted"
           }`}>
             <KeyRound className="h-3.5 w-3.5" strokeWidth={2.4} />
             {estaRechazada ? "Código de reserva" : "Presentar en estación"}
@@ -73,13 +85,13 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
             {reserva.codigo_reserva}
           </p>
           <p className={`mt-3 text-sm font-semibold ${
-            codigoVerificado && !estaRechazada ? "text-white/80" : "text-autospot-muted"
+            puedeHacerCheckin && !estaRechazada ? "text-white/80" : "text-autospot-muted"
           }`}>
             {codigoMensaje}
           </p>
         </div>
 
-        {codigoVerificado && !estaRechazada && (
+        {puedeHacerCheckin && tieneVerificacionRegistrada && !estaRechazada && (
           <div className="mt-4 flex items-start gap-2 rounded-2xl border border-autospot-border bg-autospot-cream/40 p-4">
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-autospot-black" strokeWidth={2.4} />
             <p className="text-sm font-semibold text-autospot-black">
@@ -117,9 +129,11 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
             valor={
               estaRechazada
                 ? "Rechazada"
-                : codigoVerificado
-                  ? "Aprobada"
-                  : "Pendiente de verificación"
+                : verificandoCheckin
+                  ? "Verificando check-in"
+                  : puedeHacerCheckin
+                  ? estadoCheckinReserva(checkinEstado)
+                  : estadoReservaPendiente(estado)
             }
           />
         </dl>
@@ -140,13 +154,40 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
               Ir al catálogo
               <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
             </Link>
-          ) : codigoVerificado ? (
-            <Link
-              to={`/usuario/reservas/${reserva.id}/checkin`}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-autospot-black px-5 py-3 text-sm font-bold !text-white transition hover:bg-autospot-mid"
+          ) : verificandoCheckin ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-wait items-center justify-center gap-2 rounded-full bg-autospot-black/20 px-5 py-3 text-sm font-bold text-white/70"
+            >
+              <Clock className="h-4 w-4" strokeWidth={2.4} />
+              Verificando
+            </button>
+          ) : puedeHacerCheckin && checkinEstado === "PENDIENTE" ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-autospot-black/20 px-5 py-3 text-sm font-bold text-white/70"
+            >
+              <Clock className="h-4 w-4" strokeWidth={2.4} />
+              Check-in enviado
+            </button>
+          ) : puedeHacerCheckin && checkinEstado === "APROBADO" ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-autospot-black/20 px-5 py-3 text-sm font-bold text-white/70"
             >
               <Check className="h-4 w-4" strokeWidth={2.4} />
-              Iniciar check-in
+              Esperando entrega
+            </button>
+          ) : puedeHacerCheckin ? (
+            <Link
+              to={`/usuario/reservas/${reserva.id}/checkin`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+            >
+              <Check className="h-4 w-4" strokeWidth={2.4} />
+              {checkinEstado === "RECHAZADO" ? "Corregir check-in" : "Iniciar check-in"}
             </Link>
           ) : (
             <button
@@ -154,13 +195,25 @@ const ReservaCodigoModal = ({ reserva, onClose }) => {
               disabled
               className="inline-flex cursor-not-allowed justify-center rounded-full bg-autospot-black/20 px-5 py-3 text-sm font-bold text-white/70"
             >
-              Check-in
+              Esperando verificación
             </button>
           )}
         </div>
       </div>
     </div>
   );
+};
+
+const estadoCheckinReserva = (checkinEstado) => {
+  if (checkinEstado === "APROBADO") return "Espera de entrega";
+  if (checkinEstado === "PENDIENTE") return "Check-in en revisión";
+  if (checkinEstado === "RECHAZADO") return "Check-in rechazado";
+  return "Falta check-in";
+};
+
+const estadoReservaPendiente = (estado) => {
+  if (estado === "CONFIRMADA") return "Pendiente de verificación";
+  return "Reserva no habilitada para check-in";
 };
 
 const DatoReserva = ({ label, valor }) => (

@@ -1,93 +1,340 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../features/auth/hooks/useAuth";
+import {
+  AlertCircle,
+  ArrowRight,
+  Car,
+  ClipboardCheck,
+  Clock,
+  FileText,
+  Inbox,
+  KeyRound,
+  ListChecks,
+} from "lucide-react";
+import { getSolicitudesDocumentacion } from "../features/admin/api/solicitudesApi";
+import { listarCheckins } from "../features/reservas/api/checkinService";
+import {
+  listarRecepcionAutos,
+  listarReservasParaEntregar,
+} from "../features/reservas/api/reservasService";
 
-const nombrePresentable = (usuario) => {
-  if (usuario?.nombre) return usuario.nombre;
-  if (usuario?.first_name) return usuario.first_name;
-  const local = (usuario?.email || "").split("@")[0];
-  return local || "Admin";
+const RECEPCION_PAGE_SIZE = 50;
+
+const esRecepcionNoFinalizada = (reserva) =>
+  (reserva?.estado || "").toUpperCase() !== "FINALIZADA";
+
+const contarRecepcionNoFinalizada = async () => {
+  const primeraPagina = await listarRecepcionAutos({
+    page: 1,
+    size: RECEPCION_PAGE_SIZE,
+  });
+  const paginas = Math.max(Number(primeraPagina?.pages || 1), 1);
+  let items = Array.isArray(primeraPagina?.items) ? primeraPagina.items : [];
+
+  if (paginas > 1) {
+    const restantes = await Promise.all(
+      Array.from({ length: paginas - 1 }, (_, index) =>
+        listarRecepcionAutos({
+          page: index + 2,
+          size: RECEPCION_PAGE_SIZE,
+        }),
+      ),
+    );
+    items = items.concat(
+      restantes.flatMap((pagina) =>
+        Array.isArray(pagina?.items) ? pagina.items : [],
+      ),
+    );
+  }
+
+  return items.filter(esRecepcionNoFinalizada).length;
 };
 
 const AdminDashboardPage = () => {
-  const { usuario } = useAuth();
-  const nombreUsuario = nombrePresentable(usuario);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [checkins, setCheckins] = useState([]);
+  const [reservasParaEntregar, setReservasParaEntregar] = useState([]);
+  const [totalRecepcion, setTotalRecepcion] = useState(0);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarPanel = async () => {
+      setCargando(true);
+
+      const [solicitudesResult, checkinsResult, entregasResult, recepcionResult] =
+        await Promise.allSettled([
+          getSolicitudesDocumentacion(),
+          listarCheckins(),
+          listarReservasParaEntregar(),
+          contarRecepcionNoFinalizada(),
+        ]);
+
+      if (cancelado) return;
+
+      if (solicitudesResult.status === "fulfilled") {
+        setSolicitudes(
+          Array.isArray(solicitudesResult.value) ? solicitudesResult.value : [],
+        );
+      }
+
+      if (checkinsResult.status === "fulfilled") {
+        setCheckins(Array.isArray(checkinsResult.value) ? checkinsResult.value : []);
+      }
+
+      if (entregasResult.status === "fulfilled") {
+        setReservasParaEntregar(
+          Array.isArray(entregasResult.value) ? entregasResult.value : [],
+        );
+      }
+
+      if (recepcionResult.status === "fulfilled") {
+        setTotalRecepcion(Number(recepcionResult.value || 0));
+      }
+
+      setCargando(false);
+    };
+
+    cargarPanel();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const resumen = useMemo(() => {
+    const checkinsPendientes = checkins.filter(
+      (checkin) => (checkin.estado || "").toUpperCase() === "PENDIENTE",
+    ).length;
+
+    return {
+      documentos: solicitudes.length,
+      checkinsPendientes,
+      entregas: reservasParaEntregar.length,
+      recepcion: totalRecepcion,
+    };
+  }, [checkins, reservasParaEntregar.length, solicitudes.length, totalRecepcion]);
 
   return (
-    <>
-      <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-accent">
-            Panel administrativo
-          </p>
-          <h1 className="font-display text-3xl font-black leading-[1.08] tracking-[-0.05em] text-autospot-black break-words sm:text-4xl">
-            Buen día, {nombreUsuario} 👋
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-autospot-muted">
-            Vista operativa para sprints 1 y 2: usuarios, vehículos publicados y
-            estaciones registradas.
-          </p>
-        </div>
+    <section className="w-full min-w-0">
+      <div className="mb-6 min-w-0">
+        <h1 className="text-3xl font-black leading-tight text-autospot-black sm:text-4xl">
+          Panel administrativo
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-autospot-muted">
+          Vista operativa general para validar documentación, controlar
+          alquileres y gestionar entregas y devoluciones.
+        </p>
       </div>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-            Recepción
-          </p>
-          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Solicitudes de documentación
-          </h2>
-          <p className="mb-5 text-sm leading-6 text-autospot-muted">
-            Atendé los trámites pendientes en orden cronológico (los más
-            antiguos primero).
-          </p>
-          <Link
-            to="/admin/solicitudes-documentacion"
-            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-          >
-            Ver solicitudes
-          </Link>
-        </article>
-
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-            Red AutoSpot
-          </p>
-          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Estaciones
-          </h2>
-          <p className="mb-5 text-sm leading-6 text-autospot-muted">
-            Consultá las estaciones registradas y su estado actual.
-          </p>
-          <Link
-            to="/estaciones"
-            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-          >
-            Ver estaciones
-          </Link>
-        </article>
-
-        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
-            Operación
-          </p>
-          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
-            Recepción de autos
-          </h2>
-          <p className="mb-5 text-sm leading-6 text-autospot-muted">
-            Revisá devoluciones, enviá checkouts y consultá el historial.
-          </p>
-          <Link
-            to="/admin/recepcion"
-            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
-          >
-            Ir a recepción
-          </Link>
-        </article>
-
+      <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <StatCard
+          destacado
+          icono={Clock}
+          titulo="Operaciones hoy"
+          valor="Próximo a implementar"
+          detalle="Métrica diaria en preparación"
+        />
+        <StatCard
+          icono={FileText}
+          titulo="Documentos a revisar"
+          valor={cargando ? "..." : resumen.documentos}
+          detalle="Pendientes de validación"
+        />
+        <StatCard
+          icono={Car}
+          titulo="Autos alquilados"
+          valor="Próximo a implementar"
+          detalle="Métrica en preparación"
+        />
+        <StatCard
+          icono={ClipboardCheck}
+          titulo="Check-ins pendientes"
+          valor={cargando ? "..." : resumen.checkinsPendientes}
+          detalle="Con fotos obligatorias"
+        />
+        <StatCard
+          icono={AlertCircle}
+          titulo="Incidentes abiertos"
+          valor="Próximo a implementar"
+          detalle="Módulo pendiente"
+        />
       </section>
-    </>
+
+      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-5">
+          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
+            <div className="border-b border-autospot-border px-5 py-4">
+              <h2 className="text-base font-black text-autospot-black">
+                Tareas prioritarias
+              </h2>
+            </div>
+
+            <div className="divide-y divide-autospot-border">
+              <TaskRow
+                icono={FileText}
+                titulo="Validar documentación"
+                detalle={`${resumen.documentos} solicitud${resumen.documentos === 1 ? "" : "es"} pendiente${resumen.documentos === 1 ? "" : "s"}`}
+                to="/admin/solicitudes-documentacion"
+              />
+              <TaskRow
+                icono={KeyRound}
+                titulo="Verificar reservas"
+                detalle="Buscar por código y aprobar o rechazar"
+                to="/admin/reservas/verificar"
+              />
+              <TaskRow
+                icono={ClipboardCheck}
+                titulo="Revisar check-ins"
+                detalle={`${resumen.checkinsPendientes} pendiente${resumen.checkinsPendientes === 1 ? "" : "s"} de revisión`}
+                to="/admin/checkins/revision"
+              />
+              <TaskRow
+                icono={Car}
+                titulo="Entrega de autos"
+                detalle={`${resumen.entregas} reserva${resumen.entregas === 1 ? "" : "s"} lista${resumen.entregas === 1 ? "" : "s"} para entregar`}
+                to="/admin/entrega"
+              />
+              <TaskRow
+                icono={Inbox}
+                titulo="Recepción de autos"
+                detalle={`${resumen.recepcion} alquiler${resumen.recepcion === 1 ? "" : "es"} en recepción o checkout`}
+                to="/admin/recepcion"
+              />
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
+            <div className="border-b border-autospot-border px-5 py-4">
+              <h2 className="text-base font-black text-autospot-black">
+                Resumen operativo
+              </h2>
+            </div>
+            <div className="divide-y divide-autospot-border">
+              <SummaryRow
+                icono={ListChecks}
+                titulo="Cola documental"
+                detalle={
+                  resumen.documentos > 0
+                    ? `${resumen.documentos} trámite${resumen.documentos === 1 ? "" : "s"} pendiente${resumen.documentos === 1 ? "" : "s"}`
+                    : "Sin trámites pendientes"
+                }
+              />
+              <SummaryRow
+                icono={Inbox}
+                titulo="Recepción y checkout"
+                detalle={
+                  resumen.recepcion > 0
+                    ? `${resumen.recepcion} registro${resumen.recepcion === 1 ? "" : "s"} en seguimiento`
+                    : "Sin autos para recibir"
+                }
+              />
+              <SummaryRow
+                icono={AlertCircle}
+                titulo="Incidencias"
+                detalle="Próximo a implementar."
+              />
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-5">
+          <section className="rounded-lg border border-autospot-border bg-autospot-white p-5">
+            <h2 className="text-base font-black text-autospot-black">
+              Accesos rápidos
+            </h2>
+            <div className="mt-4 grid gap-3">
+              <QuickLink
+                principal
+                to="/admin/solicitudes-documentacion"
+                label="Ir a documentación"
+              />
+              <QuickLink to="/admin/reservas/verificar" label="Verificar reserva" />
+              <QuickLink to="/admin/checkins/revision" label="Abrir check-ins" />
+              <QuickLink to="/admin/entrega" label="Entregar autos" />
+              <QuickLink to="/admin/recepcion" label="Recepción de autos" />
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>
   );
 };
+
+const StatCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) => (
+  <article
+    className={`rounded-lg border p-5 ${
+      destacado
+        ? "border-autospot-black bg-autospot-black text-white md:col-span-2 xl:col-span-1"
+        : "border-autospot-border bg-autospot-white text-autospot-black"
+    }`}
+  >
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className={`text-xs font-bold uppercase ${destacado ? "text-white/60" : "text-autospot-muted"}`}>
+          {titulo}
+        </p>
+        <p className={`mt-2 break-words text-2xl font-black ${destacado ? "text-white" : "text-autospot-black"}`}>
+          {valor}
+        </p>
+        <p className={`mt-1 text-xs ${destacado ? "text-white/60" : "text-autospot-muted"}`}>
+          {detalle}
+        </p>
+      </div>
+      <span
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+          destacado ? "bg-white/10 text-white" : "bg-white text-autospot-accent"
+        }`}
+      >
+        <Icono className="h-5 w-5" aria-hidden="true" />
+      </span>
+    </div>
+  </article>
+);
+
+const TaskRow = ({ icono: Icono, titulo, detalle, to }) => (
+  <Link
+    to={to}
+    className="grid gap-4 px-5 py-4 transition hover:bg-[#fafaf9] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+  >
+    <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
+      <Icono className="h-5 w-5" aria-hidden="true" />
+    </span>
+    <div className="min-w-0">
+      <h3 className="text-sm font-black text-autospot-black">{titulo}</h3>
+      <p className="mt-1 text-sm text-autospot-muted">{detalle}</p>
+    </div>
+    <span className="inline-flex items-center gap-2 text-sm font-bold text-autospot-accent">
+      Abrir
+      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+    </span>
+  </Link>
+);
+
+const SummaryRow = ({ icono: Icono, titulo, detalle }) => (
+  <div className="flex items-center gap-3 px-5 py-4">
+    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
+      <Icono className="h-5 w-5" aria-hidden="true" />
+    </span>
+    <div className="min-w-0">
+      <h3 className="text-sm font-black text-autospot-black">{titulo}</h3>
+      <p className="mt-1 text-sm text-autospot-muted">{detalle}</p>
+    </div>
+  </div>
+);
+
+const QuickLink = ({ to, label, principal = false }) => (
+  <Link
+    to={to}
+    className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
+      principal
+        ? "bg-autospot-accent !text-white hover:bg-[#5a1420]"
+        : "border border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent"
+    }`}
+  >
+    {label}
+  </Link>
+);
 
 export default AdminDashboardPage;
