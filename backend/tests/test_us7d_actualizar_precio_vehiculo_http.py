@@ -59,8 +59,16 @@ def _crear_cliente():
     return engine, TestClient(app)
 
 
-def _registrar_usuario(client: TestClient, email: str, password: str = "password123") -> str:
-    response = client.post("/usuarios/registro", json={"email": email, "password": password})
+def _registrar_usuario(
+    client: TestClient,
+    email: str,
+    password: str = "password123",
+    rol: str = "PROPIETARIO",
+) -> str:
+    response = client.post(
+        "/usuarios/registro",
+        json={"email": email, "password": password, "rol": rol},
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -75,8 +83,9 @@ def _registrar_y_loguear_usuario(
     client: TestClient,
     email: str,
     password: str = "password123",
+    rol: str = "PROPIETARIO",
 ) -> tuple[str, str]:
-    usuario_id = _registrar_usuario(client, email, password)
+    usuario_id = _registrar_usuario(client, email, password, rol)
     token = _login_usuario(client, email, password)
     return usuario_id, token
 

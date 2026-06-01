@@ -23,6 +23,7 @@ from app.exceptions import (
     VehiculoConReservaActivaError,
 )
 from app.models.foto_vehiculo import FotoVehiculo
+from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
@@ -47,6 +48,15 @@ CAMBIOS_DOCUMENTALES_ACTUALIZACION = (
     "estacion",
     "telefono",
 )
+ESTADOS_RESERVA_QUE_BLOQUEAN_DISPONIBILIDAD = {
+    "CONFIRMADA",
+    "CODIGO_GENERADO",
+    "VERIFICADA",
+    "EN_CURSO",
+    "ENTREGA_SOLICITADA",
+    "DEVUELTO",
+    "CHECKOUT_PENDIENTE",
+}
 
 def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
     """
@@ -426,13 +436,20 @@ def cargar_documentacion_vehiculo(
     return vehiculo
 
 
-def verificar_alquileres_activos(vehiculo_id: uuid.UUID) -> bool:
+def verificar_alquileres_activos(db: Session, vehiculo_id: uuid.UUID) -> bool:
     """
-    Stub temporal para verificar si un vehículo tiene alquileres o reservas
-    en curso. En un futuro, delegará al servicio correspondiente de alquileres.
+    Verifica si un vehículo tiene reservas o alquileres que bloquean su baja
+    de disponibilidad.
     """
-    # TODO: Implementar lógica real cuando exista el módulo de alquileres
-    return False
+    reserva_activa = (
+        db.query(Reserva.id)
+        .filter(
+            Reserva.vehiculo_id == vehiculo_id,
+            Reserva.estado.in_(ESTADOS_RESERVA_QUE_BLOQUEAN_DISPONIBILIDAD),
+        )
+        .first()
+    )
+    return reserva_activa is not None
 
 
 def cambiar_disponibilidad_vehiculo(
@@ -468,7 +485,7 @@ def cambiar_disponibilidad_vehiculo(
     if vehiculo.estado_registro != "HABILITADO":
         raise VehiculoNoHabilitadoError()
 
-    if not disponible and verificar_alquileres_activos(vehiculo_id):
+    if not disponible and verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
         raise VehiculoConReservaActivaError()
 
     vehiculo.disponible = disponible
