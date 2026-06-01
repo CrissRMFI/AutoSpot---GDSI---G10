@@ -17,6 +17,10 @@ from app.models.vehiculo import Vehiculo
 TIPO_RESERVA_PENDIENTE_VERIFICACION = "RESERVA_PENDIENTE_VERIFICACION"
 TIPO_RESERVA_APROBADA = "RESERVA_APROBADA"
 TIPO_RESERVA_RECHAZADA = "RESERVA_RECHAZADA"
+TIPO_AUTO_DEVUELTO = "AUTO_DEVUELTO"
+TIPO_CHECKOUT_PENDIENTE_CONFIRMACION = "CHECKOUT_PENDIENTE_CONFIRMACION"
+TIPO_CHECKOUT_CONFIRMADO = "CHECKOUT_CONFIRMADO"
+TIPO_CHECKOUT_RECHAZADO = "CHECKOUT_RECHAZADO"
 TIPO_VEHICULO_DOCUMENTACION_PENDIENTE = "VEHICULO_DOCUMENTACION_PENDIENTE"
 TIPO_VEHICULO_HABILITADO = "VEHICULO_HABILITADO"
 TIPO_VEHICULO_RECHAZADO = "VEHICULO_RECHAZADO"
@@ -121,6 +125,31 @@ def cerrar_notificaciones_reserva_pendiente_verificacion(
             Notificacion.tipo == TIPO_RESERVA_PENDIENTE_VERIFICACION,
             Notificacion.recurso_tipo == RECURSO_RESERVA,
             Notificacion.recurso_id == reserva.id,
+            Notificacion.vista_at.is_(None),
+        )
+        .all()
+    )
+
+    for notificacion in notificaciones:
+        notificacion.vista_at = ahora
+
+
+def cerrar_notificaciones_de_reserva_por_tipo(
+    db: Session,
+    reserva_id: uuid.UUID,
+    tipos: list[str],
+) -> None:
+    """Marca como vistas notificaciones activas asociadas a una reserva."""
+    if not tipos:
+        return
+
+    ahora = datetime.now(timezone.utc)
+    notificaciones = (
+        db.query(Notificacion)
+        .filter(
+            Notificacion.tipo.in_(tipos),
+            Notificacion.recurso_tipo == RECURSO_RESERVA,
+            Notificacion.recurso_id == reserva_id,
             Notificacion.vista_at.is_(None),
         )
         .all()

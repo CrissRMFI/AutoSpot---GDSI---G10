@@ -18,6 +18,8 @@ import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage
 import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
 import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
 import MisReservasPage from "../features/reservas/pages/MisReservasPage";
+import MisAlquileresPage from "../features/reservas/pages/MisAlquileresPage";
+import AlquilerDetallePage from "../features/reservas/pages/AlquilerDetallePage";
 import AlquilerStepperPage from "../features/reservas/pages/AlquilerStepperPage";
 import CheckInReservaPage from "../features/reservas/pages/CheckInReservaPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
@@ -26,6 +28,10 @@ import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSo
 import SolicitudesDocumentacionPage from "../features/admin/pages/SolicitudesDocumentacionPage";
 import VerificarReservaPage from "../features/admin/pages/VerificarReservaPage";
 import RevisionCheckinPage from "../features/admin/pages/RevisionCheckinPage";
+import RevisionCheckinDetallePage from "../features/admin/pages/RevisionCheckinDetallePage";
+import EntregaAutosPage from "../features/admin/pages/EntregaAutosPage";
+import RecepcionAutosPage from "../features/admin/pages/RecepcionAutosPage";
+import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -125,6 +131,24 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/usuario/alquileres"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <MisAlquileresPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/usuario/alquileres/:reservaId"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <AlquilerDetallePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/usuario/reservas/:reservaId/checkin"
           element={
             <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
@@ -219,6 +243,51 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <RevisionCheckinPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/checkins/:checkinId"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <RevisionCheckinDetallePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/entrega"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <EntregaAutosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/recepcion"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <RecepcionAutosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/recepcion/:reservaId"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <RecepcionDetallePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/checkout"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <Navigate to="/admin/recepcion" replace />
             </ProtectedRoute>
           }
         />

@@ -27,14 +27,33 @@ class CrearReservaPayloadSchema(BaseModel):
     fecha_fin: datetime
 
 
+class FotoVehiculoReservaSchema(BaseModel):
+    """Foto del vehículo asociada al alquiler."""
+
+    id: uuid.UUID
+    lado: str
+    url: str
+
+    model_config = {"from_attributes": True}
+
+
 class VehiculoReservaResumenSchema(BaseModel):
-    """Datos pactados del vehículo reservado que acompañan el código."""
+    """Datos del vehículo reservado/alquilado."""
 
     id: uuid.UUID
     marca: str
     modelo: str
+    anio: int | None = None
+    tipo_transmision: str | None = None
+    capacidad: int | None = None
+    categoria: str | None = None
+    tipo_combustible: str | None = None
+    pets_friendly: bool | None = None
     patente: str | None = None
+    descripcion: str | None = None
+    precio_por_dia: Decimal | None = None
     estacion: str
+    fotos: list[FotoVehiculoReservaSchema] = Field(default_factory=list)
 
 
 class ConductorReservaResumenSchema(BaseModel):
@@ -58,9 +77,14 @@ class ReservaCodigoResponseSchema(BaseModel):
     codigo_verificado_at: datetime | None = None
     fecha_inicio: datetime
     fecha_fin: datetime
+    fecha_entrega_solicitada: datetime | None = None
+    fecha_salida_real: datetime | None = None
+    fecha_devolucion_real: datetime | None = None
     monto_total: Decimal
     estacion_retiro: str
     motivo_rechazo: str | None = None
+    minutos_retraso: int | None = None
+    monto_penalizacion: Decimal | None = None
     vehiculo: VehiculoReservaResumenSchema
 
     model_config = {"from_attributes": True}
@@ -79,8 +103,26 @@ class RechazarReservaPayloadSchema(BaseModel):
 
 
 class ReservaVerificacionResponseSchema(ReservaCodigoResponseSchema):
-    """Detalle admin de reserva para US 5R."""
+    """Detalle admin de reserva"""
 
     conductor: ConductorReservaResumenSchema
     puede_entregar: bool
     motivo_bloqueo: str | None = None
+
+
+class RegistrarEntradaResponseSchema(ReservaCodigoResponseSchema):
+    """Respuesta de registrar la entrada/devolución del auto."""
+
+    hubo_retraso: bool = False
+    minutos_retraso: int | None = None
+    monto_penalizacion: Decimal | None = None
+
+
+class PaginaReservasSchema(BaseModel):
+    """Página de reservas para listados paginados (Mis alquileres / Recepción)."""
+
+    items: list[ReservaCodigoResponseSchema]
+    total: int
+    page: int
+    size: int
+    pages: int

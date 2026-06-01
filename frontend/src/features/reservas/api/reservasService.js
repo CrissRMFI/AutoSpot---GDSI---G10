@@ -20,6 +20,46 @@ export const listarMisReservas = async () => {
   return response.data;
 };
 
+export const listarMisAlquileres = async ({ page = 1, size = 10 } = {}) => {
+  const response = await httpClient.get("/alquiler/mis-alquileres", {
+    params: { page, size },
+  });
+
+  return response.data;
+};
+
+export const obtenerMiAlquiler = async (reservaId) => {
+  const response = await httpClient.get(`/alquiler/reservas/${reservaId}`);
+
+  return response.data;
+};
+
+export const entregarAuto = async (reservaId) => {
+  const response = await httpClient.post(`/alquiler/reservas/${reservaId}/entregar`);
+
+  return response.data;
+};
+
+export const obtenerCheckoutDeReserva = async (reservaId) => {
+  const response = await httpClient.get(`/alquiler/reservas/${reservaId}/checkout`);
+
+  return response.data;
+};
+
+export const confirmarCheckout = async (checkoutId) => {
+  const response = await httpClient.post(`/alquiler/checkouts/${checkoutId}/confirmar`);
+
+  return response.data;
+};
+
+export const rechazarCheckout = async (checkoutId, motivo) => {
+  const response = await httpClient.post(`/alquiler/checkouts/${checkoutId}/rechazar`, {
+    motivo,
+  });
+
+  return response.data;
+};
+
 export const obtenerReservaParaVerificacion = async (reservaId) => {
   const response = await httpClient.get(`/alquiler/reservas/admin/${reservaId}`);
 
@@ -48,6 +88,48 @@ export const rechazarReserva = async (reservaId, motivo) => {
     `/alquiler/reservas/admin/${reservaId}/rechazar`,
     { motivo },
   );
+
+  return response.data;
+};
+
+export const registrarSalida = async (reservaId) => {
+  const response = await httpClient.post(
+    `/alquiler/reservas/admin/${reservaId}/registrar-salida`,
+  );
+
+  return response.data;
+};
+
+export const registrarEntrada = async (reservaId) => {
+  const response = await httpClient.post(
+    `/alquiler/reservas/admin/${reservaId}/registrar-entrada`,
+  );
+
+  return response.data;
+};
+
+export const listarReservasParaEntregar = async () => {
+  const response = await httpClient.get("/alquiler/reservas/admin/para-entregar");
+
+  return response.data;
+};
+
+export const listarReservasEnCurso = async () => {
+  const response = await httpClient.get("/alquiler/reservas/admin/en-curso");
+
+  return response.data;
+};
+
+export const listarReservasDevueltas = async () => {
+  const response = await httpClient.get("/alquiler/reservas/admin/devueltas");
+
+  return response.data;
+};
+
+export const listarRecepcionAutos = async ({ page = 1, size = 10 } = {}) => {
+  const response = await httpClient.get("/alquiler/reservas/admin/recepcion", {
+    params: { page, size },
+  });
 
   return response.data;
 };

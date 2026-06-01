@@ -7,7 +7,7 @@ from decimal import Decimal
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -82,6 +82,33 @@ class Reserva(Base):
         String(100),
         nullable=False,
         doc="Estación pactada originalmente para el retiro.",
+    )
+
+    # ── Tiempos reales y penalización ───────────────────────────
+    fecha_entrega_solicitada: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Momento en que el conductor avisó que entrega el auto (auditoría).",
+    )
+    fecha_salida_real: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Fecha/hora real en que el auto salió de la estación.",
+    )
+    fecha_devolucion_real: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Fecha/hora real en que el auto fue devuelto en la estación.",
+    )
+    minutos_retraso: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Minutos de retraso respecto de fecha_fin pactada al devolver el auto.",
+    )
+    monto_penalizacion: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=12, scale=2),
+        nullable=True,
+        doc="Penalización aplicada por devolución tardía.",
     )
 
     created_at: Mapped[datetime] = mapped_column(

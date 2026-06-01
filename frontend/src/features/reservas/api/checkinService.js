@@ -28,6 +28,16 @@ export const listarCheckinsPendientes = async () => {
   return response.data;
 };
 
+export const listarCheckins = async () => {
+  const response = await httpClient.get("/admin/checkins");
+  return response.data;
+};
+
+export const obtenerCheckin = async (checkinId) => {
+  const response = await httpClient.get(`/admin/checkins/${checkinId}`);
+  return response.data;
+};
+
 export const aprobarCheckin = async (checkinId) => {
   const response = await httpClient.post(
     `/admin/checkins/${checkinId}/aprobar`,

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
 const nombrePresentable = (usuario) => {
@@ -40,12 +41,12 @@ const AdminDashboardPage = () => {
             Atendé los trámites pendientes en orden cronológico (los más
             antiguos primero).
           </p>
-          <a
-            href="/admin/solicitudes-documentacion"
+          <Link
+            to="/admin/solicitudes-documentacion"
             className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
           >
             Ver solicitudes
-          </a>
+          </Link>
         </article>
 
         <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
@@ -58,12 +59,30 @@ const AdminDashboardPage = () => {
           <p className="mb-5 text-sm leading-6 text-autospot-muted">
             Consultá las estaciones registradas y su estado actual.
           </p>
-          <a
-            href="/estaciones"
+          <Link
+            to="/estaciones"
             className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
           >
             Ver estaciones
-          </a>
+          </Link>
+        </article>
+
+        <article className="rounded-2xl border border-autospot-border bg-autospot-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-autospot-muted">
+            Operación
+          </p>
+          <h2 className="mb-2 font-display text-xl font-bold tracking-[-0.04em] text-autospot-black">
+            Recepción de autos
+          </h2>
+          <p className="mb-5 text-sm leading-6 text-autospot-muted">
+            Revisá devoluciones, enviá checkouts y consultá el historial.
+          </p>
+          <Link
+            to="/admin/recepcion"
+            className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] sm:w-auto"
+          >
+            Ir a recepción
+          </Link>
         </article>
 
       </section>

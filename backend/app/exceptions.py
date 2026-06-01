@@ -190,6 +190,65 @@ class MotivoRechazoRequeridoError(AutoSpotError):
         super().__init__("Debes ingresar un motivo para rechazar la reserva")
 
 
+class ReservaSinCheckinAprobadoError(AutoSpotError):
+    """
+    Se lanza al registrar la salida de una reserva cuyo conductor no
+    completó el check-in o cuyo check-in no fue aprobado por el recepcionista.
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "No se puede registrar la salida: el check-in del conductor "
+            "no está aprobado."
+        )
+
+
+class ReservaNoEntregableError(AutoSpotError):
+    """
+    Se lanza al registrar la salida de una reserva cuyo estado no lo
+    permite (código sin verificar, ya entregada, finalizada, etc.).
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "La reserva no puede entregarse en su estado actual"
+        )
+
+
+class ReservaNoEnCursoError(AutoSpotError):
+    """Se lanza al registrar la entrada sin un alquiler en curso."""
+    def __init__(self) -> None:
+        super().__init__("No hay un alquiler en curso para ese auto")
+
+
+class CheckoutNoDisponibleError(AutoSpotError):
+    """
+    Se lanza al intentar completar el checkout cuando el auto todavía
+    no fue reportado como devuelto en la estación.
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "El formulario de checkout no está disponible: el auto aún no fue "
+            "devuelto en la estación."
+        )
+
+
+class CheckoutYaRegistradoError(AutoSpotError):
+    """Se lanza cuando ya existe un checkout para la reserva."""
+    def __init__(self) -> None:
+        super().__init__("El checkout de esta reserva ya fue registrado")
+
+
+class CheckoutNoEncontradoError(AutoSpotError):
+    """Se lanza cuando un checkout no existe o no pertenece al conductor."""
+    def __init__(self) -> None:
+        super().__init__("Checkout no encontrado")
+
+
+class CheckoutNoConfirmableError(AutoSpotError):
+    """Se lanza al confirmar/rechazar un checkout que no está pendiente."""
+    def __init__(self) -> None:
+        super().__init__("El checkout no está pendiente de confirmación")
+
+
 class DocumentacionVehiculoNoEditableError(AutoSpotError):
     """
     Se lanza cuando se intenta cargar o modificar documentación de un vehículo

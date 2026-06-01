@@ -8,6 +8,8 @@ export const formatearFechaHora = (valor) => {
 };
 
 export const formatearMonto = (valor) => {
+  if (valor === null || valor === undefined || valor === "") return "—";
+
   const numero = Number(valor);
   if (Number.isNaN(numero)) return `$${valor}`;
 
