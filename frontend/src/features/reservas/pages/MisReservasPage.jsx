@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Check, ChevronRight, X, MapPin } from "lucide-react";
 import { listarMisReservas } from "../api/reservasService";
 import ReservaCodigoModal from "../components/ReservaCodigoModal";
+import EstacionInfoModal from "../components/EstacionInfoModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const presentacionEstado = (reserva) => {
@@ -44,6 +45,7 @@ const MisReservasPage = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [reservaSeleccionadaId, setReservaSeleccionadaId] = useState(null);
+  const [estacionModalData, setEstacionModalData] = useState(null);
   const [focusConsumido, setFocusConsumido] = useState(false);
   const reservaRefs = useRef({});
 
@@ -187,9 +189,32 @@ const MisReservasPage = () => {
                     <h2 className="mt-1 font-display text-xl font-black tracking-[-0.04em] text-autospot-black">
                       {tituloVehiculo}
                     </h2>
-                    <p className="mt-2 text-sm text-autospot-muted">
-                      {reserva.estacion_retiro}
-                    </p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <p className="text-sm text-autospot-muted">
+                        {reserva.estacion_retiro}
+                      </p>
+                      {reserva.estacion_detalle && reserva.estado !== "RECHAZADA" && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEstacionModalData(reserva.estacion_detalle);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEstacionModalData(reserva.estacion_detalle);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.05em] text-autospot-accent transition hover:text-[#5a1420] hover:underline"
+                        >
+                          <MapPin className="h-3 w-3" strokeWidth={2.4} />
+                          Info de Retiro
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid gap-2 text-sm text-autospot-muted sm:grid-cols-2">
@@ -232,6 +257,7 @@ const MisReservasPage = () => {
       </section>
 
       <ReservaCodigoModal reserva={reservaModal} onClose={cerrarModal} />
+      <EstacionInfoModal estacion={estacionModalData} onClose={() => setEstacionModalData(null)} />
     </>
   );
 };

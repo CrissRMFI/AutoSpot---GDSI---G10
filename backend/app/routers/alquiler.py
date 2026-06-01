@@ -62,6 +62,8 @@ from app.services.checkout_service import (
     obtener_checkout_vigente,
     rechazar_checkout,
 )
+from app.models.estacion import Estacion
+from app.schemas.estacion import EstacionDetailResponse
 
 router = APIRouter(
     prefix="/alquiler",
@@ -96,7 +98,13 @@ def _vehiculo_resumen(reserva) -> VehiculoReservaResumenSchema:
     )
 
 
-def _reserva_codigo_response(reserva) -> ReservaCodigoResponseSchema:
+def _reserva_codigo_response(db: Session, reserva) -> ReservaCodigoResponseSchema:
+    estacion_detalle = None
+    if reserva.estado not in ["PENDIENTE", "RECHAZADA"]:
+        estacion_db = db.query(Estacion).filter(Estacion.nombre == reserva.estacion_retiro).first()
+        if estacion_db:
+            estacion_detalle = EstacionDetailResponse.model_validate(estacion_db)
+
     return ReservaCodigoResponseSchema(
         id=reserva.id,
         vehiculo_id=reserva.vehiculo_id,
@@ -115,6 +123,7 @@ def _reserva_codigo_response(reserva) -> ReservaCodigoResponseSchema:
         minutos_retraso=reserva.minutos_retraso,
         monto_penalizacion=reserva.monto_penalizacion,
         vehiculo=_vehiculo_resumen(reserva),
+        estacion_detalle=estacion_detalle,
     )
 
 
@@ -129,7 +138,7 @@ def _reserva_verificacion_response(
     motivo_bloqueo = motivo_bloqueo_entrega(reserva)
 
     return ReservaVerificacionResponseSchema(
-        **_reserva_codigo_response(reserva).model_dump(),
+        **_reserva_codigo_response(db, reserva).model_dump(),
         conductor=ConductorReservaResumenSchema(
             id=reserva.conductor.id,
             email=reserva.conductor.email,
@@ -142,10 +151,10 @@ def _reserva_verificacion_response(
     )
 
 
-def _pagina(items, total, page, size) -> PaginaReservasSchema:
+def _pagina(db: Session, items, total, page, size) -> PaginaReservasSchema:
     pages = (total + size - 1) // size if size else 1
     return PaginaReservasSchema(
-        items=[_reserva_codigo_response(r) for r in items],
+        items=[_reserva_codigo_response(db, r) for r in items],
         total=total,
         page=page,
         size=size,
@@ -201,7 +210,7 @@ def crear_reserva(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
-    return _reserva_codigo_response(reserva)
+    return _reserva_codigo_response(db, reserva)
 
 
 @router.get(
@@ -217,7 +226,7 @@ def listar_mis_reservas(
     """Reservas del conductor autenticado (pantalla Mis reservas)."""
     conductor_id = uuid.UUID(str(usuario_actual["sub"]))
     reservas = listar_reservas_de_conductor(db=db, conductor_id=conductor_id)
-    return [_reserva_codigo_response(reserva) for reserva in reservas]
+    return [_reserva_codigo_response(db, reserva) for reserva in reservas]
 
 
 # ── Conductor: Mis alquileres (US 22C) ────────────────────────────────────────
@@ -235,7 +244,7 @@ def listar_mis_alquileres_endpoint(
 ) -> PaginaReservasSchema:
     conductor_id = uuid.UUID(str(usuario_actual["sub"]))
     items, total = listar_mis_alquileres(db=db, conductor_id=conductor_id, page=page, size=size)
-    return _pagina(items, total, page, size)
+    return _pagina(db, items, total, page, size)
 
 
 # ── Admin: listados (literales antes de /reservas/admin/{reserva_id}) ─────────
@@ -251,7 +260,7 @@ def listar_para_entregar_endpoint(
 ) -> list[ReservaCodigoResponseSchema]:
     """Reservas VERIFICADA con check-in aprobado, listas para la salida."""
     return [
-        _reserva_codigo_response(reserva)
+        _reserva_codigo_response(db, reserva)
         for reserva in listar_reservas_para_entregar(db=db)
     ]
 
@@ -269,7 +278,7 @@ def listar_recepcion_endpoint(
     db: Session = Depends(get_db),
 ) -> PaginaReservasSchema:
     items, total = listar_recepcion(db=db, page=page, size=size)
-    return _pagina(items, total, page, size)
+    return _pagina(db, items, total, page, size)
 
 
 @router.post(
@@ -373,7 +382,7 @@ def registrar_salida_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except (ReservaNoEntregableError, ReservaSinCheckinAprobadoError) as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
-    return _reserva_codigo_response(reserva)
+    return _reserva_codigo_response(db, reserva)
 
 
 @router.post(
@@ -394,7 +403,7 @@ def registrar_entrada_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ReservaNoEnCursoError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
-    return _reserva_codigo_response(reserva)
+    return _reserva_codigo_response(db, reserva)
 
 
 # ── Conductor: entrega del auto y confirmación de checkout (US 22C) ───────────
@@ -416,7 +425,7 @@ def entregar_auto_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ReservaNoEnCursoError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
-    return _reserva_codigo_response(reserva)
+    return _reserva_codigo_response(db, reserva)
 
 
 @router.get(
@@ -457,7 +466,7 @@ def obtener_mi_alquiler_endpoint(
         reserva = obtener_alquiler_conductor(db=db, reserva_id=reserva_id, conductor_id=conductor_id)
     except ReservaNoEncontradaError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-    return _reserva_codigo_response(reserva)
+    return _reserva_codigo_response(db, reserva)
 
 
 @router.post(
