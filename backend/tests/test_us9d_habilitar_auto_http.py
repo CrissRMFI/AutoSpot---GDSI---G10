@@ -11,8 +11,8 @@ Contrato esperado:
   - Valida que no haya reservas en curso al intentar deshabilitar.
 """
 from decimal import Decimal
+from datetime import datetime, timedelta, timezone
 import uuid
-from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
@@ -23,6 +23,7 @@ from tests.conftest import _make_test_engine, sembrar_catalogo
 
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.reserva import Reserva  # noqa: F401
 from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
@@ -133,6 +134,26 @@ def _forzar_estado_vehiculo(engine, vehiculo_id: str, estado: str):
             db.commit()
 
 
+def _crear_reserva_activa(engine, vehiculo_id: str, conductor_id: str) -> None:
+    """Crea una reserva activa real para validar el bloqueo de disponibilidad."""
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    ahora = datetime.now(timezone.utc)
+    with TestingSessionLocal() as db:
+        db.add(
+            Reserva(
+                vehiculo_id=uuid.UUID(vehiculo_id),
+                conductor_id=uuid.UUID(conductor_id),
+                codigo=f"AS-{uuid.uuid4().hex[:6].upper()}",
+                estado="CONFIRMADA",
+                monto_total=Decimal("100000.00"),
+                fecha_inicio=ahora + timedelta(days=1),
+                fecha_fin=ahora + timedelta(days=3),
+                estacion_retiro="Estación Belgrano",
+            )
+        )
+        db.commit()
+
+
 class TestCA1_HabilitarAutoDisponibleHTTP:
     def test_ca1_cambiar_a_disponible_exitoso(self):
         """
@@ -234,9 +255,7 @@ class TestCA3_VehiculoNoHabilitadoHTTP:
 
 
 class TestCA4_VehiculoConReservaHTTP:
-    # Asumimos que existirá una función en el servicio o dependencias que verifique alquileres
-    @patch("app.services.vehiculo.verificar_alquileres_activos", return_value=True, create=True)
-    def test_ca4_deshabilitar_auto_con_reserva_activa(self, mock_alquileres):
+    def test_ca4_deshabilitar_auto_con_reserva_activa(self):
         """
         CA 4: Dado que el auto tiene un alquiler confirmado para este momento,
         cuando intento cambiar el estado a "No Disponible",
@@ -248,17 +267,19 @@ class TestCA4_VehiculoConReservaHTTP:
                 vehiculo, token = _registrar_vehiculo(client, "ca4@autospot.com")
                 _forzar_estado_vehiculo(engine, vehiculo["id"], "HABILITADO")
 
-                # Lo ponemos disponible primero
-                # Anulamos temporalmente el mock para que permita habilitarlo
-                mock_alquileres.return_value = False
-                client.patch(
+                disponible = client.patch(
                     f"/vehiculos/{vehiculo['id']}/disponibilidad",
                     json={"disponible": True},
                     headers=_auth_headers(token),
                 )
+                assert disponible.status_code == 200, disponible.text
 
-                # Restauramos el mock para simular que ahora sí tiene alquiler
-                mock_alquileres.return_value = True
+                conductor_id, _ = _registrar_y_loguear_usuario(
+                    client,
+                    "cliente.ca4@autospot.com",
+                    rol="CLIENTE",
+                )
+                _crear_reserva_activa(engine, vehiculo["id"], conductor_id)
 
                 # Intentamos deshabilitarlo mientras tiene alquiler
                 response = client.patch(
