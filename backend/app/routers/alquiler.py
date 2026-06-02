@@ -365,7 +365,7 @@ def rechazar_reserva_endpoint(
 
 
 @router.post(
-    "/reservas/admin/{reserva_id}/registrar-salida",
+    "/reservas/admin/{reserva_id}/salida",
     response_model=ReservaCodigoResponseSchema,
     status_code=status.HTTP_200_OK,
     summary="Registrar salida del auto (US 6R)",

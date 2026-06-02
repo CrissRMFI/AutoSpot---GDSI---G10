@@ -362,13 +362,27 @@ def registrar_salida(db: Session, reserva_id: uuid.UUID) -> Reserva:
         raise ReservaNoEncontradaError()
 
     if (reserva.estado or "").upper() != "VERIFICADA" or reserva.codigo_verificado_at is None:
-        raise ReservaNoEntregableError()
+        raise ReservaNoEntregableError("Falta verificar el código de reserva.")
 
-    if not _existe_checkin_aprobado(db=db, reserva_id=reserva.id):
-        raise ReservaSinCheckinAprobadoError()
+    checkin = db.query(CheckinVehiculo).filter(CheckinVehiculo.reserva_id == reserva.id).first()
+    if checkin is None:
+        raise ReservaSinCheckinAprobadoError("No se puede registrar la salida: el conductor aún no envió el check-in.")
+    elif checkin.estado == "RECHAZADO":
+        raise ReservaSinCheckinAprobadoError("No se puede registrar la salida: el check-in está rechazado y el conductor tiene que reenviarlo.")
+    elif checkin.estado != "APROBADO":
+        raise ReservaSinCheckinAprobadoError("No se puede registrar la salida: el check-in del conductor no está aprobado.")
 
     reserva.estado = "EN_CURSO"
     reserva.fecha_salida_real = datetime.now(timezone.utc)
+
+    db.add(Notificacion(
+        usuario_id=reserva.vehiculo.propietario_id,
+        tipo="ALQUILER_INICIADO",
+        titulo="Alquiler Iniciado",
+        mensaje=f"El alquiler de tu auto {reserva.vehiculo.marca} {reserva.vehiculo.modelo} ha iniciado.",
+        recurso_tipo="RESERVA",
+        recurso_id=reserva.id,
+    ))
 
     db.commit()
     db.refresh(reserva)

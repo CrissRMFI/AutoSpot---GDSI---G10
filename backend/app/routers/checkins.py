@@ -165,7 +165,7 @@ class RechazarPayload(BaseModel):
 
 
 @router.post(
-    "/admin/checkins/{checkin_id}/rechazar",
+    "/admin/checkins/{checkin_id}/rechazo",
     response_model=CheckinResponseSchema,
     status_code=status.HTTP_200_OK,
 )
