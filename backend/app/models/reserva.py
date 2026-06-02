@@ -125,6 +125,12 @@ class Reserva(Base):
 
     vehiculo = relationship("Vehiculo")
     conductor = relationship("Usuario")
+    checkin = relationship(
+        "CheckinVehiculo",
+        back_populates="reserva",
+        uselist=False,
+        doc="Check-in del conductor asociado a esta reserva (relación 1 a 1).",
+    )
 
     def __repr__(self) -> str:
         return (

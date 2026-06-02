@@ -468,6 +468,7 @@ def listar_reservas_para_entregar(db: Session) -> list[Reserva]:
         .options(
             joinedload(Reserva.vehiculo).joinedload(Vehiculo.fotos),
             joinedload(Reserva.conductor),
+            joinedload(Reserva.checkin),
         )
         .order_by(Reserva.codigo_verificado_at.asc())
         .all()
