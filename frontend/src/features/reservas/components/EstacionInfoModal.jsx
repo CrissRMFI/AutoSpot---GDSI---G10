@@ -1,4 +1,4 @@
-import { MapPin, Info, Map, X, Image as ImageIcon } from "lucide-react";
+import { MapPin, Info, Map, X } from "lucide-react";
 
 const EstacionInfoModal = ({ estacion, onClose }) => {
   if (!estacion) return null;
