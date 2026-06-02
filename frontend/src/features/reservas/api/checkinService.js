@@ -71,7 +71,7 @@ export const aprobarCheckin = async (checkinId) => {
 
 export const rechazarCheckin = async (checkinId, motivo) => {
   const response = await httpClient.post(
-    `/admin/checkins/${checkinId}/rechazar`,
+    `/admin/checkins/${checkinId}/rechazo`,
     { motivo },
   );
   return response.data;

@@ -108,6 +108,8 @@ export const useNotificaciones = () => {
       "AUTO_DEVUELTO",
       "CHECKOUT_PENDIENTE_CONFIRMACION",
       "CHECKOUT_RECHAZADO",
+      "CHECKIN_RECHAZADO",
+      "ALQUILER_INICIADO",
     ].includes(item.raw.tipo);
 
     if (item.raw.tipo === "RESERVA_PENDIENTE_VERIFICACION") {
@@ -154,6 +156,15 @@ export const useNotificaciones = () => {
   const hrefNotificacion = (notificacion) => {
     if (notificacion.tipo === "CHECKIN_PENDIENTE") {
       return "/admin/checkins/revision";
+    }
+    if (notificacion.tipo === "CHECKIN_RECHAZADO" && notificacion.recurso_id) {
+      return `/usuario/reservas/${notificacion.recurso_id}/checkin`;
+    }
+    if (notificacion.tipo === "CHECKIN_APROBADO" && notificacion.recurso_id) {
+      return `/usuario/alquileres?focus=${notificacion.recurso_id}`;
+    }
+    if (notificacion.tipo === "ALQUILER_INICIADO" && notificacion.recurso_id) {
+      return `/propietario/vehiculos`;
     }
     if (notificacion.tipo === "AUTO_DEVUELTO" && notificacion.recurso_id) {
       return `/admin/recepcion?focus=${notificacion.recurso_id}`;

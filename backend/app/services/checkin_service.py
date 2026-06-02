@@ -249,8 +249,8 @@ def aprobar_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo:
         tipo="CHECKIN_APROBADO",
         titulo="Check-in Aprobado",
         mensaje=f"Tu check-in ha sido aprobado. Puedes iniciar el alquiler.",
-        recurso_tipo="CHECKIN",
-        recurso_id=checkin.id,
+        recurso_tipo="RESERVA",
+        recurso_id=checkin.reserva_id,
     )
     db.add(notificacion)
     
@@ -275,8 +275,8 @@ def rechazar_checkin(db: Session, checkin_id: uuid.UUID, motivo: str) -> Checkin
         tipo="CHECKIN_RECHAZADO",
         titulo="Check-in Rechazado",
         mensaje=f"Tu check-in ha sido rechazado. Motivo: {motivo}",
-        recurso_tipo="CHECKIN",
-        recurso_id=checkin.id,
+        recurso_tipo="RESERVA",
+        recurso_id=checkin.reserva_id,
     )
     db.add(notificacion)
     

@@ -106,6 +106,28 @@ const presentacionItem = (item) => {
       acento: "bg-[#92400e]",
     };
   }
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    (tipo === "CHECKIN_APROBADO" || tipo === "CHECKIN_RECHAZADO")
+  ) {
+    return {
+      label: tipo === "CHECKIN_APROBADO" ? "Check-in aprobado" : "Check-in rechazado",
+      Icono: IconoVehiculo,
+      iconoBg:
+        tipo === "CHECKIN_APROBADO"
+          ? "bg-[#dcfce7] text-[#166534]"
+          : "bg-[#fee2e2] text-[#b42318]",
+      acento: tipo === "CHECKIN_APROBADO" ? "bg-[#166534]" : "bg-[#b42318]",
+    };
+  }
+  if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "ALQUILER_INICIADO") {
+    return {
+      label: "Alquiler iniciado",
+      Icono: IconoVehiculo,
+      iconoBg: "bg-[#dcfce7] text-[#166534]",
+      acento: "bg-[#166534]",
+    };
+  }
   if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "RESERVA_APROBADA") {
     return {
       label: "Reserva aprobada",

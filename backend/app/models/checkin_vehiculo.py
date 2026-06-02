@@ -112,7 +112,7 @@ class CheckinVehiculo(Base):
         nullable=False,
     )
 
-    reserva = relationship("Reserva")
+    reserva = relationship("Reserva", back_populates="checkin")
     conductor = relationship("Usuario")
 
     def __repr__(self) -> str:
