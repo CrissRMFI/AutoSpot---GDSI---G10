@@ -190,6 +190,12 @@ export const useNotificaciones = () => {
     ) {
       return `/vehiculos/${notificacion.recurso_id}/documentacion`;
     }
+    if (
+      notificacion.tipo === "CONDUCTOR_HABILITADO" ||
+      notificacion.tipo === "CONDUCTOR_RECHAZADO"
+    ) {
+      return "/documentacion-habilitante";
+    }
     if (notificacion.recurso_tipo === "VEHICULO" && notificacion.recurso_id) {
       return `/vehiculos/${notificacion.recurso_id}/detalle`;
     }
