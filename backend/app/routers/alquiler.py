@@ -24,6 +24,7 @@ from app.exceptions import (
     VehiculoNoEncontradoError,
 )
 from app.schemas.alquiler import (
+    CheckinResumenSchema,
     ConductorReservaResumenSchema,
     CrearReservaPayloadSchema,
     PaginaReservasSchema,
@@ -105,6 +106,10 @@ def _reserva_codigo_response(db: Session, reserva) -> ReservaCodigoResponseSchem
         if estacion_db:
             estacion_detalle = EstacionDetailResponse.model_validate(estacion_db)
 
+    checkin_resumen = None
+    if getattr(reserva, "checkin", None) is not None:
+        checkin_resumen = CheckinResumenSchema.model_validate(reserva.checkin)
+
     return ReservaCodigoResponseSchema(
         id=reserva.id,
         vehiculo_id=reserva.vehiculo_id,
@@ -124,6 +129,7 @@ def _reserva_codigo_response(db: Session, reserva) -> ReservaCodigoResponseSchem
         monto_penalizacion=reserva.monto_penalizacion,
         vehiculo=_vehiculo_resumen(reserva),
         estacion_detalle=estacion_detalle,
+        checkin=checkin_resumen,
     )
 
 
@@ -365,7 +371,7 @@ def rechazar_reserva_endpoint(
 
 
 @router.post(
-    "/reservas/admin/{reserva_id}/registrar-salida",
+    "/reservas/admin/{reserva_id}/salida",
     response_model=ReservaCodigoResponseSchema,
     status_code=status.HTTP_200_OK,
     summary="Registrar salida del auto (US 6R)",
