@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getSolicitudesDocumentacion } from "../api/solicitudesApi";
+import { etiquetaEstado } from "../../../utils/formatStatus";
 
 const formatearFecha = (iso) => {
   if (!iso) return "—";
@@ -172,7 +173,7 @@ const SolicitudesDocumentacionPage = () => {
                         {solicitud.resumen}
                       </td>
                       <td className="px-4 py-3 text-autospot-muted">
-                        {solicitud.estado}
+                        {etiquetaEstado(solicitud.estado)}
                       </td>
                       <td className="px-4 py-3 text-autospot-muted">
                         {formatearFecha(solicitud.fecha_solicitud)}
@@ -266,7 +267,7 @@ const SolicitudesDocumentacionPage = () => {
                             Estado Actual
                           </span>
                           <p className="font-medium text-autospot-black">
-                            {solicitud.estado}
+                            {etiquetaEstado(solicitud.estado)}
                           </p>
                         </div>
                       </div>
