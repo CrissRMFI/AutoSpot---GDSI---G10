@@ -1,5 +1,24 @@
 import httpClient from "../../../api/httpClient";
 
+const storageKeyEstadoCheckin = (reservaId) =>
+  `autospot:checkin-reserva:${reservaId}:estado`;
+
+export const recordarEstadoCheckinReserva = (reservaId, estado) => {
+  try {
+    sessionStorage.setItem(storageKeyEstadoCheckin(reservaId), estado);
+  } catch {
+    // Ignoramos entornos sin sessionStorage disponible.
+  }
+};
+
+export const obtenerEstadoCheckinReservaRecordado = (reservaId) => {
+  try {
+    return sessionStorage.getItem(storageKeyEstadoCheckin(reservaId));
+  } catch {
+    return null;
+  }
+};
+
 export const crearCheckin = async (payload) => {
   const response = await httpClient.post("/checkins", payload);
   return response.data;
@@ -7,6 +26,11 @@ export const crearCheckin = async (payload) => {
 
 export const reenviarCheckin = async (checkinId, payload) => {
   const response = await httpClient.put(`/checkins/${checkinId}`, payload);
+  return response.data;
+};
+
+export const obtenerMiCheckinPorReserva = async (reservaId) => {
+  const response = await httpClient.get(`/checkins/reservas/${reservaId}`);
   return response.data;
 };
 

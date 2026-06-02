@@ -16,6 +16,12 @@ from app.schemas.checkin_vehiculo import (
     CheckinUpdatePayloadSchema,
 )
 
+MENSAJES_CHECKIN_EXISTENTE = {
+    "PENDIENTE": "Ya enviaste el check-in de esta reserva. Esperá la revisión del administrador.",
+    "APROBADO": "El check-in de esta reserva ya fue aprobado.",
+    "RECHAZADO": "El check-in de esta reserva fue rechazado. Debés reenviar la corrección desde el check-in existente.",
+}
+
 
 def _obtener_admin_para_notificar(db: Session) -> Usuario | None:
     """
@@ -56,9 +62,13 @@ def crear_checkin(
     # 2. Verificar que no exista ya un check-in para esta reserva
     existente = db.query(CheckinVehiculo).filter(CheckinVehiculo.reserva_id == reserva.id).first()
     if existente:
+        estado_existente = (existente.estado or "").upper()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El check-in para esta reserva ya fue iniciado.",
+            detail=MENSAJES_CHECKIN_EXISTENTE.get(
+                estado_existente,
+                "El check-in para esta reserva ya fue iniciado.",
+            ),
         )
 
     # 3. Crear el check-in
@@ -162,6 +172,36 @@ def re_enviar_checkin(
     db.commit()
     db.refresh(checkin)
     return checkin
+
+
+def obtener_checkin_de_reserva_conductor(
+    db: Session,
+    reserva_id: uuid.UUID,
+    conductor_id: uuid.UUID,
+) -> CheckinVehiculo | None:
+    """
+    Devuelve el check-in propio de una reserva, si existe.
+
+    Permite al conductor saber si debe esperar revisión, puede corregir un
+    rechazo o ya tiene el check-in aprobado.
+    """
+    reserva = db.query(Reserva).filter(Reserva.id == reserva_id).first()
+    if not reserva:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada.",
+        )
+    if reserva.conductor_id != conductor_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La reserva no pertenece a este conductor.",
+        )
+
+    return (
+        db.query(CheckinVehiculo)
+        .filter(CheckinVehiculo.reserva_id == reserva_id)
+        .first()
+    )
 
 
 def listar_checkins_pendientes(db: Session):

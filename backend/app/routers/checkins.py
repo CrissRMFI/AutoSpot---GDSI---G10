@@ -19,6 +19,7 @@ from app.services.checkin_service import (
     listar_checkins,
     listar_checkins_pendientes,
     obtener_checkin,
+    obtener_checkin_de_reserva_conductor,
     re_enviar_checkin,
     rechazar_checkin,
 )
@@ -74,6 +75,33 @@ def re_enviar_checkin_endpoint(
         schema=payload,
         conductor_id=_obtener_usuario_id(usuario_actual),
     )
+
+
+@router.get(
+    "/checkins/reservas/{reserva_id}",
+    response_model=CheckinResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener el check-in propio de una reserva",
+)
+def obtener_mi_checkin_de_reserva_endpoint(
+    reserva_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    usuario_actual: dict = Depends(get_usuario_actual),
+):
+    """
+    Permite al conductor consultar si ya existe un check-in para la reserva.
+    """
+    checkin = obtener_checkin_de_reserva_conductor(
+        db=db,
+        reserva_id=reserva_id,
+        conductor_id=_obtener_usuario_id(usuario_actual),
+    )
+    if checkin is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Check-in no encontrado.",
+        )
+    return checkin
 
 
 @router.get(

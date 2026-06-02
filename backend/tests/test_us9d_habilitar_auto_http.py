@@ -11,8 +11,8 @@ Contrato esperado:
   - Valida que no haya reservas en curso al intentar deshabilitar.
 """
 from decimal import Decimal
+from datetime import datetime, timedelta, timezone
 import uuid
-from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
@@ -23,6 +23,7 @@ from tests.conftest import _make_test_engine, sembrar_catalogo
 
 from app.models.datos_personales_usuario import DatosPersonalesUsuario  # noqa: F401
 from app.models.foto_vehiculo import FotoVehiculo  # noqa: F401
+from app.models.reserva import Reserva  # noqa: F401
 from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
@@ -51,8 +52,16 @@ def _crear_cliente():
     return engine, TestClient(app)
 
 
-def _registrar_usuario(client: TestClient, email: str = "us9d@autospot.com", password: str = "password123") -> str:
-    response = client.post("/usuarios/registro", json={"email": email, "password": password})
+def _registrar_usuario(
+    client: TestClient,
+    email: str = "us9d@autospot.com",
+    password: str = "password123",
+    rol: str = "CLIENTE",
+) -> str:
+    response = client.post(
+        "/usuarios/registro",
+        json={"email": email, "password": password, "rol": rol},
+    )
     return response.json()["id"]
 
 
@@ -61,8 +70,18 @@ def _login_usuario(client: TestClient, email: str = "us9d@autospot.com", passwor
     return response.json()["access_token"]
 
 
-def _registrar_y_loguear_usuario(client: TestClient, email: str = "us9d@autospot.com", password: str = "password123") -> tuple[str, str]:
-    usuario_id = _registrar_usuario(client=client, email=email, password=password)
+def _registrar_y_loguear_usuario(
+    client: TestClient,
+    email: str = "us9d@autospot.com",
+    password: str = "password123",
+    rol: str = "CLIENTE",
+) -> tuple[str, str]:
+    usuario_id = _registrar_usuario(
+        client=client,
+        email=email,
+        password=password,
+        rol=rol,
+    )
     token = _login_usuario(client=client, email=email, password=password)
     return usuario_id, token
 
@@ -92,7 +111,11 @@ def _payload_vehiculo_valido():
 
 
 def _registrar_vehiculo(client: TestClient, email: str = "us9d@autospot.com") -> tuple[dict, str]:
-    propietario_id, token = _registrar_y_loguear_usuario(client, email=email)
+    propietario_id, token = _registrar_y_loguear_usuario(
+        client,
+        email=email,
+        rol="PROPIETARIO",
+    )
     response = client.post(
         f"/usuarios/{propietario_id}/vehiculos",
         json=_payload_vehiculo_valido(),
@@ -109,6 +132,26 @@ def _forzar_estado_vehiculo(engine, vehiculo_id: str, estado: str):
         if vehiculo:
             vehiculo.estado_registro = estado
             db.commit()
+
+
+def _crear_reserva_activa(engine, vehiculo_id: str, conductor_id: str) -> None:
+    """Crea una reserva activa real para validar el bloqueo de disponibilidad."""
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    ahora = datetime.now(timezone.utc)
+    with TestingSessionLocal() as db:
+        db.add(
+            Reserva(
+                vehiculo_id=uuid.UUID(vehiculo_id),
+                conductor_id=uuid.UUID(conductor_id),
+                codigo=f"AS-{uuid.uuid4().hex[:6].upper()}",
+                estado="CONFIRMADA",
+                monto_total=Decimal("100000.00"),
+                fecha_inicio=ahora + timedelta(days=1),
+                fecha_fin=ahora + timedelta(days=3),
+                estacion_retiro="Estación Belgrano",
+            )
+        )
+        db.commit()
 
 
 class TestCA1_HabilitarAutoDisponibleHTTP:
@@ -212,9 +255,7 @@ class TestCA3_VehiculoNoHabilitadoHTTP:
 
 
 class TestCA4_VehiculoConReservaHTTP:
-    # Asumimos que existirá una función en el servicio o dependencias que verifique alquileres
-    @patch("app.services.vehiculo.verificar_alquileres_activos", return_value=True, create=True)
-    def test_ca4_deshabilitar_auto_con_reserva_activa(self, mock_alquileres):
+    def test_ca4_deshabilitar_auto_con_reserva_activa(self):
         """
         CA 4: Dado que el auto tiene un alquiler confirmado para este momento,
         cuando intento cambiar el estado a "No Disponible",
@@ -226,17 +267,19 @@ class TestCA4_VehiculoConReservaHTTP:
                 vehiculo, token = _registrar_vehiculo(client, "ca4@autospot.com")
                 _forzar_estado_vehiculo(engine, vehiculo["id"], "HABILITADO")
 
-                # Lo ponemos disponible primero
-                # Anulamos temporalmente el mock para que permita habilitarlo
-                mock_alquileres.return_value = False
-                client.patch(
+                disponible = client.patch(
                     f"/vehiculos/{vehiculo['id']}/disponibilidad",
                     json={"disponible": True},
                     headers=_auth_headers(token),
                 )
+                assert disponible.status_code == 200, disponible.text
 
-                # Restauramos el mock para simular que ahora sí tiene alquiler
-                mock_alquileres.return_value = True
+                conductor_id, _ = _registrar_y_loguear_usuario(
+                    client,
+                    "cliente.ca4@autospot.com",
+                    rol="CLIENTE",
+                )
+                _crear_reserva_activa(engine, vehiculo["id"], conductor_id)
 
                 # Intentamos deshabilitarlo mientras tiene alquiler
                 response = client.patch(
@@ -285,7 +328,11 @@ class TestSeguridad_CambiarDisponibilidadHTTP:
                 _forzar_estado_vehiculo(engine, vehiculo["id"], "HABILITADO")
 
                 # Creamos otro usuario malicioso
-                _, token_ajeno = _registrar_y_loguear_usuario(client, "malicioso@autospot.com")
+                _, token_ajeno = _registrar_y_loguear_usuario(
+                    client,
+                    "malicioso@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 response = client.patch(
                     f"/vehiculos/{vehiculo['id']}/disponibilidad",
@@ -303,7 +350,11 @@ class TestSeguridad_CambiarDisponibilidadHTTP:
         engine, client_context = _crear_cliente()
         try:
             with client_context as client:
-                _, token = _registrar_y_loguear_usuario(client, "seguridad3@autospot.com")
+                _, token = _registrar_y_loguear_usuario(
+                    client,
+                    "seguridad3@autospot.com",
+                    rol="PROPIETARIO",
+                )
 
                 vehiculo_id_inexistente = str(uuid.uuid4())
                 response = client.patch(

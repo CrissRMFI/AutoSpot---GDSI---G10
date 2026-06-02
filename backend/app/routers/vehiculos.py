@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import (
     get_usuario_actual,
+    requerir_rol_propietario,
     validar_usuario_autenticado_coincide_con_id,
 )
 from app.exceptions import (
@@ -154,7 +155,7 @@ def validar_vehiculo_pertenece_a_usuario_autenticado(
 def registrar_vehiculo_usuario(
     propietario_id: uuid.UUID,
     payload: RegistroVehiculoPayloadSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> VehiculoPublicoSchema:
     """
@@ -226,7 +227,7 @@ def registrar_vehiculo_usuario(
 )
 def listar_vehiculos_usuario(
     propietario_id: uuid.UUID,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> list[VehiculoPublicoSchema]:
     """
@@ -372,7 +373,7 @@ def obtener_detalle_vehiculo_catalogo(
 )
 def obtener_detalle_vehiculo(
     vehiculo_id: uuid.UUID,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> VehiculoDetallePropietarioSchema:
     """
@@ -438,7 +439,7 @@ def obtener_detalle_vehiculo(
 def definir_precio_diario_vehiculo(
     vehiculo_id: uuid.UUID,
     payload: DefinirPrecioVehiculoSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> PrecioVehiculoResponseSchema:
     """
@@ -507,7 +508,7 @@ def definir_precio_diario_vehiculo(
 def cargar_documentacion_legal_vehiculo(
     vehiculo_id: uuid.UUID,
     payload: DocumentacionVehiculoSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> VehiculoDocumentacionResponseSchema:
     """
@@ -585,7 +586,7 @@ def cargar_documentacion_legal_vehiculo(
 def cambiar_disponibilidad_de_vehiculo(
     vehiculo_id: uuid.UUID,
     payload: CambiarDisponibilidadSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> DisponibilidadVehiculoResponseSchema:
     """
@@ -659,7 +660,7 @@ def cambiar_disponibilidad_de_vehiculo(
 def actualizar_datos_vehiculo(
     vehiculo_id: uuid.UUID,
     payload: ActualizarVehiculoPayloadSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> VehiculoPublicoSchema:
     """
@@ -728,7 +729,7 @@ def actualizar_datos_vehiculo(
 def agregar_foto_vehiculo_endpoint(
     vehiculo_id: uuid.UUID,
     payload: FotoVehiculoSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> FotoVehiculoPublicoSchema:
     """
@@ -796,7 +797,7 @@ def reemplazar_foto_de_vehiculo(
     vehiculo_id: uuid.UUID,
     foto_id: uuid.UUID,
     payload: ReemplazarFotoVehiculoSchema,
-    usuario_actual: dict = Depends(get_usuario_actual),
+    usuario_actual: dict = Depends(requerir_rol_propietario),
     db: Session = Depends(get_db),
 ) -> FotoVehiculoPublicoSchema:
     """
