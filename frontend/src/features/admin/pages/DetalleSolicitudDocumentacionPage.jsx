@@ -5,6 +5,7 @@ import {
   aprobarSolicitudDocumentacion,
   rechazarSolicitudDocumentacion,
 } from "../api/solicitudesApi";
+import { etiquetaEstado } from "../../../utils/formatStatus";
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
@@ -284,7 +285,7 @@ const DetalleSolicitudDocumentacionPage = () => {
           value: etiquetaTipo(detalle.tipo),
         },
         { id: "usuario", label: "Usuario", value: detalle.usuario_email },
-        { id: "estado", label: "Estado actual", value: detalle.estado },
+        { id: "estado", label: "Estado actual", value: etiquetaEstado(detalle.estado) },
         {
           id: "ingreso",
           label: "Fecha de ingreso",
@@ -399,7 +400,7 @@ const DetalleSolicitudDocumentacionPage = () => {
               <span
                 className={`rounded-full border px-3 py-1 text-xs font-bold ${claseEstado(detalle.estado)}`}
               >
-                {detalle.estado}
+                {etiquetaEstado(detalle.estado)}
               </span>
             </div>
           )}

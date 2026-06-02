@@ -12,6 +12,7 @@ from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
+from app.models.documentacion_habilitante_conductor import DocumentacionHabilitanteConductor
 
 
 TIPO_RESERVA_PENDIENTE_VERIFICACION = "RESERVA_PENDIENTE_VERIFICACION"
@@ -24,8 +25,11 @@ TIPO_CHECKOUT_RECHAZADO = "CHECKOUT_RECHAZADO"
 TIPO_VEHICULO_DOCUMENTACION_PENDIENTE = "VEHICULO_DOCUMENTACION_PENDIENTE"
 TIPO_VEHICULO_HABILITADO = "VEHICULO_HABILITADO"
 TIPO_VEHICULO_RECHAZADO = "VEHICULO_RECHAZADO"
+TIPO_CONDUCTOR_HABILITADO = "CONDUCTOR_HABILITADO"
+TIPO_CONDUCTOR_RECHAZADO = "CONDUCTOR_RECHAZADO"
 RECURSO_RESERVA = "RESERVA"
 RECURSO_VEHICULO = "VEHICULO"
+RECURSO_CONDUCTOR = "CONDUCTOR"
 ESTADO_VEHICULO_PENDIENTE_DOCUMENTACION = "PENDIENTE_DOCUMENTACION"
 
 
@@ -398,4 +402,37 @@ def marcar_notificacion_como_vista(
         db.commit()
         db.refresh(notificacion)
 
+    return notificacion
+
+
+def crear_notificacion_resolucion_conductor(
+    db: Session,
+    conductor: DocumentacionHabilitanteConductor,
+    aprobada: bool,
+    motivo_rechazo: str | None = None,
+) -> Notificacion:
+    """
+    Crea el aviso para el conductor al aprobar o rechazar su documentación.
+    """
+    if aprobada:
+        notificacion = Notificacion(
+            usuario_id=conductor.usuario_id,
+            tipo=TIPO_CONDUCTOR_HABILITADO,
+            titulo="Documentación aprobada",
+            mensaje="Tu documentación ha sido aprobada. Ya podés realizar reservas.",
+            recurso_tipo=RECURSO_CONDUCTOR,
+            recurso_id=conductor.id,
+        )
+    else:
+        motivo = (motivo_rechazo or "Revisá la documentación cargada.").strip()
+        notificacion = Notificacion(
+            usuario_id=conductor.usuario_id,
+            tipo=TIPO_CONDUCTOR_RECHAZADO,
+            titulo="Documentación rechazada",
+            mensaje=f"Tu documentación fue rechazada. Motivo: {motivo}",
+            recurso_tipo=RECURSO_CONDUCTOR,
+            recurso_id=conductor.id,
+        )
+
+    db.add(notificacion)
     return notificacion

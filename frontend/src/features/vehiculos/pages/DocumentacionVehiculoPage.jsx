@@ -232,6 +232,15 @@ const DocumentacionVehiculoPage = () => {
       return false;
     }
 
+    const patenteRegex = /^[A-Z0-9]+$/;
+    if (!patenteRegex.test(form.patente.trim())) {
+      setFeedback({
+        message: "La patente solo acepta letras mayúsculas y números.",
+        type: "error",
+      });
+      return false;
+    }
+
     return true;
   };
 
