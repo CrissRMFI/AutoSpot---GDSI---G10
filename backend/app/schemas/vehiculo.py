@@ -387,3 +387,20 @@ class ActualizarVehiculoPayloadSchema(VehiculoBaseSchema):
     titular: str | None = None
     estacion: str | None = None
     telefono: str | None = None
+
+class CambiarUbicacionSchema(BaseModel):
+    """
+    Payload de entrada para cambiar la ubicación de un vehículo manualmente.
+    """
+    estacion: str | None
+
+class UbicacionVehiculoResponseSchema(BaseModel):
+    """
+    Respuesta pública luego de cambiar la ubicación de un vehículo.
+    """
+    id: uuid.UUID
+    estacion: str | None
+
+    model_config = {
+        "from_attributes": True,
+    }

@@ -95,3 +95,11 @@ export const verificarDisponibilidad = async (vehiculoId, fechaInicio, fechaFin)
   });
   return response.data;
 };
+
+export const cambiarUbicacionVehiculo = async (vehiculoId, estacion) => {
+  const response = await httpClient.patch(
+    `/vehiculos/${vehiculoId}/ubicacion`,
+    { estacion }
+  );
+  return response.data;
+};
