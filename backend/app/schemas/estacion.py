@@ -37,3 +37,13 @@ class EstacionImagenUpdateRequest(BaseModel):
         default=None,
         description="URL pública de la imagen de la estación. Enviar null para limpiar.",
     )
+
+
+class EstacionCreateRequest(BaseModel):
+    """
+    Payload para crear una nueva estación a mano (admin).
+    """
+    nombre: str = Field(..., description="Nombre de la nueva estación (Ej: Spot Centro)")
+    descripcion: str = Field(..., description="Descripción o instrucciones de acceso para el conductor")
+    latitud: float = Field(..., description="Coordenada de latitud (Ej: -34.6037)")
+    longitud: float = Field(..., description="Coordenada de longitud (Ej: -58.3816)")
