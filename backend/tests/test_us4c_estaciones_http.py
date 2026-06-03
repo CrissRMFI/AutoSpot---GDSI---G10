@@ -165,3 +165,40 @@ class TestPatchImagenEstacionHTTP:
         )
 
         assert response.status_code == 422
+
+
+class TestPoblarCoordenadasAdminHTTP:
+    def test_poblar_coordenadas_devuelve_200_y_actualiza(self, client: TestClient):
+        # Primero necesitamos estaciones en DB
+        _sembrar_estaciones(client)
+        
+        response = client.post(f"{_ENDPOINT_ESTACIONES}/admin/poblar-coordenadas")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "Coordenadas pobladas exitosamente" in data["detail"]
+        
+        # Verificar que Spot Palermo se actualizó (nuestro mock tiene ese nombre)
+        verificacion = client.get(f"{_ENDPOINT_ESTACIONES}/1")
+        assert verificacion.json()["latitud"] == -34.5835882
+
+
+class TestCrearEstacionAdminHTTP:
+    def test_crear_estacion_devuelve_201_y_crea(self, client: TestClient):
+        payload = {
+            "nombre": "Spot Nuevo Test",
+            "descripcion": "Una descripción de prueba",
+            "latitud": -34.123,
+            "longitud": -58.123
+        }
+        
+        response = client.post(f"{_ENDPOINT_ESTACIONES}/admin/crear", json=payload)
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["nombre"] == "Spot Nuevo Test"
+        assert data["instrucciones_acceso"] == "Una descripción de prueba"
+        assert data["latitud"] == -34.123
+        assert data["longitud"] == -58.123
+        assert data["activa"] is True
+        assert data["id"] > 0
