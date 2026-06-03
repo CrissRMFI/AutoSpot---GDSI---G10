@@ -8,6 +8,7 @@ from app.schemas.estacion import (
     EstacionDetailResponse,
     EstacionImagenUpdateRequest,
     EstacionListResponse,
+    EstacionCreateRequest,
 )
 from app.services import estacion_service
 
@@ -51,3 +52,22 @@ def actualizar_imagen_estacion(
     return estacion_service.actualizar_imagen_estacion(
         db, estacion_id=estacion_id, imagen_url=imagen_url
     )
+
+
+@router.post("/admin/poblar-coordenadas", status_code=200)
+def poblar_coordenadas(db: Session = Depends(get_db)):
+    """
+    Puebla las coordenadas de latitud y longitud por defecto para las 10 estaciones Spots.
+    
+    Pensado para ejecutar una única vez en producción después de migrar la base de datos, 
+    de forma que los pines del mapa se ubiquen correctamente en Leaflet.
+    """
+    return estacion_service.poblar_coordenadas_default(db)
+
+
+@router.post("/admin/crear", response_model=EstacionDetailResponse, status_code=201)
+def crear_estacion_manual(payload: EstacionCreateRequest, db: Session = Depends(get_db)):
+    """
+    Crea una nueva estación (Spot) a mano introduciendo latitud, longitud, nombre y descripción.
+    """
+    return estacion_service.crear_estacion_manual(db, payload)

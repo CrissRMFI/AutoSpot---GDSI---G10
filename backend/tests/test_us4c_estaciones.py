@@ -10,6 +10,7 @@ from fastapi import HTTPException
 
 from app.models.estacion import Estacion
 from app.services import estacion_service
+from app.schemas.estacion import EstacionCreateRequest
 
 
 def _crear_estaciones_basicas(db):
@@ -131,3 +132,40 @@ def test_actualizar_imagen_estacion_inexistente_lanza_404(db_session):
         )
 
     assert exc.value.status_code == 404
+
+
+def test_poblar_coordenadas_default(db_session):
+    _crear_estaciones_basicas(db_session)
+    # Renombrar "Estacion A" a "Spot Palermo" para que el script la detecte
+    estacion = db_session.query(Estacion).filter(Estacion.id == 1).first()
+    estacion.nombre = "Spot Palermo"
+    db_session.commit()
+    
+    resultado = estacion_service.poblar_coordenadas_default(db_session)
+    
+    assert "Coordenadas pobladas exitosamente" in resultado["detail"]
+    
+    # Verificar que Spot Palermo se haya actualizado
+    refrescada = db_session.query(Estacion).filter(Estacion.nombre == "Spot Palermo").first()
+    assert refrescada.latitud == -34.5835882
+    assert refrescada.longitud == -58.4185817
+
+
+def test_crear_estacion_manual(db_session):
+    payload = EstacionCreateRequest(
+        nombre="Spot Test",
+        descripcion="Test desc",
+        latitud=-34.0,
+        longitud=-58.0
+    )
+    
+    estacion = estacion_service.crear_estacion_manual(db_session, payload)
+    
+    assert estacion.id is not None
+    assert estacion.nombre == "Spot Test"
+    assert estacion.instrucciones_acceso == "Test desc"
+    assert estacion.latitud == -34.0
+    assert estacion.longitud == -58.0
+    assert estacion.direccion == "A confirmar"
+    assert estacion.zona == "Nueva"
+    assert estacion.activa is True
