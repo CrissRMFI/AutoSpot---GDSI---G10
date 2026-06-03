@@ -21,6 +21,8 @@ def _crear_estaciones_basicas(db):
             instrucciones_acceso="Inst A",
             zona="Zona A",
             activa=True,
+            latitud=-34.5835882,
+            longitud=-58.4185817,
         ),
         Estacion(
             id=2,
@@ -29,6 +31,8 @@ def _crear_estaciones_basicas(db):
             instrucciones_acceso="Inst B",
             zona="Zona B",
             activa=True,
+            latitud=-34.5892027,
+            longitud=-58.3927602,
         ),
         Estacion(
             id=3,
@@ -37,6 +41,8 @@ def _crear_estaciones_basicas(db):
             instrucciones_acceso="Inst C",
             zona="Zona C",
             activa=False,
+            latitud=None,
+            longitud=None,
         ),
     ])
     db.commit()
@@ -60,6 +66,8 @@ def test_get_estacion_by_id_devuelve_estacion_activa(db_session):
     assert estacion.id == 1
     assert estacion.direccion == "Dir A"
     assert estacion.instrucciones_acceso == "Inst A"
+    assert float(estacion.latitud) == -34.5835882
+    assert float(estacion.longitud) == -58.4185817
 
 
 def test_get_estacion_by_id_inexistente_lanza_404(db_session):

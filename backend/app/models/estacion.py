@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, String, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -19,6 +19,8 @@ class Estacion(Base):
     zona: Mapped[str] = mapped_column(String(100), nullable=False)
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    latitud: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitud: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     def __repr__(self) -> str:
         return f"<Estacion id={self.id} nombre='{self.nombre}' activa={self.activa}>"

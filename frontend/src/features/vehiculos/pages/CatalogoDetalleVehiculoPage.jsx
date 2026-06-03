@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
+import LightboxGaleria from "../components/LightboxGaleria";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -17,6 +18,7 @@ const CatalogoDetalleVehiculoPage = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+  const [lightboxAbierto, setLightboxAbierto] = useState(false);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -121,7 +123,8 @@ const CatalogoDetalleVehiculoPage = () => {
               <img
                 src={fotoActiva.url}
                 alt={`Vehículo ${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado}`}
-                className="aspect-video w-full object-cover sm:aspect-[16/10]"
+                className="block aspect-video w-full cursor-pointer object-cover sm:aspect-[16/10]"
+                onClick={() => setLightboxAbierto(true)}
               />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center text-sm text-white/70">
@@ -166,7 +169,7 @@ const CatalogoDetalleVehiculoPage = () => {
                   key={foto.id}
                   onClick={() => setIndiceActivo(indice)}
                   aria-label={`Ver foto ${indice + 1}`}
-                  className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition sm:h-20 sm:w-28 ${
+                  className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 p-0.5 transition sm:h-20 sm:w-28 ${
                     indice === indiceActivo
                       ? "border-autospot-accent"
                       : "border-transparent opacity-70 hover:opacity-100"
@@ -175,7 +178,7 @@ const CatalogoDetalleVehiculoPage = () => {
                   <img
                     src={foto.url}
                     alt={`Miniatura ${indice + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full rounded-md object-cover"
                   />
                 </button>
               ))}
@@ -237,6 +240,14 @@ const CatalogoDetalleVehiculoPage = () => {
           </div>
         </aside>
       </section>
+
+      <LightboxGaleria 
+        isOpen={lightboxAbierto} 
+        onClose={() => setLightboxAbierto(false)}
+        fotos={fotos}
+        indiceActivo={indiceActivo}
+        setIndiceActivo={setIndiceActivo}
+      />
     </>
   );
 };

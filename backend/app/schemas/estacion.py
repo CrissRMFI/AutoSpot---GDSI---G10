@@ -9,6 +9,8 @@ class EstacionBase(BaseModel):
     zona: str
     activa: bool
     imagen_url: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
 
 
 class EstacionListResponse(EstacionBase):
