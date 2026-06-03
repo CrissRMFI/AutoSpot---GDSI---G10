@@ -508,6 +508,39 @@ const DetalleVehiculoPage = () => {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
+                    Ubicación Actual
+                  </p>
+                  {vehiculo.estacion && (
+                    <p className="text-sm font-bold !text-white text-right">
+                      {vehiculo.estacion}
+                    </p>
+                  )}
+                </div>
+                {vehiculo.estacion ? (
+                  <div className="overflow-hidden rounded-xl border border-white/10">
+                    <iframe
+                      width="100%"
+                      height="150"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(vehiculo.estacion)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                      title={`Ubicación de ${vehiculo.estacion}`}
+                    ></iframe>
+                  </div>
+                ) : (
+                  <div className="mt-2 flex h-24 items-center justify-center rounded-xl bg-[#2a2a2a] border border-white/5">
+                    <p className="text-sm font-bold text-white/60">
+                      El auto está en alquiler
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
                   Precio por día
                 </p>
