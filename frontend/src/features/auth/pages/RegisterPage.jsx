@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../../layouts/AuthLayout";
 import { registrarUsuario } from "../api/authService";
 
@@ -8,73 +8,18 @@ const TIPOS_CUENTA = {
   PROPIETARIO: "PROPIETARIO",
 };
 
-const IconoCliente = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    {...props}
-  >
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21c0-4.42 3.58-8 8-8s8 3.58 8 8" />
-  </svg>
-);
-
-const IconoPropietario = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    {...props}
-  >
-    <path d="M3 13l2-6h14l2 6" />
-    <path d="M3 13v4h2M21 13v4h-2M5 17h14" />
-    <circle cx="7" cy="17" r="2" />
-    <circle cx="17" cy="17" r="2" />
-  </svg>
-);
-
-const IconoOjoAbierto = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    {...props}
-  >
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const IconoOjoTachado = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    {...props}
-  >
-    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-    <path d="M2 2l20 20" />
-  </svg>
-);
+const OPCIONES_CUENTA = [
+  {
+    tipo: TIPOS_CUENTA.CLIENTE,
+    titulo: "Cliente",
+    descripcion: "Alquilar autos",
+  },
+  {
+    tipo: TIPOS_CUENTA.PROPIETARIO,
+    titulo: "Propietario",
+    descripcion: "Publicar autos",
+  },
+];
 
 const normalizarMensajeError = (err) => {
   const detalle = err?.response?.data?.detail;
@@ -95,7 +40,7 @@ const normalizarMensajeError = (err) => {
     return detalle.msg || JSON.stringify(detalle);
   }
 
-  return err?.message || "Error al crear la cuenta. Inténtelo de nuevo.";
+  return err?.message || "Error al crear la cuenta. Intentá de nuevo.";
 };
 
 const RegisterPage = () => {
@@ -109,7 +54,6 @@ const RegisterPage = () => {
 
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -117,13 +61,6 @@ const RegisterPage = () => {
     setForm((estadoActual) => ({
       ...estadoActual,
       [name]: value,
-    }));
-  };
-
-  const seleccionarTipoCuenta = (tipoCuenta) => {
-    setForm((estadoActual) => ({
-      ...estadoActual,
-      tipoCuenta,
     }));
   };
 
@@ -156,84 +93,53 @@ const RegisterPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Crear cuenta"
-      description="Registrate en AutoSpot como cliente o propietario para comenzar a operar dentro de la plataforma."
-      asideText="¿Ya tenés cuenta?"
-      asideLinkText="Iniciar sesión"
-      asideLinkTo="/login"
-    >
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] !text-autospot-black sm:text-3xl">
-          Registro de usuario
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 !text-autospot-muted">
-          Elegí el tipo de cuenta y completá tus datos de acceso.
-        </p>
-      </div>
-
-      <form onSubmit={enviarFormulario} className="space-y-5">
-        <div>
-          <span className="mb-2 block text-sm font-bold !text-autospot-black">
+    <AuthLayout>
+      <form onSubmit={enviarFormulario} className="space-y-6">
+        <fieldset>
+          <legend className="mb-2 block text-[11px] font-bold uppercase tracking-normal !text-autospot-black">
             Tipo de cuenta
-          </span>
+          </legend>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              {
-                tipo: TIPOS_CUENTA.CLIENTE,
-                titulo: "Cliente",
-                descripcion: "Buscar autos, alquilar y gestionar tus reservas.",
-                Icono: IconoCliente,
-              },
-              {
-                tipo: TIPOS_CUENTA.PROPIETARIO,
-                titulo: "Propietario",
-                descripcion: "Publicar vehículos, cargar documentación y definir precios.",
-                Icono: IconoPropietario,
-              },
-            ].map(({ tipo, titulo, descripcion, Icono }) => {
+          <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+            {OPCIONES_CUENTA.map(({ tipo, titulo, descripcion }) => {
               const activo = form.tipoCuenta === tipo;
+
               return (
-                <button
+                <label
                   key={tipo}
-                  type="button"
-                  onClick={() => seleccionarTipoCuenta(tipo)}
-                  aria-pressed={activo}
-                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                  className={`min-h-[68px] cursor-pointer rounded-[8px] border px-3 py-3 transition ${
                     activo
-                      ? "border-autospot-accent bg-white shadow-[0_10px_30px_rgba(123,28,46,0.12)]"
-                      : "border-autospot-border bg-white/70 hover:border-autospot-accent"
+                      ? "border-autospot-black bg-autospot-black !text-white"
+                      : "border-autospot-border bg-transparent !text-autospot-black hover:border-autospot-accent"
                   }`}
                 >
+                  <input
+                    type="radio"
+                    name="tipoCuenta"
+                    value={tipo}
+                    checked={activo}
+                    onChange={actualizarCampo}
+                    className="sr-only"
+                  />
+
+                  <span className="block text-sm font-bold">{titulo}</span>
                   <span
-                    className={`inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition ${
-                      activo
-                        ? "bg-autospot-accent !text-white"
-                        : "bg-autospot-cream text-autospot-accent"
+                    className={`mt-1 block text-xs ${
+                      activo ? "!text-white/70" : "!text-autospot-muted"
                     }`}
                   >
-                    <Icono className="h-5 w-5" />
+                    {descripcion}
                   </span>
-                  <div className="min-w-0">
-                    <div className="mb-1 text-sm font-bold !text-autospot-black">
-                      {titulo}
-                    </div>
-                    <div className="text-xs leading-5 !text-autospot-muted">
-                      {descripcion}
-                    </div>
-                  </div>
-                </button>
+                </label>
               );
             })}
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <label
             htmlFor="email"
-            className="mb-2 block text-sm font-bold !text-autospot-black"
+            className="mb-2 block text-[11px] font-bold uppercase tracking-normal !text-autospot-black"
           >
             Email
           </label>
@@ -246,57 +152,34 @@ const RegisterPage = () => {
             onChange={actualizarCampo}
             required
             autoComplete="email"
-            placeholder="tuemail@ejemplo.com"
-            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm !text-autospot-black outline-none transition placeholder:!text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
+            placeholder="tu@email.com"
+            className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent px-3 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
           />
         </div>
 
         <div>
           <label
             htmlFor="password"
-            className="mb-2 block text-sm font-bold !text-autospot-black"
+            className="mb-2 block text-[11px] font-bold uppercase tracking-normal !text-autospot-black"
           >
             Contraseña
           </label>
 
-          <div className="relative">
-            <input
-              type={mostrarPassword ? "text" : "password"}
-              id="password"
-              name="password"
-              value={form.password}
-              onChange={actualizarCampo}
-              required
-              autoComplete="new-password"
-              placeholder="Mínimo 8 caracteres"
-              className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 pr-12 text-sm !text-autospot-black outline-none transition placeholder:!text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
-            />
-
-            <button
-              type="button"
-              onClick={() => setMostrarPassword((valor) => !valor)}
-              aria-label={
-                mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-              }
-              aria-pressed={mostrarPassword}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-muted transition hover:border-autospot-accent hover:text-autospot-accent focus:outline-none"
-            >
-              {mostrarPassword ? (
-                <IconoOjoTachado className="h-5 w-5" />
-              ) : (
-                <IconoOjoAbierto className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          <p className="mt-2 text-xs leading-5 !text-autospot-muted">
-            Usá una contraseña segura. El backend validará las reglas reales de
-            registro.
-          </p>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={form.password}
+            onChange={actualizarCampo}
+            required
+            autoComplete="new-password"
+            placeholder="Mínimo 8 caracteres"
+            className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent px-3 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
+          />
         </div>
 
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold !text-[#b42318]">
+          <div className="rounded-[8px] bg-red-50 px-4 py-3 text-sm font-bold !text-[#b42318]">
             {error}
           </div>
         )}
@@ -304,15 +187,23 @@ const RegisterPage = () => {
         <button
           type="submit"
           disabled={cargando}
-          className="flex w-full items-center justify-center rounded-full bg-autospot-accent px-5 py-3.5 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
+          className="flex h-12 w-full items-center justify-center rounded-[8px] bg-autospot-black px-5 text-sm font-bold !text-white transition hover:bg-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
         >
-          {cargando
-            ? "Creando cuenta..."
-            : form.tipoCuenta === TIPOS_CUENTA.PROPIETARIO
-              ? "Crear cuenta como propietario"
-              : "Crear cuenta como cliente"}
+          {cargando ? "Creando cuenta..." : "Crear cuenta"}
         </button>
       </form>
+
+      <div className="mt-6 space-y-2 text-center text-sm">
+        <p className="!text-autospot-muted">
+          ¿Ya tenés cuenta?{" "}
+          <Link to="/login" className="font-bold !text-autospot-accent">
+            Iniciar sesión
+          </Link>
+        </p>
+        <Link to="/" className="text-xs font-bold !text-autospot-muted">
+          Volver al inicio
+        </Link>
+      </div>
     </AuthLayout>
   );
 };

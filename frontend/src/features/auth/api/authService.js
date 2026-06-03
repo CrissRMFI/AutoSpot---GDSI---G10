@@ -19,8 +19,11 @@ export const loginUsuario = async ({ email, password }) => {
   return response.data;
 };
 
-export const logoutUsuario = async () => {
-  const response = await httpClient.post("/usuarios/logout");
+export const logoutUsuario = async (pushSubscription = null) => {
+  const response = await httpClient.post(
+    "/usuarios/logout",
+    pushSubscription ?? undefined,
+  );
 
   return response.data;
 };
