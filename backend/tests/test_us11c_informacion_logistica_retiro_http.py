@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base
 from app.main import app
 from app.models.estacion import Estacion
+from tests.test_us5r_verificar_codigo_reserva_http import _registrar_datos_personales_directo
 from tests.test_us9d_habilitar_auto_http import (
     _auth_headers,
     _crear_cliente,
@@ -47,10 +48,11 @@ class TestUS11CInformacionLogisticaRetiroHTTP:
                 vehiculo, _ = _registrar_vehiculo(client, "prop11c1@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
                 
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente11c1@autospot.com",
                 )
+                _registrar_datos_personales_directo(engine, cliente_id)
 
                 # Creamos reserva
                 creacion = client.post(
@@ -94,10 +96,11 @@ class TestUS11CInformacionLogisticaRetiroHTTP:
                 vehiculo, _ = _registrar_vehiculo(client, "prop11c2@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
                 
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente11c2@autospot.com",
                 )
+                _registrar_datos_personales_directo(engine, cliente_id)
 
                 # Creamos reserva (estado por defecto CONFIRMADA)
                 creacion = client.post(

@@ -2,6 +2,7 @@
 Tests HTTP — US 5R: Verificar código de reserva.
 """
 import uuid
+import itertools
 
 from sqlalchemy.orm import sessionmaker
 
@@ -23,17 +24,18 @@ from tests.test_us9d_habilitar_auto_http import (
     _registrar_y_loguear_usuario,
 )
 
+_dni_counter = itertools.count(10_000_000)
 
-def _registrar_datos_personales_directo(engine, usuario_id: str) -> None:
+def _registrar_datos_personales_directo(engine, usuario_id: str, dni: str = str(next(_dni_counter))) -> None:
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     with TestingSessionLocal() as db:
         datos = DatosPersonalesUsuario(
             usuario_id=uuid.UUID(usuario_id),
-            dni="30111222",
+            dni=dni,
             nombre="Carla",
             apellido="Reserva",
-            foto_dni_frente_url="uploads/dni/30111222/frente.jpg",
-            foto_dni_dorso_url="uploads/dni/30111222/dorso.jpg",
+            foto_dni_frente_url=f"uploads/dni/{dni}/frente.jpg",
+            foto_dni_dorso_url=f"uploads/dni/{dni}/dorso.jpg",
             estado_validacion="APROBADO",
         )
         db.add(datos)
@@ -66,7 +68,7 @@ class TestUS5RVerificarCodigoReservaHTTP:
                     client,
                     "cliente5r@autospot.com",
                 )
-                _registrar_datos_personales_directo(engine, conductor_id)
+                _registrar_datos_personales_directo(engine, conductor_id, "30111222")
 
                 creacion = client.post(
                     "/alquiler/reservas",
@@ -241,11 +243,11 @@ class TestUS5RVerificarCodigoReservaHTTP:
                 token_admin = _login_usuario(client, "admin5r-r3@autospot.com")
                 vehiculo, _ = _registrar_vehiculo(client, "prop5r-r3@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
-                _, token_cliente = _registrar_y_loguear_usuario(
+                conductor_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente5r-r3@autospot.com",
                 )
-
+                _registrar_datos_personales_directo(engine, conductor_id)
                 creacion = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo["id"]),
