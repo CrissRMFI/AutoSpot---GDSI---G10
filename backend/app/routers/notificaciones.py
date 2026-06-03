@@ -3,16 +3,25 @@ Controlador HTTP — Notificaciones del usuario autenticado.
 """
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_usuario_actual
 from app.exceptions import NotificacionNoEncontradaError
 from app.schemas.notificacion import NotificacionSchema
+from app.schemas.push_subscription import (
+    PushSubscriptionCreateSchema,
+    PushSubscriptionDeleteSchema,
+    PushSubscriptionSchema,
+)
 from app.services.notificacion import (
     listar_notificaciones_no_vistas,
     marcar_notificacion_como_vista,
+)
+from app.services.push import (
+    eliminar_suscripcion_push,
+    registrar_suscripcion_push,
 )
 
 
@@ -44,6 +53,48 @@ def listar_notificaciones(
     return listar_notificaciones_no_vistas(
         db=db,
         usuario_id=_usuario_id_desde_token(usuario_actual),
+    )
+
+
+@router.post(
+    "/push/suscripciones",
+    response_model=PushSubscriptionSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar suscripción Web Push",
+    description=(
+        "Guarda o actualiza la suscripción Push API del navegador actual para "
+        "enviar notificaciones de fondo al sistema operativo."
+    ),
+)
+def registrar_suscripcion_push_endpoint(
+    payload: PushSubscriptionCreateSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+    user_agent: str | None = Header(default=None),
+) -> PushSubscriptionSchema:
+    return registrar_suscripcion_push(
+        db=db,
+        usuario_id=_usuario_id_desde_token(usuario_actual),
+        schema=payload,
+        user_agent=user_agent,
+    )
+
+
+@router.delete(
+    "/push/suscripciones",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar suscripción Web Push del dispositivo actual",
+    description="Borra la suscripción Push puntual cuando el usuario cierra sesión.",
+)
+def eliminar_suscripcion_push_endpoint(
+    payload: PushSubscriptionDeleteSchema,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> None:
+    eliminar_suscripcion_push(
+        db=db,
+        usuario_id=_usuario_id_desde_token(usuario_actual),
+        endpoint=payload.endpoint,
     )
 
 

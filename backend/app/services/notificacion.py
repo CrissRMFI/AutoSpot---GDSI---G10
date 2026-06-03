@@ -12,6 +12,7 @@ from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
+from app.services.push import enviar_push_a_usuario
 
 
 TIPO_RESERVA_PENDIENTE_VERIFICACION = "RESERVA_PENDIENTE_VERIFICACION"
@@ -27,6 +28,66 @@ TIPO_VEHICULO_RECHAZADO = "VEHICULO_RECHAZADO"
 RECURSO_RESERVA = "RESERVA"
 RECURSO_VEHICULO = "VEHICULO"
 ESTADO_VEHICULO_PENDIENTE_DOCUMENTACION = "PENDIENTE_DOCUMENTACION"
+
+
+def _url_notificacion(
+    tipo: str,
+    recurso_tipo: str | None,
+    recurso_id: uuid.UUID | None,
+) -> str:
+    if tipo == "CHECKIN_PENDIENTE":
+        return "/admin/checkins/revision"
+    if tipo in {TIPO_AUTO_DEVUELTO, TIPO_CHECKOUT_CONFIRMADO, TIPO_CHECKOUT_RECHAZADO} and recurso_id:
+        return f"/admin/recepcion?focus={recurso_id}"
+    if tipo == TIPO_CHECKOUT_PENDIENTE_CONFIRMACION and recurso_id:
+        return f"/usuario/alquileres?focus={recurso_id}"
+    if tipo == TIPO_RESERVA_PENDIENTE_VERIFICACION and recurso_id:
+        return f"/admin/reservas/verificar?reservaId={recurso_id}"
+    if tipo in {TIPO_RESERVA_APROBADA, TIPO_RESERVA_RECHAZADA} and recurso_id:
+        return f"/usuario/reservas?focus={recurso_id}"
+    if tipo == TIPO_VEHICULO_DOCUMENTACION_PENDIENTE and recurso_id:
+        return f"/vehiculos/{recurso_id}/documentacion"
+    if recurso_tipo == RECURSO_VEHICULO and recurso_id:
+        return f"/vehiculos/{recurso_id}/detalle"
+    return "/dashboard"
+
+
+def crear_notificacion_usuario(
+    db: Session,
+    usuario_id: uuid.UUID,
+    tipo: str,
+    titulo: str,
+    mensaje: str,
+    recurso_tipo: str | None = None,
+    recurso_id: uuid.UUID | None = None,
+) -> Notificacion:
+    """
+    Crea la notificación in-app y dispara Web Push para el mismo usuario.
+
+    No hace commit: la transacción la controla el flujo de negocio que llama.
+    """
+    notificacion = Notificacion(
+        usuario_id=usuario_id,
+        tipo=tipo,
+        titulo=titulo,
+        mensaje=mensaje,
+        recurso_tipo=recurso_tipo,
+        recurso_id=recurso_id,
+    )
+    db.add(notificacion)
+    enviar_push_a_usuario(
+        db=db,
+        usuario_id=usuario_id,
+        titulo=titulo,
+        mensaje=mensaje,
+        data={
+            "tipo": tipo,
+            "recurso_tipo": recurso_tipo,
+            "recurso_id": str(recurso_id) if recurso_id else None,
+            "url": _url_notificacion(tipo, recurso_tipo, recurso_id),
+        },
+    )
+    return notificacion
 
 
 def _nombre_vehiculo(vehiculo: Vehiculo) -> str:
@@ -99,7 +160,8 @@ def crear_notificaciones_reserva_pendiente_verificacion(
             creadas.append(existente)
             continue
 
-        notificacion = Notificacion(
+        notificacion = crear_notificacion_usuario(
+            db=db,
             usuario_id=admin.id,
             tipo=TIPO_RESERVA_PENDIENTE_VERIFICACION,
             titulo="Reserva pendiente de verificación",
@@ -107,7 +169,6 @@ def crear_notificaciones_reserva_pendiente_verificacion(
             recurso_tipo=RECURSO_RESERVA,
             recurso_id=reserva.id,
         )
-        db.add(notificacion)
         creadas.append(notificacion)
 
     return creadas
@@ -165,7 +226,8 @@ def crear_notificacion_reserva_aprobada(
 ) -> Notificacion:
     """Notifica al conductor que su reserva fue aprobada en estación."""
     nombre_vehiculo = _nombre_vehiculo(reserva.vehiculo)
-    notificacion = Notificacion(
+    return crear_notificacion_usuario(
+        db=db,
         usuario_id=reserva.conductor_id,
         tipo=TIPO_RESERVA_APROBADA,
         titulo="Reserva aprobada",
@@ -176,8 +238,6 @@ def crear_notificacion_reserva_aprobada(
         recurso_tipo=RECURSO_RESERVA,
         recurso_id=reserva.id,
     )
-    db.add(notificacion)
-    return notificacion
 
 
 def crear_notificacion_reserva_rechazada(
@@ -187,7 +247,8 @@ def crear_notificacion_reserva_rechazada(
 ) -> Notificacion:
     """Notifica al conductor que su reserva fue rechazada con un motivo."""
     nombre_vehiculo = _nombre_vehiculo(reserva.vehiculo)
-    notificacion = Notificacion(
+    return crear_notificacion_usuario(
+        db=db,
         usuario_id=reserva.conductor_id,
         tipo=TIPO_RESERVA_RECHAZADA,
         titulo="Reserva rechazada",
@@ -198,8 +259,6 @@ def crear_notificacion_reserva_rechazada(
         recurso_tipo=RECURSO_RESERVA,
         recurso_id=reserva.id,
     )
-    db.add(notificacion)
-    return notificacion
 
 
 def crear_notificacion_documentacion_pendiente(
@@ -221,7 +280,8 @@ def crear_notificacion_documentacion_pendiente(
         return existente
 
     nombre_vehiculo = _nombre_vehiculo(vehiculo)
-    notificacion = Notificacion(
+    return crear_notificacion_usuario(
+        db=db,
         usuario_id=vehiculo.propietario_id,
         tipo=TIPO_VEHICULO_DOCUMENTACION_PENDIENTE,
         titulo="Documentación pendiente",
@@ -229,8 +289,6 @@ def crear_notificacion_documentacion_pendiente(
         recurso_tipo=RECURSO_VEHICULO,
         recurso_id=vehiculo.id,
     )
-    db.add(notificacion)
-    return notificacion
 
 
 def cerrar_notificacion_documentacion_pendiente(
@@ -317,7 +375,8 @@ def crear_notificacion_resolucion_vehiculo(
     nombre_vehiculo = _nombre_vehiculo(vehiculo)
 
     if aprobada:
-        notificacion = Notificacion(
+        notificacion = crear_notificacion_usuario(
+            db=db,
             usuario_id=vehiculo.propietario_id,
             tipo=TIPO_VEHICULO_HABILITADO,
             titulo="Vehículo habilitado",
@@ -327,7 +386,8 @@ def crear_notificacion_resolucion_vehiculo(
         )
     else:
         motivo = (motivo_rechazo or "Revisá la documentación cargada.").strip()
-        notificacion = Notificacion(
+        notificacion = crear_notificacion_usuario(
+            db=db,
             usuario_id=vehiculo.propietario_id,
             tipo=TIPO_VEHICULO_RECHAZADO,
             titulo="Vehículo rechazado",
@@ -335,8 +395,6 @@ def crear_notificacion_resolucion_vehiculo(
             recurso_tipo=RECURSO_VEHICULO,
             recurso_id=vehiculo.id,
         )
-
-    db.add(notificacion)
     return notificacion
 
 

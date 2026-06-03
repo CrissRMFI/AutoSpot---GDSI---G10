@@ -171,7 +171,7 @@ def autenticar_usuario(db: Session, credenciales: UsuarioLogin) -> Usuario:
     return usuario
 
 
-def cerrar_sesion(db: Session, token: str) -> None:
+def cerrar_sesion(db: Session, token: str) -> dict:
     """
     Invalida un token JWT insertando su `jti` en la blacklist.
 
@@ -187,6 +187,9 @@ def cerrar_sesion(db: Session, token: str) -> None:
     Raises:
         TokenInvalidoError : Si el token es inválido, expirado o ya fue
                              invalidado previamente.
+
+    Returns:
+        Payload decodificado del token invalidado.
     """
     try:
         payload = verificar_access_token(token)
@@ -216,6 +219,7 @@ def cerrar_sesion(db: Session, token: str) -> None:
 
     db.add(registro)
     db.commit()
+    return payload
 
 
 def validar_token_activo(db: Session, token: str) -> dict:

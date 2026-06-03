@@ -25,15 +25,16 @@ from app.exceptions import (
 )
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
-from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.schemas.alquiler import CrearReservaPayloadSchema
 from app.services.notificacion import (
+    RECURSO_RESERVA,
     TIPO_AUTO_DEVUELTO,
     cerrar_notificaciones_reserva_pendiente_verificacion,
     cerrar_notificaciones_de_reserva_por_tipo,
+    crear_notificacion_usuario,
     crear_notificacion_reserva_aprobada,
     crear_notificacion_reserva_rechazada,
     crear_notificaciones_reserva_pendiente_verificacion,
@@ -505,14 +506,15 @@ def _notificar_admins(
         .all()
     )
     for admin in admins:
-        db.add(Notificacion(
+        crear_notificacion_usuario(
+            db=db,
             usuario_id=admin.id,
             tipo=tipo,
             titulo=titulo,
             mensaje=mensaje,
-            recurso_tipo="RESERVA",
+            recurso_tipo=RECURSO_RESERVA,
             recurso_id=reserva.id,
-        ))
+        )
 
 
 def entregar_auto(

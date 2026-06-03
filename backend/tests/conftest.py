@@ -42,6 +42,7 @@ from app.models.checkin_vehiculo import CheckinVehiculo  # noqa: F401
 from app.models.checkout_vehiculo import CheckoutVehiculo  # noqa: F401
 from app.models.marca import Marca, Modelo  # noqa: F401
 from app.models.notificacion import Notificacion  # noqa: F401
+from app.models.push_subscription import PushSubscription  # noqa: F401
 from app.models.reserva import Reserva  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
