@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 const LADO_LABEL = {
@@ -11,6 +11,18 @@ const LADO_LABEL = {
 };
 
 const LightboxGaleria = ({ isOpen, onClose, fotos, indiceActivo, setIndiceActivo }) => {
+  const totalFotos = fotos.length;
+
+  const irAnterior = useCallback((e) => {
+    if (e) e.stopPropagation();
+    setIndiceActivo((prev) => (prev - 1 + totalFotos) % totalFotos);
+  }, [setIndiceActivo, totalFotos]);
+
+  const irSiguiente = useCallback((e) => {
+    if (e) e.stopPropagation();
+    setIndiceActivo((prev) => (prev + 1) % totalFotos);
+  }, [setIndiceActivo, totalFotos]);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -31,22 +43,11 @@ const LightboxGaleria = ({ isOpen, onClose, fotos, indiceActivo, setIndiceActivo
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, fotos, indiceActivo]);
+  }, [isOpen, onClose, irAnterior, irSiguiente]);
 
   if (!isOpen || fotos.length === 0) return null;
 
-  const totalFotos = fotos.length;
   const fotoActiva = fotos[indiceActivo];
-
-  const irAnterior = (e) => {
-    if (e) e.stopPropagation();
-    setIndiceActivo((prev) => (prev - 1 + totalFotos) % totalFotos);
-  };
-
-  const irSiguiente = (e) => {
-    if (e) e.stopPropagation();
-    setIndiceActivo((prev) => (prev + 1) % totalFotos);
-  };
 
   return createPortal(
     <div 

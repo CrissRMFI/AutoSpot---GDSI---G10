@@ -39,7 +39,7 @@ const MapaEstacionVehiculo = ({ nombreEstacion }) => {
     if (nombreEstacion) {
       fetchEstacion();
     } else {
-      setCargando(false);
+      setTimeout(() => setCargando(false), 0);
     }
   }, [nombreEstacion]);
 

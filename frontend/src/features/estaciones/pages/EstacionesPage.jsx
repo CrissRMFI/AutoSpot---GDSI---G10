@@ -98,10 +98,7 @@ const EstacionesPage = () => {
     }
   };
 
-  const handleBarrioSelect = (barrio) => {
-    setBarrioSeleccionado(barrio === barrioSeleccionado ? null : barrio);
-    setEstacionSeleccionada(null);
-  };
+
 
   const estacionesFiltradas = estacionSeleccionada
     ? estaciones.filter((e) => e.id === estacionSeleccionada.id)

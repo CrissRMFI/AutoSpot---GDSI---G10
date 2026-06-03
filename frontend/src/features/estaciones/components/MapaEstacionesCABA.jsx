@@ -46,8 +46,10 @@ const MapaEstacionesCABA = ({ onEstacionSelect, datosEstaciones }) => {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setErrorUbicacion("Tu navegador no soporta geolocalización.");
-      setCargando(false);
+      setTimeout(() => {
+        setErrorUbicacion("Tu navegador no soporta geolocalización.");
+        setCargando(false);
+      }, 0);
       return;
     }
 
