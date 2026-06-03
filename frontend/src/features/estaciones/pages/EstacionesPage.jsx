@@ -75,12 +75,21 @@ const EstacionesPage = () => {
   }, []);
 
   const handleSeleccionarEstacion = async (id) => {
-    if (soloVisualizacion) return;
+    if (estacionSeleccionada?.id === id) {
+      setEstacionSeleccionada(null);
+      return;
+    }
+
     setLoadingDetalle(true);
-    setEstacionSeleccionada(null);
     try {
       const data = await getDetalleEstacion(id);
       setEstacionSeleccionada(data);
+      setTimeout(() => {
+        const el = document.getElementById(`estacion-${id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
     } catch (err) {
       console.error(err);
       setError("Error al cargar los detalles de la estación.");
@@ -89,15 +98,14 @@ const EstacionesPage = () => {
     }
   };
 
-  const handleBarrioSelect = (barrio) => {
-    setBarrioSeleccionado(barrio === barrioSeleccionado ? null : barrio);
-    setEstacionSeleccionada(null);
-  };
 
-  const estacionesFiltradas = (barrioSeleccionado
-    ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
-    : estaciones)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  const estacionesFiltradas = estacionSeleccionada
+    ? estaciones.filter((e) => e.id === estacionSeleccionada.id)
+    : (barrioSeleccionado
+        ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
+        : estaciones)
+        .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   return (
     <>
@@ -144,21 +152,26 @@ const EstacionesPage = () => {
             <div className="rounded-[28px] bg-white p-6 shadow-sm border border-autospot-border sticky top-24">
               <h2 className="font-display text-xl font-bold mb-4">Mapa de CABA</h2>
               <MapaEstacionesCABA 
-                onBarrioSelect={handleBarrioSelect}
-                barrioSeleccionado={barrioSeleccionado}
+                onEstacionSelect={handleSeleccionarEstacion}
                 datosEstaciones={estaciones}
               />
             </div>
 
             {/* Listado de estaciones y autos */}
             <div className="flex flex-col gap-4">
-              {barrioSeleccionado && (
+              {(barrioSeleccionado || estacionSeleccionada) && (
                 <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3">
                   <span className="text-sm font-bold text-autospot-black">
-                    Barrio: {barrioSeleccionado}
+                    {estacionSeleccionada 
+                      ? `Estación: ${estacionSeleccionada.nombre}`
+                      : `Barrio: ${barrioSeleccionado}`
+                    }
                   </span>
                   <button 
-                    onClick={() => setBarrioSeleccionado(null)}
+                    onClick={() => {
+                      setBarrioSeleccionado(null);
+                      setEstacionSeleccionada(null);
+                    }}
                     className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-3 py-1.5 text-xs font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
                   >
                     Ver todas
@@ -182,13 +195,10 @@ const EstacionesPage = () => {
 
                   return (
                     <article
+                      id={`estacion-${estacion.id}`}
                       key={estacion.id}
                       onClick={() => handleSeleccionarEstacion(estacion.id)}
-                      className={
-                        soloVisualizacion
-                          ? "overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] opacity-80"
-                          : "cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
-                      }
+                      className={`cursor-pointer overflow-hidden rounded-[22px] border border-autospot-border bg-autospot-white shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] ${soloVisualizacion ? 'opacity-90' : ''}`}
                     >
                       {estacion.imagen_url && (
                         <img

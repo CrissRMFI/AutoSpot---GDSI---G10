@@ -11,6 +11,8 @@ import {
   getDetalleVehiculo,
   toggleEstadoVehiculo,
 } from "../api/vehiculoService";
+import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
+import LightboxGaleria from "../components/LightboxGaleria";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -36,6 +38,7 @@ const DetalleVehiculoPage = () => {
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
+  const [lightboxAbierto, setLightboxAbierto] = useState(false);
 
   const [editandoPrecio, setEditandoPrecio] = useState(false);
   const [inputPrecio, setInputPrecio] = useState("");
@@ -267,23 +270,7 @@ const DetalleVehiculoPage = () => {
 
   return (
     <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
 
-          <Link
-            to="/dashboard"
-            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            Volver al panel
-          </Link>
-        </div>
-      </header>
 
       <div
         className={`fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-full px-5 py-3 text-sm font-bold shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ${
@@ -318,7 +305,8 @@ const DetalleVehiculoPage = () => {
               <img
                 src={fotoActiva.url}
                 alt={`Vehículo ${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado}`}
-                className="aspect-video w-full object-cover sm:aspect-[16/10]"
+                className="block aspect-video w-full cursor-pointer object-cover sm:aspect-[16/10]"
+                onClick={() => setLightboxAbierto(true)}
               />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center text-sm text-white/70">
@@ -363,7 +351,7 @@ const DetalleVehiculoPage = () => {
                   key={foto.id}
                   onClick={() => setIndiceActivo(indice)}
                   aria-label={`Ver foto ${indice + 1}`}
-                  className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition sm:h-20 sm:w-28 ${
+                  className={`relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 p-0.5 transition sm:h-20 sm:w-28 ${
                     indice === indiceActivo
                       ? "border-autospot-accent"
                       : "border-transparent opacity-70 hover:opacity-100"
@@ -372,7 +360,7 @@ const DetalleVehiculoPage = () => {
                   <img
                     src={foto.url}
                     alt={`Miniatura ${indice + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full rounded-md object-cover"
                   />
                 </button>
               ))}
@@ -426,7 +414,15 @@ const DetalleVehiculoPage = () => {
           )}
         </article>
 
-        <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8">
+        <div className="flex flex-col gap-4">
+          <Link
+            to="/dashboard"
+            className="inline-flex w-fit items-center justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            ← Volver al panel
+          </Link>
+
+          <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
             Ficha técnica
           </p>
@@ -505,6 +501,30 @@ const DetalleVehiculoPage = () => {
                       ? "Marcar como No disponible"
                       : "Marcar como Disponible"}
                 </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] !text-white/60">
+                    Ubicación Actual
+                  </p>
+                  {vehiculo.estacion && (
+                    <p className="text-sm font-bold !text-white text-right">
+                      {vehiculo.estacion}
+                    </p>
+                  )}
+                </div>
+                {vehiculo.estacion ? (
+                  <div className="mt-2">
+                    <MapaEstacionVehiculo nombreEstacion={vehiculo.estacion} />
+                  </div>
+                ) : (
+                  <div className="mt-2 flex h-24 items-center justify-center rounded-xl bg-[#2a2a2a] border border-white/5">
+                    <p className="text-sm font-bold text-white/60">
+                      El auto está en tránsito
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
@@ -588,7 +608,16 @@ const DetalleVehiculoPage = () => {
             </div>
           )}
         </aside>
+        </div>
       </section>
+
+      <LightboxGaleria 
+        isOpen={lightboxAbierto} 
+        onClose={() => setLightboxAbierto(false)}
+        fotos={fotos}
+        indiceActivo={indiceActivo}
+        setIndiceActivo={setIndiceActivo}
+      />
     </main>
   );
 };

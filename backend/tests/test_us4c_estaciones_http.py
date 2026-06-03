@@ -33,17 +33,17 @@ def _sembrar_estaciones(client: TestClient) -> Session:
         Estacion(
             id=1, nombre="Estación Palermo", direccion="Honduras 5500",
             instrucciones_acceso="Retiro keyless en subsuelo",
-            zona="Palermo", activa=True,
+            zona="Palermo", activa=True, latitud=-34.5835882, longitud=-58.4185817,
         ),
         Estacion(
             id=2, nombre="Estación Recoleta", direccion="Av. Callao 1000",
             instrucciones_acceso="Ingreso por rampa vehicular",
-            zona="Recoleta", activa=True,
+            zona="Recoleta", activa=True, latitud=-34.5892027, longitud=-58.3927602,
         ),
         Estacion(
             id=3, nombre="Estación Mantenimiento", direccion="Taller Central",
             instrucciones_acceso="Prohibido el paso de Conductores",
-            zona="Talleres", activa=False,
+            zona="Talleres", activa=False, latitud=None, longitud=None,
         ),
     ])
     db.commit()
@@ -88,6 +88,8 @@ class TestCA3_DetalleEstacionHTTP:
         assert data["id"] == 1
         assert data["direccion"] == "Honduras 5500"
         assert data["instrucciones_acceso"] == "Retiro keyless en subsuelo"
+        assert data["latitud"] == -34.5835882
+        assert data["longitud"] == -58.4185817
         assert data["imagen_url"] is None
 
     def test_obtener_detalle_estacion_inexistente_devuelve_404(self, client: TestClient):

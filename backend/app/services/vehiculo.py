@@ -511,3 +511,39 @@ def listar_vehiculos_disponibles(db: Session) -> list[Vehiculo]:
         )
         .all()
     )
+
+
+def cambiar_ubicacion_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    estacion: str | None,
+) -> Vehiculo:
+    """
+    Cambia la ubicación (estación) actual del vehículo manualmente.
+
+    Args:
+        db: Sesión SQLAlchemy activa.
+        vehiculo_id: Identificador del vehículo.
+        estacion: Nombre de la estación, o None si está en alquiler/fuera.
+
+    Returns:
+        Vehiculo actualizado.
+    
+    Raises:
+        VehiculoNoEncontradoError: Si el vehículo no existe.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    vehiculo.estacion = estacion
+
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
