@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 import uuid
 
+from app.schemas.estacion import EstacionDetailResponse
+
 
 class SimularTiempoAlquilerRequest(BaseModel):
     """Payload para solicitar la simulación y validación de tiempo."""
@@ -66,6 +68,16 @@ class ConductorReservaResumenSchema(BaseModel):
     dni: str | None = None
 
 
+class CheckinResumenSchema(BaseModel):
+    """Resumen del check-in del conductor para la pantalla de entrega."""
+
+    id: uuid.UUID
+    estado: str
+    motivo_rechazo: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class ReservaCodigoResponseSchema(BaseModel):
     """Respuesta pública de US 14C con código de reserva."""
 
@@ -86,6 +98,8 @@ class ReservaCodigoResponseSchema(BaseModel):
     minutos_retraso: int | None = None
     monto_penalizacion: Decimal | None = None
     vehiculo: VehiculoReservaResumenSchema
+    estacion_detalle: EstacionDetailResponse | None = None
+    checkin: CheckinResumenSchema | None = None
 
     model_config = {"from_attributes": True}
 

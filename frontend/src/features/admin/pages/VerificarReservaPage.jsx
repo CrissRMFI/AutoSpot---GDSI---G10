@@ -71,8 +71,8 @@ const VerificarReservaPage = () => {
     estadoNormalizado === "VERIFICADA" || estadoNormalizado === "RECHAZADA";
   const puedeRechazar = Boolean(
     detalle?.id &&
-      !yaResuelta &&
-      !detalle.codigo_verificado_at,
+    !yaResuelta &&
+    !detalle.codigo_verificado_at,
   );
 
   const handleBuscar = async (event) => {
@@ -109,8 +109,8 @@ const VerificarReservaPage = () => {
         tipo: "exito",
         titulo: "Verificación realizada",
         mensaje:
-          "La reserva fue aprobada y el auto entregado al conductor. " +
-          "Se le notificó la aprobación.",
+          "La reserva fue aprobada. " +
+          "Se le notificó al conductor de la aprobación para seguir con el check-in.",
         accionPrimaria: "volver-dashboard",
       });
     } catch (err) {
@@ -120,7 +120,7 @@ const VerificarReservaPage = () => {
         mensaje:
           err.response?.data?.detail ||
           "Ocurrió un error inesperado y la operación no se procesó. " +
-            "Volvé a intentarlo en unos segundos.",
+          "Volvé a intentarlo en unos segundos.",
         accionPrimaria: "cerrar",
       });
     } finally {
@@ -230,11 +230,10 @@ const VerificarReservaPage = () => {
           <button
             type="submit"
             disabled={buscando || !codigoNormalizado}
-            className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
-              buscando || !codigoNormalizado
-                ? "cursor-not-allowed bg-autospot-accent/40 text-white/70"
-                : "bg-autospot-accent text-white hover:bg-[#5a1420]"
-            }`}
+            className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${buscando || !codigoNormalizado
+              ? "cursor-not-allowed bg-autospot-accent/40 text-white/70"
+              : "bg-autospot-accent text-white hover:bg-[#5a1420]"
+              }`}
           >
             {buscando ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
@@ -418,11 +417,10 @@ const ModalRechazarReserva = ({
         <button
           type="submit"
           disabled={enviando || !motivo.trim()}
-          className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
-            enviando || !motivo.trim()
-              ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
-              : "bg-autospot-black text-white hover:bg-autospot-mid"
-          }`}
+          className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${enviando || !motivo.trim()
+            ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
+            : "bg-autospot-black text-white hover:bg-autospot-mid"
+            }`}
         >
           {enviando ? (
             <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
@@ -540,11 +538,10 @@ const DetalleReservaVerificacion = ({
             disabled={
               !puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
             }
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
-              !puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
-                ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
-                : "bg-autospot-black text-white hover:bg-autospot-mid"
-            }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${!puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
+              ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
+              : "bg-autospot-black text-white hover:bg-autospot-mid"
+              }`}
           >
             {entregando ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />

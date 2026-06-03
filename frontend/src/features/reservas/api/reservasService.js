@@ -94,7 +94,7 @@ export const rechazarReserva = async (reservaId, motivo) => {
 
 export const registrarSalida = async (reservaId) => {
   const response = await httpClient.post(
-    `/alquiler/reservas/admin/${reservaId}/registrar-salida`,
+    `/alquiler/reservas/admin/${reservaId}/salida`,
   );
 
   return response.data;

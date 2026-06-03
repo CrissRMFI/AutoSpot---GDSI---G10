@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, ChevronRight, Clock, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, X, MapPin } from "lucide-react";
 import { listarMisReservas } from "../api/reservasService";
 import {
   obtenerEstadoCheckinReservaRecordado,
   obtenerMiCheckinPorReserva,
 } from "../api/checkinService";
 import ReservaCodigoModal from "../components/ReservaCodigoModal";
+import EstacionInfoModal from "../components/EstacionInfoModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const PAGE_SIZE = 5;
@@ -147,6 +148,7 @@ const MisReservasPage = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [reservaSeleccionadaId, setReservaSeleccionadaId] = useState(null);
+  const [estacionModalData, setEstacionModalData] = useState(null);
   const [reservasVerificandoCheckin, setReservasVerificandoCheckin] = useState(
     () => new Set(),
   );
@@ -383,11 +385,10 @@ const MisReservasPage = () => {
                     }}
                     type="button"
                     onClick={() => abrirReserva(reserva)}
-                    className={`grid w-full gap-4 rounded-[24px] border bg-autospot-white p-5 text-left shadow-[0_18px_50px_rgba(15,23,42,0.07)] transition hover:border-autospot-accent sm:grid-cols-[1.3fr_0.9fr_auto] sm:items-center ${
-                      estaFocus
+                    className={`grid w-full gap-4 rounded-[24px] border bg-autospot-white p-5 text-left shadow-[0_18px_50px_rgba(15,23,42,0.07)] transition hover:border-autospot-accent sm:grid-cols-[1.3fr_0.9fr_auto] sm:items-center ${estaFocus
                         ? "border-autospot-accent ring-2 ring-autospot-accent/40"
                         : "border-autospot-border"
-                    }`}
+                      }`}
                   >
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-autospot-accent">
@@ -396,9 +397,32 @@ const MisReservasPage = () => {
                       <h2 className="mt-1 font-display text-xl font-black tracking-[-0.04em] text-autospot-black">
                         {tituloVehiculo}
                       </h2>
-                      <p className="mt-2 text-sm text-autospot-muted">
-                        {reserva.estacion_retiro}
-                      </p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <p className="text-sm text-autospot-muted">
+                          {reserva.estacion_retiro}
+                        </p>
+                        {reserva.estacion_detalle && reserva.estado !== "RECHAZADA" && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEstacionModalData(reserva.estacion_detalle);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setEstacionModalData(reserva.estacion_detalle);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.05em] text-autospot-accent transition hover:text-[#5a1420] hover:underline"
+                          >
+                            <MapPin className="h-3 w-3" strokeWidth={2.4} />
+                            Info de Retiro
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid gap-2 text-sm text-autospot-muted sm:grid-cols-2">
@@ -453,6 +477,7 @@ const MisReservasPage = () => {
         verificandoCheckin={verificandoCheckinModal}
         onClose={cerrarModal}
       />
+      <EstacionInfoModal estacion={estacionModalData} onClose={() => setEstacionModalData(null)} />
     </>
   );
 };

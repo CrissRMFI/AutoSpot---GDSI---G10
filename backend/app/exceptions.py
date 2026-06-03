@@ -195,11 +195,8 @@ class ReservaSinCheckinAprobadoError(AutoSpotError):
     Se lanza al registrar la salida de una reserva cuyo conductor no
     completó el check-in o cuyo check-in no fue aprobado por el recepcionista.
     """
-    def __init__(self) -> None:
-        super().__init__(
-            "No se puede registrar la salida: el check-in del conductor "
-            "no está aprobado."
-        )
+    def __init__(self, mensaje: str = "No se puede registrar la salida: el check-in del conductor no está aprobado.") -> None:
+        super().__init__(mensaje)
 
 
 class ReservaNoEntregableError(AutoSpotError):
@@ -207,10 +204,8 @@ class ReservaNoEntregableError(AutoSpotError):
     Se lanza al registrar la salida de una reserva cuyo estado no lo
     permite (código sin verificar, ya entregada, finalizada, etc.).
     """
-    def __init__(self) -> None:
-        super().__init__(
-            "La reserva no puede entregarse en su estado actual"
-        )
+    def __init__(self, mensaje: str = "La reserva no puede entregarse en su estado actual") -> None:
+        super().__init__(mensaje)
 
 
 class ReservaNoEnCursoError(AutoSpotError):
