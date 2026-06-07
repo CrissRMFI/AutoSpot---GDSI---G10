@@ -16,7 +16,10 @@ const ValoracionModal = ({ abierto, onEnviar, cargando = false, onClose }) => {
   return (
     <Dialog
       open={abierto}
-      onClose={!cargando ? onClose : undefined}
+      onClose={(event, reason) => {
+        if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
+        if (!cargando && onClose) onClose();
+      }}
       maxWidth="xs"
       fullWidth
       PaperProps={{ sx: { borderRadius: 4, p: 1 } }}

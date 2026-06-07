@@ -185,8 +185,12 @@ const AlquilerDetallePage = () => {
   const handleEnviarValoracion = async (puntaje, descripcion) => {
     setProcesando(true);
     try {
-      await enviarValoracion(reservaId, puntaje);
-      await enviarTestimonio(reservaId, descripcion);
+      const peticiones = [enviarValoracion(reservaId, puntaje)];
+      if (descripcion && descripcion.trim() !== "") {
+        peticiones.push(enviarTestimonio(reservaId, descripcion));
+      }
+      
+      await Promise.all(peticiones);
 
       setIsRatingModalOpen(false);
       setMensaje({
