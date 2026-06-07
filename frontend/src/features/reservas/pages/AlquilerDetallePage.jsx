@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, RotateCcw, X } from "lucide-react";
@@ -8,6 +9,7 @@ import {
   obtenerMiAlquiler,
   rechazarCheckout,
   enviarValoracion,
+  enviarTestimonio,
 } from "../api/reservasService";
 import ConfirmacionModal from "../components/ConfirmacionModal";
 import MensajeModal from "../components/MensajeModal";
@@ -180,10 +182,12 @@ const AlquilerDetallePage = () => {
     }
   };
 
-  const handleEnviarValoracion = async (puntaje) => {
+  const handleEnviarValoracion = async (puntaje, descripcion) => {
     setProcesando(true);
     try {
       await enviarValoracion(reservaId, puntaje);
+      await enviarTestimonio(reservaId, descripcion);
+
       setIsRatingModalOpen(false);
       setMensaje({
         tipo: "exito",
@@ -195,7 +199,7 @@ const AlquilerDetallePage = () => {
       setMensaje({
         tipo: "error",
         titulo: "Error al enviar",
-        mensaje: err.response?.data?.detail || "No se pudo registrar la valoración.",
+        mensaje: err.response?.data?.detail || "No se pudo registrar la valoración o el testimonio.",
       });
     } finally {
       setProcesando(false);

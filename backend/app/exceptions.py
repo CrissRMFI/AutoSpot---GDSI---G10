@@ -314,3 +314,25 @@ class ValoracionYaRegistradaError(AutoSpotError):
     """Se lanza al intentar registrar una segunda valoración para la misma reserva."""
     def __init__(self) -> None:
         super().__init__("Ya existe una valoración para esta reserva")
+
+
+class TestimonioYaRegistradoError(AutoSpotError):
+    """
+    Se lanza al intentar registrar un segundo testimonio para la misma reserva.
+
+    Corresponde al CA 3 de la US 18C: inmutabilidad y transparencia de reseñas.
+    Mensaje canónico: "Ya existe un testimonio para esta reserva"
+    """
+    def __init__(self) -> None:
+        super().__init__("Ya existe un testimonio para esta reserva")
+
+
+class ReservaNoFinalizadaParaTestimonioError(AutoSpotError):
+    """
+    Se lanza al intentar dejar un testimonio sobre una reserva que no está
+    en estado FINALIZADA con cierre administrativo (CA 1 US 18C).
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "Solo se puede dejar un testimonio sobre una contratación cerrada administrativamente"
+        )
