@@ -7,10 +7,12 @@ import {
   obtenerCheckoutDeReserva,
   obtenerMiAlquiler,
   rechazarCheckout,
+  enviarValoracion,
 } from "../api/reservasService";
 import ConfirmacionModal from "../components/ConfirmacionModal";
 import MensajeModal from "../components/MensajeModal";
 import RechazoModal from "../components/RechazoModal";
+import ValoracionModal from "../components/ValoracionModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const ESTADO_UI = {
@@ -75,6 +77,7 @@ const AlquilerDetallePage = () => {
   const [rechazoAbierto, setRechazoAbierto] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
   const cargarDetalle = useCallback(async () => {
     setCargando(true);
@@ -171,6 +174,28 @@ const AlquilerDetallePage = () => {
         tipo: "error",
         titulo: "No se pudo rechazar",
         mensaje: err.response?.data?.detail || "Ocurrió un error inesperado.",
+      });
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleEnviarValoracion = async (puntaje) => {
+    setProcesando(true);
+    try {
+      await enviarValoracion(reservaId, puntaje);
+      setIsRatingModalOpen(false);
+      setMensaje({
+        tipo: "exito",
+        titulo: "¡Gracias por tu valoración!",
+        mensaje: "Tu opinión nos ayuda a mejorar el servicio.",
+      });
+    } catch (err) {
+      setIsRatingModalOpen(false);
+      setMensaje({
+        tipo: "error",
+        titulo: "Error al enviar",
+        mensaje: err.response?.data?.detail || "No se pudo registrar la valoración.",
       });
     } finally {
       setProcesando(false);
@@ -388,7 +413,20 @@ const AlquilerDetallePage = () => {
         tipo={mensaje?.tipo}
         titulo={mensaje?.titulo}
         mensaje={mensaje?.mensaje}
-        onClose={() => setMensaje(null)}
+        onClose={() => {
+          const esCheckoutConfirmado = mensaje?.titulo === "Checkout confirmado";
+          setMensaje(null);
+          if (esCheckoutConfirmado) {
+            setIsRatingModalOpen(true);
+          }
+        }}
+      />
+
+      <ValoracionModal
+        abierto={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        onEnviar={handleEnviarValoracion}
+        cargando={procesando}
       />
     </section>
   );

@@ -297,3 +297,20 @@ class NotificacionNoEncontradaError(AutoSpotError):
     """Se lanza cuando una notificación no existe o no pertenece al usuario."""
     def __init__(self) -> None:
         super().__init__("Notificacion no encontrada")
+
+
+class ReservaNoFinalizadaError(AutoSpotError):
+    """
+    Se lanza al intentar valorar una reserva que no está FINALIZADA
+    o que no tiene devolución física registrada.
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "Solo se puede valorar una reserva finalizada con devolución registrada"
+        )
+
+
+class ValoracionYaRegistradaError(AutoSpotError):
+    """Se lanza al intentar registrar una segunda valoración para la misma reserva."""
+    def __init__(self) -> None:
+        super().__init__("Ya existe una valoración para esta reserva")

@@ -18,8 +18,9 @@ US 5U - Criterio de unicidad:
 """
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -79,6 +80,14 @@ class Usuario(Base):
         server_default="CLIENTE",
         nullable=False,
         doc="Rol del usuario: CLIENTE, PROPIETARIO o ADMIN. ADMIN solo se setea por backoffice.",
+    )
+
+    # ── Valoración promedio del propietario (US 17C) ─────────────────────────
+    calificacion_promedio: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=3, scale=2),
+        nullable=True,
+        default=None,
+        doc="Promedio de calificación del propietario, calculado como media de sus vehículos.",
     )
 
     # ── Auditoría ────────────────────────────────────────────────────────────
