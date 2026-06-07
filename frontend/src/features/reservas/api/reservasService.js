@@ -121,3 +121,12 @@ export const listarRecepcionAutos = async ({ page = 1, size = 10 } = {}) => {
 
   return response.data;
 };
+
+export const enviarValoracion = async (reservaId, puntaje) => {
+  const response = await httpClient.post("/valoraciones", {
+    reserva_id: reservaId,
+    puntaje,
+  });
+
+  return response.data;
+};

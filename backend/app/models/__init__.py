@@ -5,3 +5,4 @@ from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.checkout_vehiculo import CheckoutVehiculo
+from app.models.valoracion import Valoracion
