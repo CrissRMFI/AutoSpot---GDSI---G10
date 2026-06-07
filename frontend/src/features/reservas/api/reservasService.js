@@ -130,3 +130,18 @@ export const enviarValoracion = async (reservaId, puntaje) => {
 
   return response.data;
 };
+
+/**
+ * US 18C — Registra un testimonio descriptivo sobre un alquiler finalizado.
+ * El campo `descripcion` es opcional: puede omitirse o enviarse como null/cadena vacía.
+ */
+export const enviarTestimonio = async (reservaId, descripcion) => {
+  const response = await httpClient.post("/testimonios", {
+    reserva_id: reservaId,
+    // Normalizar: cadena vacía → null (el backend acepta null)
+    descripcion: descripcion?.trim() || null,
+  });
+
+  return response.data;
+};
+
