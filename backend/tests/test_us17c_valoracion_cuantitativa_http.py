@@ -27,6 +27,7 @@ from tests.test_us14c_obtener_codigo_reserva_http import (
     _hacer_vehiculo_reservable,
     _payload_reserva,
     _registrar_admin_directo,
+    _registrar_datos_personales_directo,
 )
 from tests.test_us9d_habilitar_auto_http import (
     _auth_headers,
@@ -68,10 +69,11 @@ def _crear_reserva_finalizada(client, engine, sufijo: str):
     vehiculo, _ = _registrar_vehiculo(client, propietario_email)
     _hacer_vehiculo_reservable(engine, vehiculo["id"])
 
-    _, token_cliente = _registrar_y_loguear_usuario(
+    id_cliente, token_cliente = _registrar_y_loguear_usuario(
         client,
         f"cliente-{sufijo}@autospot.com",
     )
+    _registrar_datos_personales_directo(engine, id_cliente)
 
     creacion = client.post(
         "/alquiler/reservas",
@@ -386,9 +388,11 @@ class TestCA3_ConsolidacionPromedios:
                 vehiculo_id = vehiculo["id"]
                 _hacer_vehiculo_reservable(engine, vehiculo_id)
 
-                _, token_c1 = _registrar_y_loguear_usuario(
+                id_c1, token_c1 = _registrar_y_loguear_usuario(
                     client, "cliente-prom2a@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_c1)
+
                 r1 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_id),
@@ -409,9 +413,10 @@ class TestCA3_ConsolidacionPromedios:
                 # Necesitamos habilitar el vehículo de nuevo para la segunda reserva
                 _hacer_vehiculo_reservable(engine, vehiculo_id)
 
-                _, token_c2 = _registrar_y_loguear_usuario(
+                id_c2, token_c2 = _registrar_y_loguear_usuario(
                     client, "cliente-prom2b@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_c2)
                 r2 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_id),
@@ -454,9 +459,10 @@ class TestCA3_ConsolidacionPromedios:
                 vehiculo, _ = _registrar_vehiculo(client, "prop-nofin@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
 
-                _, token_cliente = _registrar_y_loguear_usuario(
+                id_cliente, token_cliente = _registrar_y_loguear_usuario(
                     client, "cliente-nofin@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_cliente)
 
                 creacion = client.post(
                     "/alquiler/reservas",
@@ -570,9 +576,10 @@ class TestCA3_ConsolidacionPromedios:
                 _hacer_vehiculo_reservable(engine, vehiculo_b_id)
 
                 # ── Cliente 1 reserva Auto A y lo califica con 2 ─────────
-                _, token_c1 = _registrar_y_loguear_usuario(
+                id_ci, token_c1 = _registrar_y_loguear_usuario(
                     client, "c1-2autos@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_ci)
                 r1 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_a_id),
@@ -591,9 +598,10 @@ class TestCA3_ConsolidacionPromedios:
 
                 # ── Cliente 2 reserva Auto B y lo califica con 4 ─────────
                 _hacer_vehiculo_reservable(engine, vehiculo_b_id)
-                _, token_c2 = _registrar_y_loguear_usuario(
+                id_c2, token_c2 = _registrar_y_loguear_usuario(
                     client, "c2-2autos@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_c2)
                 r2 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_b_id),
