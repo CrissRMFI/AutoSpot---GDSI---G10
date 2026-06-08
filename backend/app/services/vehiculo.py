@@ -14,7 +14,10 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
+    ActualizarDocumentacionVehiculoConReservaActivaError,
+    ActualizarDocumentacionVehiculoDisponibleError,
     DocumentacionVehiculoNoEditableError,
+    DocumentacionVehiculoNoExistenteError,
     FotoVehiculoNoEncontradaError,
     MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
@@ -40,6 +43,7 @@ from app.services.notificacion import (
 
 ESTADOS_DOCUMENTACION_EDITABLE = {"PENDIENTE_DOCUMENTACION", "RECHAZADO"}
 ESTADO_DOCUMENTACION_CORREGIBLE = "RECHAZADO"
+ESTADO_DOCUMENTACION_ACTUALIZABLE = "HABILITADO"
 CAMBIOS_DOCUMENTALES_ACTUALIZACION = (
     "patente",
     "chasis",
@@ -429,6 +433,55 @@ def cargar_documentacion_vehiculo(
     # Si estaba rechazado, limpiamos el motivo
     vehiculo.motivo_rechazo = None
     cerrar_notificacion_documentacion_pendiente(db=db, vehiculo=vehiculo)
+
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
+
+def actualizar_documentacion_vehiculo(
+        db: Session,
+        vehiculo_id: uuid.UUID,
+        schema: DocumentacionVehiculoSchema,
+
+) -> Vehiculo:
+    """
+    Actualiza la documentación legal y operativa de un vehículo existente.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    if vehiculo.estado_registro != ESTADO_DOCUMENTACION_ACTUALIZABLE:
+        raise DocumentacionVehiculoNoExistenteError()
+    
+    if vehiculo.disponible == True:
+        raise ActualizarDocumentacionVehiculoDisponibleError()
+    
+    if verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
+        raise ActualizarDocumentacionVehiculoConReservaActivaError()
+    
+
+    vehiculo.patente = schema.patente
+    vehiculo.chasis = schema.chasis
+    vehiculo.motor = schema.motor
+    vehiculo.titular = schema.titular
+    vehiculo.cedula = schema.cedula
+    vehiculo.poliza = schema.poliza
+    vehiculo.vtv = schema.vtv
+    vehiculo.estacion = schema.estacion
+    vehiculo.telefono = schema.telefono
+    vehiculo.descripcion = schema.descripcion
+    
+    # Cambia a estado EN_REVISION para la US 4D
+    vehiculo.estado_registro = "EN_REVISION"
+    # Si estaba rechazado, limpiamos el motivo
+    vehiculo.motivo_rechazo = None
 
     db.commit()
     db.refresh(vehiculo)
