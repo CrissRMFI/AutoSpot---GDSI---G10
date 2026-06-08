@@ -376,14 +376,15 @@ def registrar_salida(db: Session, reserva_id: uuid.UUID) -> Reserva:
     reserva.estado = "EN_CURSO"
     reserva.fecha_salida_real = datetime.now(timezone.utc)
 
-    db.add(Notificacion(
+    crear_notificacion_usuario(
+        db=db,
         usuario_id=reserva.vehiculo.propietario_id,
         tipo="ALQUILER_INICIADO",
         titulo="Alquiler Iniciado",
         mensaje=f"El alquiler de tu auto {reserva.vehiculo.marca} {reserva.vehiculo.modelo} ha iniciado.",
-        recurso_tipo="RESERVA",
+        recurso_tipo=RECURSO_RESERVA,
         recurso_id=reserva.id,
-    ))
+    )
 
     db.commit()
     db.refresh(reserva)
