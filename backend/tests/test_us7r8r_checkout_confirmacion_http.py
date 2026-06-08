@@ -16,6 +16,7 @@ from tests.test_us14c_obtener_codigo_reserva_http import (
     _hacer_vehiculo_reservable,
     _payload_reserva,
     _registrar_admin_directo,
+    _registrar_datos_personales_directo,
 )
 from tests.test_us9d_habilitar_auto_http import (
     _auth_headers,
@@ -87,10 +88,11 @@ def _crear_alquiler_en_curso(client, engine, sufijo: str):
     token_admin = _login_usuario(client, f"admin-{sufijo}@autospot.com")
     vehiculo, _ = _registrar_vehiculo(client, f"prop-{sufijo}@autospot.com")
     _hacer_vehiculo_reservable(engine, vehiculo["id"])
-    _, token_cliente = _registrar_y_loguear_usuario(
+    cliente_id, token_cliente = _registrar_y_loguear_usuario(
         client,
         f"cliente-{sufijo}@autospot.com",
     )
+    _registrar_datos_personales_directo(engine, cliente_id)
 
     creacion = client.post(
         "/alquiler/reservas",

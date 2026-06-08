@@ -22,6 +22,7 @@ from app.exceptions import (
     ReservaSinCheckinAprobadoError,
     VehiculoNoDisponibleParaReservaError,
     VehiculoNoEncontradoError,
+    DatosPersonalesNoRegistradosError,
 )
 from app.schemas.alquiler import (
     CheckinResumenSchema,
@@ -194,6 +195,23 @@ def simular_tiempo(payload: SimularTiempoAlquilerRequest):
     response_model=ReservaCodigoResponseSchema,
     status_code=status.HTTP_201_CREATED,
     summary="Confirmar reserva y obtener código",
+    responses={
+        status.HTTP_201_CREATED: {
+            "description": "Reserva creada exitosamente.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehiculo no encontrado.",
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Vehiculo no disponible para reserva o ya existe una reserva activa para el conductor.",
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Fechas inválidas (inicio posterior a fin, periodo menor a 1 día, etc.).",
+        },
+        status.HTTP_428_PRECONDITION_REQUIRED: {
+            "description": "El conductor no tiene datos personales registrados.",
+        },
+    }
 )
 def crear_reserva(
     payload: CrearReservaPayloadSchema,
@@ -215,6 +233,8 @@ def crear_reserva(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    except DatosPersonalesNoRegistradosError as exc:
+        raise HTTPException(status_code=status.HTTP_428_PRECONDITION_REQUIRED, detail=str(exc)) from exc
 
     return _reserva_codigo_response(db, reserva)
 

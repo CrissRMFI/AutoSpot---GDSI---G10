@@ -8,6 +8,8 @@ from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.schemas.alquiler import CrearReservaPayloadSchema
 from app.services.alquiler_service import crear_reserva_con_codigo
+from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
+from app.services.datos_personales_usuario import registrar_datos_personales
 
 
 def _crear_usuario(db_session, email: str, rol: str = "CLIENTE") -> Usuario:
@@ -21,6 +23,20 @@ def _crear_usuario(db_session, email: str, rol: str = "CLIENTE") -> Usuario:
     db_session.refresh(usuario)
     return usuario
 
+def _registrar_datos_personales(db_session, usuario_id: str):
+        payload = DatosPersonalesUsuarioSchema(
+            dni="12345678",
+            nombre="Mateo",
+            apellido="Gomez",
+            foto_dni_frente_url="uploads/dni/12345678/frente.jpg",
+            foto_dni_dorso_url="uploads/dni/12345678/dorso.jpg",
+        )
+
+        registrar_datos_personales(
+            db=db_session,
+            usuario_id=usuario_id,
+            schema=payload,
+        )
 
 def _crear_vehiculo_reservable(db_session, propietario_id) -> Vehiculo:
     vehiculo = Vehiculo(
@@ -48,6 +64,7 @@ def _crear_vehiculo_reservable(db_session, propietario_id) -> Vehiculo:
 def test_crea_reserva_confirmada_con_codigo(db_session):
     propietario = _crear_usuario(db_session, "prop.us14c@autospot.com", "PROPIETARIO")
     conductor = _crear_usuario(db_session, "cliente.us14c@autospot.com")
+    _registrar_datos_personales(db_session, conductor.id)
     vehiculo = _crear_vehiculo_reservable(db_session, propietario.id)
     inicio = datetime.now(timezone.utc) + timedelta(days=2)
     fin = inicio + timedelta(days=2, hours=12)

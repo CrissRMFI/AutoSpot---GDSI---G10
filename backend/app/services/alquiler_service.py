@@ -22,6 +22,7 @@ from app.exceptions import (
     ReservaSinCheckinAprobadoError,
     VehiculoNoDisponibleParaReservaError,
     VehiculoNoEncontradoError,
+    DatosPersonalesNoRegistradosError
 )
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
@@ -124,6 +125,14 @@ def crear_reserva_con_codigo(
 
     Para esta historia se bloquea el vehículo y se emite el código de retiro.
     """
+    datos_existentes = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == conductor_id)
+        .first()
+    )
+    if datos_existentes is None:
+        raise DatosPersonalesNoRegistradosError()
+    
     vehiculo = db.query(Vehiculo).filter(Vehiculo.id == schema.vehiculo_id).first()
     if vehiculo is None:
         raise VehiculoNoEncontradoError()
