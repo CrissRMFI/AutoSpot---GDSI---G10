@@ -39,6 +39,7 @@ from app.models.reserva import Reserva
 from tests.test_us14c_obtener_codigo_reserva_http import (
     _hacer_vehiculo_reservable,
     _payload_reserva,
+    _registrar_datos_personales_directo,
 )
 from tests.test_us9d_habilitar_auto_http import (
     _auth_headers,
@@ -84,9 +85,10 @@ def _crear_reserva_finalizada(client, engine, sufijo: str):
     vehiculo, _ = _registrar_vehiculo(client, propietario_email)
     _hacer_vehiculo_reservable(engine, vehiculo["id"])
 
-    _, token_conductor = _registrar_y_loguear_usuario(
+    id_conductor, token_conductor = _registrar_y_loguear_usuario(
         client, f"conductor-ts-{sufijo}@autospot.com"
     )
+    _registrar_datos_personales_directo(engine, id_conductor)
 
     resp_reserva = client.post(
         "/alquiler/reservas",
@@ -232,9 +234,11 @@ class TestCA1_CreacionTestimonio:
                 vehiculo, _ = _registrar_vehiculo(client, propietario_email)
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
 
-                _, token_conductor = _registrar_y_loguear_usuario(
+                id_conductor, token_conductor = _registrar_y_loguear_usuario(
                     client, "conductor-ts-nofin@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_conductor)
+
                 resp = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo["id"]),
@@ -271,9 +275,10 @@ class TestCA1_CreacionTestimonio:
         engine, client_context = _crear_cliente()
         try:
             with client_context as client:
-                _, token_conductor = _registrar_y_loguear_usuario(
+                id_conductor, token_conductor = _registrar_y_loguear_usuario(
                     client, "conductor-ts-404@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_conductor)
                 reserva_id_falso = str(uuid.uuid4())
 
                 response = client.post(
@@ -710,9 +715,10 @@ class TestCA3_Inmutabilidad:
                 _hacer_vehiculo_reservable(engine, vehiculo_id)
 
                 # ── Primer conductor + primera reserva ───────────────────
-                _, token_c1 = _registrar_y_loguear_usuario(
+                id_c1, token_c1 = _registrar_y_loguear_usuario(
                     client, "conductor-ts-r1@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_c1)
                 r1 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_id),
@@ -737,9 +743,10 @@ class TestCA3_Inmutabilidad:
 
                 # ── Segundo conductor + segunda reserva del mismo vehículo ─
                 _hacer_vehiculo_reservable(engine, vehiculo_id)
-                _, token_c2 = _registrar_y_loguear_usuario(
+                id_c2, token_c2 = _registrar_y_loguear_usuario(
                     client, "conductor-ts-r2@autospot.com"
                 )
+                _registrar_datos_personales_directo(engine, id_c2)
                 r2 = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo_id),
