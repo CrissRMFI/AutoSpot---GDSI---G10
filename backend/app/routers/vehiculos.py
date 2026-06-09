@@ -635,6 +635,8 @@ def actualizar_documentacion_legal_vehiculo(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+    
+    return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
 
 @router.patch(
     "/vehiculos/{vehiculo_id}/disponibilidad",
