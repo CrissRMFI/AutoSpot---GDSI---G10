@@ -51,7 +51,9 @@ const VerificarReservaPage = () => {
         setCodigo(data.codigo_reserva || "");
       } catch (err) {
         if (!cancelado) {
-          setError(err.response?.data?.detail || "No se pudo cargar la reserva.");
+          setError(
+            err.response?.data?.detail || "No se pudo cargar la reserva.",
+          );
         }
       } finally {
         if (!cancelado) setCargando(false);
@@ -70,9 +72,7 @@ const VerificarReservaPage = () => {
   const yaResuelta =
     estadoNormalizado === "VERIFICADA" || estadoNormalizado === "RECHAZADA";
   const puedeRechazar = Boolean(
-    detalle?.id &&
-    !yaResuelta &&
-    !detalle.codigo_verificado_at,
+    detalle?.id && !yaResuelta && !detalle.codigo_verificado_at,
   );
 
   const handleBuscar = async (event) => {
@@ -120,7 +120,7 @@ const VerificarReservaPage = () => {
         mensaje:
           err.response?.data?.detail ||
           "Ocurrió un error inesperado y la operación no se procesó. " +
-          "Volvé a intentarlo en unos segundos.",
+            "Volvé a intentarlo en unos segundos.",
         accionPrimaria: "cerrar",
       });
     } finally {
@@ -222,7 +222,10 @@ const VerificarReservaPage = () => {
 
           {error && (
             <div className="mt-4 flex items-start gap-2 rounded-2xl border border-autospot-border bg-autospot-cream/60 p-3 text-sm font-semibold text-autospot-black">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent" strokeWidth={2.4} />
+              <AlertCircle
+                className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent"
+                strokeWidth={2.4}
+              />
               <span>{error}</span>
             </div>
           )}
@@ -230,10 +233,11 @@ const VerificarReservaPage = () => {
           <button
             type="submit"
             disabled={buscando || !codigoNormalizado}
-            className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${buscando || !codigoNormalizado
-              ? "cursor-not-allowed bg-autospot-accent/40 text-white/70"
-              : "bg-autospot-accent text-white hover:bg-[#5a1420]"
-              }`}
+            className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
+              buscando || !codigoNormalizado
+                ? "cursor-not-allowed bg-autospot-accent/40 text-white/70"
+                : "bg-autospot-accent text-white hover:bg-[#5a1420]"
+            }`}
           >
             {buscando ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
@@ -400,7 +404,10 @@ const ModalRechazarReserva = ({
 
       {error && (
         <div className="mt-4 flex items-start gap-2 rounded-2xl border border-autospot-border bg-autospot-cream/60 p-3 text-sm font-semibold text-autospot-black">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent" strokeWidth={2.4} />
+          <AlertCircle
+            className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent"
+            strokeWidth={2.4}
+          />
           <span>{error}</span>
         </div>
       )}
@@ -417,10 +424,11 @@ const ModalRechazarReserva = ({
         <button
           type="submit"
           disabled={enviando || !motivo.trim()}
-          className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${enviando || !motivo.trim()
-            ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
-            : "bg-autospot-black text-white hover:bg-autospot-mid"
-            }`}
+          className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
+            enviando || !motivo.trim()
+              ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
+              : "bg-autospot-black text-white hover:bg-autospot-mid"
+          }`}
         >
           {enviando ? (
             <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
@@ -448,7 +456,8 @@ const DetalleReservaVerificacion = ({
     .join(" ");
   const estado = (detalle.estado || "").toUpperCase();
   const estaRechazada = estado === "RECHAZADA";
-  const estaVerificada = Boolean(detalle.codigo_verificado_at) || estado === "VERIFICADA";
+  const estaVerificada =
+    Boolean(detalle.codigo_verificado_at) || estado === "VERIFICADA";
 
   let badgeIcon = null;
   let badgeClass = "bg-autospot-cream text-autospot-muted";
@@ -483,14 +492,26 @@ const DetalleReservaVerificacion = ({
       </div>
 
       <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
-        <DatoDetalle label="Conductor" valor={nombreConductor || conductor.email} />
+        <DatoDetalle
+          label="Conductor"
+          valor={nombreConductor || conductor.email}
+        />
         <DatoDetalle label="DNI" valor={conductor.dni || "Sin registrar"} />
         <DatoDetalle label="Email" valor={conductor.email} />
         <DatoDetalle label="Patente" valor={vehiculo.patente || "—"} />
-        <DatoDetalle label="Inicio" valor={formatearFechaHora(detalle.fecha_inicio)} />
-        <DatoDetalle label="Fin" valor={formatearFechaHora(detalle.fecha_fin)} />
+        <DatoDetalle
+          label="Inicio"
+          valor={formatearFechaHora(detalle.fecha_inicio)}
+        />
+        <DatoDetalle
+          label="Fin"
+          valor={formatearFechaHora(detalle.fecha_fin)}
+        />
         <DatoDetalle label="Estación" valor={detalle.estacion_retiro} />
-        <DatoDetalle label="Total" valor={formatearMonto(detalle.monto_total)} />
+        <DatoDetalle
+          label="Total"
+          valor={formatearMonto(detalle.monto_total)}
+        />
       </dl>
 
       {estaRechazada && detalle.motivo_rechazo && (
@@ -504,7 +525,10 @@ const DetalleReservaVerificacion = ({
 
       {!estaRechazada && detalle.motivo_bloqueo && (
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-autospot-border bg-autospot-cream/60 p-4 text-sm font-semibold text-autospot-black">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent" strokeWidth={2.4} />
+          <AlertCircle
+            className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent"
+            strokeWidth={2.4}
+          />
           <span>{detalle.motivo_bloqueo}</span>
         </div>
       )}
@@ -538,17 +562,18 @@ const DetalleReservaVerificacion = ({
             disabled={
               !puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
             }
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${!puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
-              ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
-              : "bg-autospot-black text-white hover:bg-autospot-mid"
-              }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
+              !puedeRechazar || Boolean(detalle.motivo_bloqueo) || entregando
+                ? "cursor-not-allowed bg-autospot-black/20 text-white/70"
+                : "bg-autospot-black text-white hover:bg-autospot-mid"
+            }`}
           >
             {entregando ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.4} />
             ) : (
               <Check className="h-4 w-4" strokeWidth={2.4} />
             )}
-            {entregando ? "Entregando..." : "Entregar auto"}
+            {entregando ? "Confirmando..." : "Confirmar reserva"}
           </button>
         )}
       </div>

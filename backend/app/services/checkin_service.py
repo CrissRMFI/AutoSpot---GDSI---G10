@@ -9,12 +9,12 @@ from fastapi import HTTPException, status
 
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.reserva import Reserva
-from app.models.notificacion import Notificacion
 from app.models.usuario import Usuario
 from app.schemas.checkin_vehiculo import (
     CheckinCreatePayloadSchema,
     CheckinUpdatePayloadSchema,
 )
+from app.services.notificacion import crear_notificacion_usuario
 
 MENSAJES_CHECKIN_EXISTENTE = {
     "PENDIENTE": "Ya enviaste el check-in de esta reserva. Esperá la revisión del administrador.",
@@ -96,7 +96,8 @@ def crear_checkin(
     # 4. Notificar al Admin
     admin = _obtener_admin_para_notificar(db)
     if admin:
-        notificacion = Notificacion(
+        crear_notificacion_usuario(
+            db=db,
             usuario_id=admin.id,
             tipo="CHECKIN_PENDIENTE",
             titulo="Revisión de Check-in",
@@ -104,7 +105,6 @@ def crear_checkin(
             recurso_tipo="CHECKIN",
             recurso_id=nuevo_checkin.id,
         )
-        db.add(notificacion)
 
     db.commit()
     db.refresh(nuevo_checkin)
@@ -159,7 +159,8 @@ def re_enviar_checkin(
     # Notificar de nuevo
     admin = _obtener_admin_para_notificar(db)
     if admin:
-        notificacion = Notificacion(
+        crear_notificacion_usuario(
+            db=db,
             usuario_id=admin.id,
             tipo="CHECKIN_PENDIENTE",
             titulo="Check-in Reenviado",
@@ -167,7 +168,6 @@ def re_enviar_checkin(
             recurso_tipo="CHECKIN",
             recurso_id=checkin.id,
         )
-        db.add(notificacion)
 
     db.commit()
     db.refresh(checkin)
@@ -244,7 +244,8 @@ def aprobar_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo:
     
     checkin.estado = "APROBADO"
     
-    notificacion = Notificacion(
+    crear_notificacion_usuario(
+        db=db,
         usuario_id=checkin.conductor_id,
         tipo="CHECKIN_APROBADO",
         titulo="Check-in Aprobado",
@@ -252,7 +253,6 @@ def aprobar_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo:
         recurso_tipo="RESERVA",
         recurso_id=checkin.reserva_id,
     )
-    db.add(notificacion)
     
     db.commit()
     db.refresh(checkin)
@@ -270,7 +270,8 @@ def rechazar_checkin(db: Session, checkin_id: uuid.UUID, motivo: str) -> Checkin
     checkin.estado = "RECHAZADO"
     checkin.motivo_rechazo = motivo
     
-    notificacion = Notificacion(
+    crear_notificacion_usuario(
+        db=db,
         usuario_id=checkin.conductor_id,
         tipo="CHECKIN_RECHAZADO",
         titulo="Check-in Rechazado",
@@ -278,7 +279,6 @@ def rechazar_checkin(db: Session, checkin_id: uuid.UUID, motivo: str) -> Checkin
         recurso_tipo="RESERVA",
         recurso_id=checkin.reserva_id,
     )
-    db.add(notificacion)
     
     db.commit()
     db.refresh(checkin)

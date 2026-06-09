@@ -1,10 +1,36 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { obtenerCatalogoVehiculos } from "./../api/vehiculoService";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
 
 const obtenerFotoFrente = (vehiculo) => {
   const fotos = vehiculo?.fotos ?? [];
   return fotos.find((foto) => foto.lado === "FRENTE")?.url || fotos[0]?.url || "";
+};
+
+// US 8C — Opciones del filtro por puntuación (calificación promedio mínima).
+const OPCIONES_PUNTUACION = [
+  { value: "4.5", label: "4,5 o más" },
+  { value: "4", label: "4 o más" },
+  { value: "3", label: "3 o más" },
+  { value: "2", label: "2 o más" },
+  { value: "1", label: "1 o más" },
+];
+
+// Estilo compartido para los selects MUI de la barra de filtros (bordes
+// redondeados acordes al diseño del catálogo).
+const sxFiltroSelect = {
+  minWidth: { xs: "100%", sm: 210 },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "9999px",
+    backgroundColor: "#fff",
+    fontWeight: 700,
+    fontSize: "0.875rem",
+  },
 };
 
 const FILTROS_INICIALES = {
@@ -17,6 +43,7 @@ const FILTROS_INICIALES = {
   anioMax: "",
   capacidad: "",
   pets_friendly: "",
+  puntuacion: "",
 };
 
 const CatalogoVehiculosPage = () => {
@@ -31,13 +58,16 @@ const CatalogoVehiculosPage = () => {
   // Estados temporales para el modal
   const [filtrosTemp, setFiltrosTemp] = useState(FILTROS_INICIALES);
 
+  // US 8C: el filtro por puntuación se resuelve en el backend, por lo que se
+  // recarga el catálogo cada vez que cambia. El resto de filtros se aplican
+  // sobre el resultado en el cliente (CA 2 — intersección de condiciones).
   useEffect(() => {
     const cargar = async () => {
       setCargando(true);
       setError("");
       setNoAutorizado(false);
       try {
-        const data = await obtenerCatalogoVehiculos();
+        const data = await obtenerCatalogoVehiculos(filtros.puntuacion);
         setVehiculosOriginales(data);
       } catch (err) {
         if (err.response?.status === 403) {
@@ -51,7 +81,7 @@ const CatalogoVehiculosPage = () => {
     };
 
     cargar();
-  }, []);
+  }, [filtros.puntuacion]);
 
   const opciones = useMemo(() => {
     const opts = {
@@ -161,16 +191,45 @@ const CatalogoVehiculosPage = () => {
 
       {!cargando && !error && vehiculosOriginales.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-autospot-border bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
-          <select
+          <TextField
+            select
+            size="small"
+            label="Estación"
             value={filtros.estacion}
             onChange={(e) => setFiltros({ ...filtros, estacion: e.target.value })}
-            className="w-full sm:w-auto min-w-[200px] rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none focus:ring-1 focus:ring-autospot-accent appearance-none"
+            sx={sxFiltroSelect}
           >
-            <option value="">Todas las estaciones</option>
+            <MenuItem value="">Todas las estaciones</MenuItem>
             {opciones.estaciones.map((est) => (
-              <option key={est} value={est}>{est}</option>
+              <MenuItem key={est} value={est}>{est}</MenuItem>
             ))}
-          </select>
+          </TextField>
+
+          <TextField
+            select
+            size="small"
+            label="Puntuación"
+            value={filtros.puntuacion}
+            onChange={(e) => setFiltros({ ...filtros, puntuacion: e.target.value })}
+            sx={sxFiltroSelect}
+            InputProps={{
+              startAdornment: filtros.puntuacion ? (
+                <InputAdornment position="start">
+                  <StarRoundedIcon sx={{ color: "#f59e0b" }} fontSize="small" />
+                </InputAdornment>
+              ) : null,
+            }}
+          >
+            <MenuItem value="">Todas las puntuaciones</MenuItem>
+            {OPCIONES_PUNTUACION.map((op) => (
+              <MenuItem key={op.value} value={op.value}>
+                <span className="inline-flex items-center gap-1.5">
+                  <StarRoundedIcon sx={{ color: "#f59e0b" }} fontSize="small" />
+                  {op.label}
+                </span>
+              </MenuItem>
+            ))}
+          </TextField>
 
           <button
             onClick={abrirModal}
@@ -212,7 +271,7 @@ const CatalogoVehiculosPage = () => {
         </div>
       )}
 
-      {!cargando && !error && vehiculosOriginales.length === 0 && (
+      {!cargando && !error && vehiculosOriginales.length === 0 && !hayFiltrosActivos && (
         <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center">
           <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
             No hay vehículos disponibles
@@ -224,7 +283,7 @@ const CatalogoVehiculosPage = () => {
         </div>
       )}
 
-      {!cargando && !error && vehiculosOriginales.length > 0 && vehiculosFiltrados.length === 0 && (
+      {!cargando && !error && hayFiltrosActivos && vehiculosFiltrados.length === 0 && (
         <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center">
           <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
             Tu búsqueda no arrojó resultados
@@ -270,9 +329,12 @@ const CatalogoVehiculosPage = () => {
                 </div>
 
                 <div className="p-5">
-                  <h3 className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black break-words">
-                    {vehiculo.marca} {vehiculo.modelo}
-                  </h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black break-words">
+                      {vehiculo.marca} {vehiculo.modelo}
+                    </h3>
+                    <PuntuacionVehiculo valor={vehiculo.calificacion_promedio} />
+                  </div>
                   <p className="mt-1 text-sm text-autospot-muted">
                     {vehiculo.anio} · {vehiculo.categoria} · {vehiculo.estacion || "Sin estación"}
                   </p>
