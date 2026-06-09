@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.database import Base, get_db
 from app.main import app
@@ -103,9 +104,24 @@ def _reset_test_schema(engine) -> None:
 
 
 def _make_test_engine():
-    """Crea un engine PostgreSQL para tests."""
+    """
+    Crea un engine PostgreSQL para tests.
+
+    Usa NullPool a propósito: la suite comparte una sola base física
+    (`autospot_test_db`) y cada test recrea el schema con
+    `DROP SCHEMA public CASCADE`. Con un pool persistente (el QueuePool por
+    defecto), las conexiones quedaban abiertas entre tests y, como el TestClient
+    atiende los requests en otro hilo, una conexión reutilizada podía consultar
+    un schema a medio reconstruir por otro engine → fallos intermitentes del
+    tipo `relation "tokens_blacklist" does not exist`.
+
+    NullPool abre una conexión nueva por checkout y la cierra al devolverla, de
+    modo que ninguna conexión sobrevive al test que la creó y `engine.dispose()`
+    no deja nada colgado. Esto elimina la condición de carrera entre tests.
+    """
     reset_engine = create_engine(
         TEST_DATABASE_URL,
+        poolclass=NullPool,
         pool_pre_ping=True,
     )
     try:
@@ -115,6 +131,7 @@ def _make_test_engine():
 
     return create_engine(
         TEST_DATABASE_URL,
+        poolclass=NullPool,
         pool_pre_ping=True,
     )
 

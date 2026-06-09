@@ -1,6 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { obtenerCatalogoVehiculos } from "./../api/vehiculoService";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
 
 const obtenerFotoFrente = (vehiculo) => {
   const fotos = vehiculo?.fotos ?? [];
@@ -16,19 +21,16 @@ const OPCIONES_PUNTUACION = [
   { value: "1", label: "1 o más" },
 ];
 
-const Estrellas = ({ puntuacion }) => {
-  if (puntuacion == null) {
-    return (
-      <span className="text-xs font-bold text-autospot-muted">Sin valoraciones</span>
-    );
-  }
-  const valor = Number(puntuacion);
-  return (
-    <span className="inline-flex items-center gap-1 text-sm font-bold text-autospot-black">
-      <span className="text-amber-500" aria-hidden="true">★</span>
-      {valor.toFixed(1)}
-    </span>
-  );
+// Estilo compartido para los selects MUI de la barra de filtros (bordes
+// redondeados acordes al diseño del catálogo).
+const sxFiltroSelect = {
+  minWidth: { xs: "100%", sm: 210 },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "9999px",
+    backgroundColor: "#fff",
+    fontWeight: 700,
+    fontSize: "0.875rem",
+  },
 };
 
 const FILTROS_INICIALES = {
@@ -189,27 +191,45 @@ const CatalogoVehiculosPage = () => {
 
       {!cargando && !error && vehiculosOriginales.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-autospot-border bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
-          <select
+          <TextField
+            select
+            size="small"
+            label="Estación"
             value={filtros.estacion}
             onChange={(e) => setFiltros({ ...filtros, estacion: e.target.value })}
-            className="w-full sm:w-auto min-w-[200px] rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none focus:ring-1 focus:ring-autospot-accent appearance-none"
+            sx={sxFiltroSelect}
           >
-            <option value="">Todas las estaciones</option>
+            <MenuItem value="">Todas las estaciones</MenuItem>
             {opciones.estaciones.map((est) => (
-              <option key={est} value={est}>{est}</option>
+              <MenuItem key={est} value={est}>{est}</MenuItem>
             ))}
-          </select>
+          </TextField>
 
-          <select
+          <TextField
+            select
+            size="small"
+            label="Puntuación"
             value={filtros.puntuacion}
             onChange={(e) => setFiltros({ ...filtros, puntuacion: e.target.value })}
-            className="w-full sm:w-auto min-w-[200px] rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none focus:ring-1 focus:ring-autospot-accent appearance-none"
+            sx={sxFiltroSelect}
+            InputProps={{
+              startAdornment: filtros.puntuacion ? (
+                <InputAdornment position="start">
+                  <StarRoundedIcon sx={{ color: "#f59e0b" }} fontSize="small" />
+                </InputAdornment>
+              ) : null,
+            }}
           >
-            <option value="">Todas las puntuaciones</option>
+            <MenuItem value="">Todas las puntuaciones</MenuItem>
             {OPCIONES_PUNTUACION.map((op) => (
-              <option key={op.value} value={op.value}>★ {op.label}</option>
+              <MenuItem key={op.value} value={op.value}>
+                <span className="inline-flex items-center gap-1.5">
+                  <StarRoundedIcon sx={{ color: "#f59e0b" }} fontSize="small" />
+                  {op.label}
+                </span>
+              </MenuItem>
             ))}
-          </select>
+          </TextField>
 
           <button
             onClick={abrirModal}
@@ -313,7 +333,7 @@ const CatalogoVehiculosPage = () => {
                     <h3 className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black break-words">
                       {vehiculo.marca} {vehiculo.modelo}
                     </h3>
-                    <Estrellas puntuacion={vehiculo.calificacion_promedio} />
+                    <PuntuacionVehiculo valor={vehiculo.calificacion_promedio} />
                   </div>
                   <p className="mt-1 text-sm text-autospot-muted">
                     {vehiculo.anio} · {vehiculo.categoria} · {vehiculo.estacion || "Sin estación"}

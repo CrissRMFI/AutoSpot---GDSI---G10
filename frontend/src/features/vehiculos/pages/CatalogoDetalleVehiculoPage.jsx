@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
 import LightboxGaleria from "../components/LightboxGaleria";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -118,6 +119,10 @@ const CatalogoDetalleVehiculoPage = () => {
             {vehiculo.anio} · {vehiculo.categoria} · {vehiculo.estacion || "Sin estación"}
           </p>
 
+          <div className="mt-3">
+            <PuntuacionVehiculo valor={vehiculo.calificacion_promedio} size="medium" />
+          </div>
+
           <div className="relative mt-6 overflow-hidden rounded-2xl bg-[#0f0f0f]">
             {fotoActiva ? (
               <img
@@ -207,6 +212,15 @@ const CatalogoDetalleVehiculoPage = () => {
               label="Acepta mascotas"
               valor={vehiculo.pets_friendly ? "Sí" : "No"}
             />
+            <div className="flex items-center justify-between gap-3">
+              <dt className="!text-white/65">Puntuación</dt>
+              <dd className="text-right">
+                <PuntuacionVehiculo
+                  valor={vehiculo.calificacion_promedio}
+                  variante="dark"
+                />
+              </dd>
+            </div>
           </dl>
 
           <div className="mt-6 space-y-4">
