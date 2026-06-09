@@ -40,6 +40,9 @@ from app.exceptions import (
     VehiculoConReservaActivaError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
+    ActualizarDocumentacionVehiculoDisponibleError,
+    ActualizarDocumentacionVehiculoConReservaActivaError,
+    DocumentacionVehiculoNoExistenteError,
 )
 from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
@@ -64,6 +67,7 @@ from app.services.vehiculo import (
     agregar_foto_a_vehiculo,
     cambiar_disponibilidad_vehiculo,
     cargar_documentacion_vehiculo,
+    actualizar_documentacion_vehiculo,
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
     reemplazar_foto_vehiculo,
@@ -549,6 +553,90 @@ def cargar_documentacion_legal_vehiculo(
 
     return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
 
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/documentacion/actualizar",
+    response_model=VehiculoDocumentacionResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Actualiza documentación legal del vehículo",
+    description=(
+        "Actualiza la documentación legal y operativa de un vehículo existente. "
+        "Requiere autenticación JWT y solo permite modificar vehículos propios."
+        "El vehiculo debe figurar como no disponible para poder actualizar su documentación."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Documentación legal actualizada exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def actualizar_documentacion_legal_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: DocumentacionVehiculoSchema,
+    usuario_actual: dict = Depends(requerir_rol_propietario),
+    db: Session = Depends(get_db),
+) -> VehiculoDocumentacionResponseSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/documentacion/actualizar
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Pydantic valida los campos documentales obligatorios.
+        3. Se valida el JWT.
+        4. Se verifica que el vehículo exista y pertenezca al usuario autenticado.
+        5. El servicio actualiza la documentación legal del vehículo.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        vehiculo = actualizar_documentacion_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            schema=payload,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DocumentacionVehiculoNoExistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except ActualizarDocumentacionVehiculoDisponibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except ActualizarDocumentacionVehiculoConReservaActivaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    
+    return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
 
 @router.patch(
     "/vehiculos/{vehiculo_id}/disponibilidad",
