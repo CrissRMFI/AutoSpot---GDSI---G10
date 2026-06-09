@@ -15,6 +15,7 @@ import ConfirmacionModal from "../components/ConfirmacionModal";
 import MensajeModal from "../components/MensajeModal";
 import RechazoModal from "../components/RechazoModal";
 import ValoracionModal from "../components/ValoracionModal";
+import ImagenModal from "../../../components/ImagenModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const ESTADO_UI = {
@@ -477,24 +478,35 @@ const FotosCheckout = ({ checkout }) => {
   return (
     <div className="mt-5 grid grid-cols-2 gap-2">
       {fotos.map(([label, url]) => (
-        <a
-          key={`${label}-${url}`}
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="group overflow-hidden rounded-xl border border-autospot-border bg-white"
-        >
-          <img
-            src={url}
-            alt={label}
-            className="aspect-video w-full object-cover transition group-hover:scale-[1.03]"
-          />
-          <span className="block truncate px-2 py-1 text-[11px] font-bold text-autospot-muted">
-            {label}
-          </span>
-        </a>
+        <FotoCheckout key={`${label}-${url}`} label={label} url={url} />
       ))}
     </div>
+  );
+};
+
+const FotoCheckout = ({ label, url }) => {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="group overflow-hidden rounded-xl border border-autospot-border bg-white text-left"
+      >
+        <img
+          src={url}
+          alt={label}
+          className="aspect-video w-full object-cover transition group-hover:scale-[1.03]"
+        />
+        <span className="block truncate px-2 py-1 text-[11px] font-bold text-autospot-muted">
+          {label}
+        </span>
+      </button>
+      {abierto && (
+        <ImagenModal url={url} alt={label} onClose={() => setAbierto(false)} />
+      )}
+    </>
   );
 };
 

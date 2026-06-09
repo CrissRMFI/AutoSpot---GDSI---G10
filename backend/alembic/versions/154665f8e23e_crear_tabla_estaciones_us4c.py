@@ -87,7 +87,7 @@ def upgrade() -> None:
             {
                 "nombre": "Spot Madero Premium",
                 "direccion": "Juana Manso 900",
-                "instrucciones_acceso": "Acceso con código QR en la barrera de entrada.",
+                "instrucciones_acceso": "Ingreso por la barrera principal; el personal de AutoSpot habilita el acceso al sector reservado.",
                 "zona": "Puerto Madero",
                 "activa": True,
                 "imagen_url": None,

@@ -15,7 +15,8 @@ from datetime import date
 
 from pydantic import BaseModel, field_validator, model_validator
 
-CATEGORIAS_LICENCIA_VALIDAS = {"A", "B", "C", "D", "E", "F", "G"}
+# Categorías de la Licencia Nacional de Conducir habilitadas para conducir autos.
+CATEGORIAS_LICENCIA_VALIDAS = {"B1", "B2"}
 
 
 class DocumentacionHabilitanteConductorSchema(BaseModel):
@@ -24,7 +25,6 @@ class DocumentacionHabilitanteConductorSchema(BaseModel):
     habilitante de un Conductor.
 
     Campos:
-        numero_licencia            : Número de la Licencia Nacional de Conducir.
         categoria                  : Categoría/clase de la licencia.
         fecha_emision              : Fecha de emisión de la licencia.
         fecha_vencimiento          : Fecha de vencimiento de la licencia.
@@ -32,7 +32,6 @@ class DocumentacionHabilitanteConductorSchema(BaseModel):
         foto_licencia_dorso_url    : Ruta o URL de la foto del dorso.
     """
 
-    numero_licencia: str
     categoria: str
     fecha_emision: date
     fecha_vencimiento: date
@@ -40,7 +39,6 @@ class DocumentacionHabilitanteConductorSchema(BaseModel):
     foto_licencia_dorso_url: str
 
     @field_validator(
-        "numero_licencia",
         "foto_licencia_frente_url",
         "foto_licencia_dorso_url",
     )
@@ -87,7 +85,6 @@ class DocumentacionHabilitanteConductorPublicoSchema(BaseModel):
 
     id: uuid.UUID
     usuario_id: uuid.UUID
-    numero_licencia: str
     categoria: str
     fecha_emision: date
     fecha_vencimiento: date

@@ -377,11 +377,31 @@ def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehicu
     if propietario is None:
         raise UsuarioNoEncontradoError()
 
-    return (
+    vehiculos = (
         db.query(Vehiculo)
         .filter(Vehiculo.propietario_id == propietario_id)
         .all()
     )
+
+    # Marca cuáles tienen un alquiler/reserva activo para poder distinguir en el
+    # frontend "Alquilado" (tiene alquiler) de "No disponible" (pausado por el dueño).
+    ids = [vehiculo.id for vehiculo in vehiculos]
+    ids_alquilados = set()
+    if ids:
+        filas = (
+            db.query(Reserva.vehiculo_id)
+            .filter(
+                Reserva.vehiculo_id.in_(ids),
+                Reserva.estado.in_(ESTADOS_RESERVA_QUE_BLOQUEAN_DISPONIBILIDAD),
+            )
+            .all()
+        )
+        ids_alquilados = {fila[0] for fila in filas}
+
+    for vehiculo in vehiculos:
+        vehiculo.alquilado = vehiculo.id in ids_alquilados
+
+    return vehiculos
 
 def cargar_documentacion_vehiculo(
     db: Session,
@@ -540,7 +560,10 @@ def cambiar_disponibilidad_vehiculo(
     if vehiculo.estado_registro != "HABILITADO":
         raise VehiculoNoHabilitadoError()
 
-    if not disponible and verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
+    # Un auto con un alquiler/reserva activo no puede cambiar su disponibilidad
+    # en ninguna dirección: no se puede volver a marcar como disponible mientras
+    # está alquilado, ni "deshabilitarlo" porque ya está comprometido.
+    if verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
         raise VehiculoConReservaActivaError()
 
     vehiculo.disponible = disponible

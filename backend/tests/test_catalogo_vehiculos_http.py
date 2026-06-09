@@ -19,7 +19,6 @@ def _aprobar_documentacion_conductor(engine, usuario_id: str):
         doc = DocumentacionHabilitanteConductor(
             usuario_id=uuid.UUID(usuario_id),
             estado_validacion=EstadoHabilitacion.APROBADO,
-            numero_licencia="12345678",
             categoria="B1",
             fecha_emision=datetime.now(timezone.utc).date() - timedelta(days=365),
             fecha_vencimiento=datetime.now(timezone.utc).date() + timedelta(days=365*4),

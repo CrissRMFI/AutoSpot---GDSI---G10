@@ -37,8 +37,7 @@ from tests.conftest import _make_test_engine
 
 
 PAYLOAD_DOCUMENTACION = {
-    "numero_licencia": "LIC-US2C-0001",
-    "categoria": "B",
+    "categoria": "B1",
     "fecha_emision": "2024-01-10",
     "fecha_vencimiento": "2029-01-10",
     "foto_licencia_frente_url": "uploads/licencia/us2c/frente.jpg",

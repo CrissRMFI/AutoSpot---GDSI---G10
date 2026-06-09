@@ -8,15 +8,14 @@ import {
   registrarDocumentacionHabilitante,
 } from "../api/documentacionHabilitanteService";
 
-const CATEGORIAS = ["A", "B", "C", "D", "E", "F", "G"];
+const CATEGORIAS = ["B1", "B2"];
 
 const DocumentacionHabilitantePage = () => {
   const navigate = useNavigate();
   const { usuario } = useAuth();
 
   const [form, setForm] = useState({
-    numero_licencia: "",
-    categoria: "B",
+    categoria: "B1",
     fecha_emision: "",
     fecha_vencimiento: "",
     foto_licencia_frente_url: "",
@@ -42,7 +41,6 @@ const DocumentacionHabilitantePage = () => {
       try {
         const datos = await obtenerDocumentacionHabilitante(usuario.id);
         setForm({
-          numero_licencia: datos.numero_licencia,
           categoria: datos.categoria,
           fecha_emision: datos.fecha_emision,
           fecha_vencimiento: datos.fecha_vencimiento,
@@ -232,42 +230,24 @@ const DocumentacionHabilitantePage = () => {
             </div>
           ) : (
             <form onSubmit={enviarFormulario} className="space-y-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="numero_licencia" className={labelClassName}>
-                    Número de licencia
-                  </label>
-                  <input
-                    type="text"
-                    id="numero_licencia"
-                    name="numero_licencia"
-                    value={form.numero_licencia}
-                    onChange={actualizarCampo}
-                    placeholder="Ej: LIC-12345678"
-                    required
-                    className={inputClassName}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="categoria" className={labelClassName}>
-                    Categoría
-                  </label>
-                  <select
-                    id="categoria"
-                    name="categoria"
-                    value={form.categoria}
-                    onChange={actualizarCampo}
-                    required
-                    className={inputClassName}
-                  >
-                    {CATEGORIAS.map((categoria) => (
-                      <option key={categoria} value={categoria}>
-                        {categoria}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label htmlFor="categoria" className={labelClassName}>
+                  Categoría
+                </label>
+                <select
+                  id="categoria"
+                  name="categoria"
+                  value={form.categoria}
+                  onChange={actualizarCampo}
+                  required
+                  className={inputClassName}
+                >
+                  {CATEGORIAS.map((categoria) => (
+                    <option key={categoria} value={categoria}>
+                      {categoria}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
