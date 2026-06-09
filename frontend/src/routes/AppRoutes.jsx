@@ -234,6 +234,15 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/vehiculos/:vehiculoId/documentacion/actualizar"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DocumentacionVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/vehiculos/:vehiculoId/detalle"
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>

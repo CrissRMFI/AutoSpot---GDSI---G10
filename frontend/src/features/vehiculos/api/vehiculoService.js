@@ -42,6 +42,18 @@ export const cargarDocumentacionVehiculo = async (
   return response.data;
 };
 
+export const actualizarDocumentacionVehiculo = async (
+  vehiculoId,
+  documentacion,
+) => {
+  const response = await httpClient.patch(
+    `/vehiculos/${vehiculoId}/documentacion/actualizar`,
+    documentacion,
+  );
+
+  return response.data;
+};
+
 export const listarVehiculosDelPropietario = async (propietarioId) => {
   const response = await httpClient.get(`/usuarios/${propietarioId}/vehiculos`);
 

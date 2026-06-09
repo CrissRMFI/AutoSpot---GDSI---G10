@@ -592,7 +592,20 @@ const DetalleVehiculoPage = () => {
                 >
                   Modificar datos
                 </Link>
-                {puedeCargarDocumentacion ? (
+                {vehiculo?.estado_registro === "HABILITADO" ? (
+                  vehiculo.disponible ? (
+                    <span className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55" title="No se puede actualizar mientras el vehículo está disponible o tiene alquileres activos">
+                      Actualizar documentación
+                    </span>
+                  ) : (
+                    <Link
+                      to={`/vehiculos/${vehiculo.id}/documentacion/actualizar`}
+                      className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                    >
+                      Actualizar documentación
+                    </Link>
+                  )
+                ) : puedeCargarDocumentacion ? (
                   <Link
                     to={`/vehiculos/${vehiculo.id}/documentacion`}
                     className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"

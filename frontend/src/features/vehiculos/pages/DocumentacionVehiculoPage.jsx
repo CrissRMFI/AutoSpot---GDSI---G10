@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { subirFotoDocumentoVehiculo } from "../../../api/uploadService";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import {
   cargarDocumentacionVehiculo,
   getDetalleVehiculo,
+  actualizarDocumentacionVehiculo,
 } from "../api/vehiculoService";
 
 const CAMPOS_DOCUMENTACION = [
@@ -97,8 +98,12 @@ const DocumentacionVehiculoPage = () => {
   const [estaciones, setEstaciones] = useState([]);
   const [cargandoEstaciones, setCargandoEstaciones] = useState(true);
 
-  const documentacionEditable =
-    ESTADOS_DOCUMENTACION_EDITABLE.has(estadoRegistro);
+  const location = useLocation();
+  const isActualizar = location.pathname.includes("/documentacion/actualizar");
+
+  const documentacionEditable = isActualizar
+    ? vehiculo?.estado_registro === "HABILITADO"
+    : ESTADOS_DOCUMENTACION_EDITABLE.has(estadoRegistro);
   const vehiculoTitulo = vehiculo
     ? `${vehiculo.marca} ${vehiculo.modelo}`
     : "Vehículo seleccionado";
@@ -263,7 +268,25 @@ const DocumentacionVehiculoPage = () => {
     setFeedback({ message: "", type: "" });
 
     try {
-      await cargarDocumentacionVehiculo(vehiculoId, {
+      if (isActualizar) {
+        await actualizarDocumentacionVehiculo(vehiculoId, {
+          patente: form.patente.trim(),
+          chasis: form.chasis.trim(),
+          motor: form.motor.trim(),
+          titular: form.titular.trim(),
+          cedula: form.cedula.trim(),
+          poliza: form.poliza.trim(),
+          vtv: form.vtv.trim(),
+          estacion: form.estacion.trim(),
+          telefono: form.telefono.trim(),
+          descripcion: form.descripcion.trim() || null,
+        });
+        setFeedback({
+          message: "Documentación legal actualizada correctamente.",
+          type: "success",
+        });
+      } else {
+        await cargarDocumentacionVehiculo(vehiculoId, {
         patente: form.patente.trim(),
         chasis: form.chasis.trim(),
         motor: form.motor.trim(),
@@ -275,19 +298,30 @@ const DocumentacionVehiculoPage = () => {
         telefono: form.telefono.trim(),
         descripcion: form.descripcion.trim() || null,
       });
-
-      setFeedback({
-        message: "Documentación legal cargada correctamente.",
-        type: "success",
-      });
-
-      setTimeout(() => {
-        navigate("/propietario/dashboard", {
-          state: {
-            message: "Documentación del vehículo cargada correctamente.",
-          },
+        setFeedback({
+          message: "Documentación legal cargada correctamente.",
+          type: "success",
         });
-      }, 1500);
+
+        setTimeout(() => {
+          navigate("/propietario/dashboard", {
+            state: {
+              message: "Documentación del vehículo cargada correctamente.",
+            },
+          });
+        }, 1500);
+      }
+
+      if (isActualizar) {
+        // After update, navigate back to vehicle detail page
+        setTimeout(() => {
+          navigate(`/vehiculos/${vehiculoId}/detalle`, {
+            state: {
+              message: "Documentación del vehículo actualizada correctamente.",
+            },
+          });
+        }, 800);
+      }
     } catch (error) {
       const detalle = error.response?.data?.detail;
 
@@ -299,8 +333,52 @@ const DocumentacionVehiculoPage = () => {
           .join(", ");
       }
 
+      // If we were updating and got a network error, try to confirm the update
+      if (isActualizar && !error.response) {
+        try {
+          const remote = await getDetalleVehiculo(vehiculoId);
+          const campos = [
+            "patente",
+            "chasis",
+            "motor",
+            "titular",
+            "cedula",
+            "poliza",
+            "vtv",
+            "estacion",
+            "telefono",
+            "descripcion",
+          ];
+
+          const igual = campos.every((c) => {
+            const remoto = (remote[c] || "").toString().trim();
+            const local = (form[c] || "").toString().trim();
+            return remoto === local;
+          });
+
+          if (igual) {
+            // Consider it successful and navigate to detail
+            setFeedback({
+              message: "Documentación del vehículo actualizada correctamente.",
+              type: "success",
+            });
+            setTimeout(() => {
+              navigate(`/vehiculos/${vehiculoId}/detalle`, {
+                state: {
+                  message: "Documentación del vehículo actualizada correctamente.",
+                },
+              });
+            }, 700);
+            return;
+          }
+        } catch (err) {
+          // fall through to show original error
+          console.debug("No se pudo confirmar actualización tras Network Error", err);
+        }
+      }
+
       setFeedback({
-        message: `Error al cargar documentación: ${
+        message: `Error al ${isActualizar ? "actualizar" : "cargar"} documentación: ${
           mensajeError || error.message
         }`,
         type: "error",
@@ -599,15 +677,20 @@ const DocumentacionVehiculoPage = () => {
                   subiendoArchivo.cedula ||
                   subiendoArchivo.poliza ||
                   subiendoArchivo.vtv ||
-                  !documentacionEditable
+                  !documentacionEditable ||
+                  (isActualizar && vehiculo?.disponible === true)
                 }
                 className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
               >
                 {cargando
                   ? "Guardando..."
-                  : documentacionEditable
-                    ? "Guardar documentación"
-                    : "Documentación no editable"}
+                  : isActualizar
+                    ? documentacionEditable
+                      ? "Actualizar documentación"
+                      : "Documentación no editable"
+                    : documentacionEditable
+                      ? "Guardar documentación"
+                      : "Documentación no editable"}
               </button>
             </div>
           </form>
