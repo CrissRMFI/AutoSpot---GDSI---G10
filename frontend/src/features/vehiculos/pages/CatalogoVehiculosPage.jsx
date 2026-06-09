@@ -7,6 +7,30 @@ const obtenerFotoFrente = (vehiculo) => {
   return fotos.find((foto) => foto.lado === "FRENTE")?.url || fotos[0]?.url || "";
 };
 
+// US 8C — Opciones del filtro por puntuación (calificación promedio mínima).
+const OPCIONES_PUNTUACION = [
+  { value: "4.5", label: "4,5 o más" },
+  { value: "4", label: "4 o más" },
+  { value: "3", label: "3 o más" },
+  { value: "2", label: "2 o más" },
+  { value: "1", label: "1 o más" },
+];
+
+const Estrellas = ({ puntuacion }) => {
+  if (puntuacion == null) {
+    return (
+      <span className="text-xs font-bold text-autospot-muted">Sin valoraciones</span>
+    );
+  }
+  const valor = Number(puntuacion);
+  return (
+    <span className="inline-flex items-center gap-1 text-sm font-bold text-autospot-black">
+      <span className="text-amber-500" aria-hidden="true">★</span>
+      {valor.toFixed(1)}
+    </span>
+  );
+};
+
 const FILTROS_INICIALES = {
   estacion: "",
   marca: "",
@@ -17,6 +41,7 @@ const FILTROS_INICIALES = {
   anioMax: "",
   capacidad: "",
   pets_friendly: "",
+  puntuacion: "",
 };
 
 const CatalogoVehiculosPage = () => {
@@ -31,13 +56,16 @@ const CatalogoVehiculosPage = () => {
   // Estados temporales para el modal
   const [filtrosTemp, setFiltrosTemp] = useState(FILTROS_INICIALES);
 
+  // US 8C: el filtro por puntuación se resuelve en el backend, por lo que se
+  // recarga el catálogo cada vez que cambia. El resto de filtros se aplican
+  // sobre el resultado en el cliente (CA 2 — intersección de condiciones).
   useEffect(() => {
     const cargar = async () => {
       setCargando(true);
       setError("");
       setNoAutorizado(false);
       try {
-        const data = await obtenerCatalogoVehiculos();
+        const data = await obtenerCatalogoVehiculos(filtros.puntuacion);
         setVehiculosOriginales(data);
       } catch (err) {
         if (err.response?.status === 403) {
@@ -51,7 +79,7 @@ const CatalogoVehiculosPage = () => {
     };
 
     cargar();
-  }, []);
+  }, [filtros.puntuacion]);
 
   const opciones = useMemo(() => {
     const opts = {
@@ -172,6 +200,17 @@ const CatalogoVehiculosPage = () => {
             ))}
           </select>
 
+          <select
+            value={filtros.puntuacion}
+            onChange={(e) => setFiltros({ ...filtros, puntuacion: e.target.value })}
+            className="w-full sm:w-auto min-w-[200px] rounded-full border border-autospot-border bg-white px-4 py-2.5 text-sm font-bold text-autospot-black focus:border-autospot-accent focus:outline-none focus:ring-1 focus:ring-autospot-accent appearance-none"
+          >
+            <option value="">Todas las puntuaciones</option>
+            {OPCIONES_PUNTUACION.map((op) => (
+              <option key={op.value} value={op.value}>★ {op.label}</option>
+            ))}
+          </select>
+
           <button
             onClick={abrirModal}
             className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-full border border-autospot-border bg-autospot-cream px-4 py-2.5 text-sm font-bold text-autospot-black transition hover:bg-gray-100"
@@ -212,7 +251,7 @@ const CatalogoVehiculosPage = () => {
         </div>
       )}
 
-      {!cargando && !error && vehiculosOriginales.length === 0 && (
+      {!cargando && !error && vehiculosOriginales.length === 0 && !hayFiltrosActivos && (
         <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center">
           <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
             No hay vehículos disponibles
@@ -224,7 +263,7 @@ const CatalogoVehiculosPage = () => {
         </div>
       )}
 
-      {!cargando && !error && vehiculosOriginales.length > 0 && vehiculosFiltrados.length === 0 && (
+      {!cargando && !error && hayFiltrosActivos && vehiculosFiltrados.length === 0 && (
         <div className="rounded-2xl border border-dashed border-autospot-border bg-white/70 px-5 py-10 text-center">
           <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
             Tu búsqueda no arrojó resultados
@@ -270,9 +309,12 @@ const CatalogoVehiculosPage = () => {
                 </div>
 
                 <div className="p-5">
-                  <h3 className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black break-words">
-                    {vehiculo.marca} {vehiculo.modelo}
-                  </h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-bold tracking-[-0.04em] !text-autospot-black break-words">
+                      {vehiculo.marca} {vehiculo.modelo}
+                    </h3>
+                    <Estrellas puntuacion={vehiculo.calificacion_promedio} />
+                  </div>
                   <p className="mt-1 text-sm text-autospot-muted">
                     {vehiculo.anio} · {vehiculo.categoria} · {vehiculo.estacion || "Sin estación"}
                   </p>

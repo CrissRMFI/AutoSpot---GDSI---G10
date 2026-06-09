@@ -78,8 +78,12 @@ export const actualizarVehiculo = async (vehiculoId, datosVehiculo) => {
   return response.data;
 };
 
-export const obtenerCatalogoVehiculos = async () => {
-  const response = await httpClient.get(`/vehiculos/catalogo`);
+export const obtenerCatalogoVehiculos = async (puntuacionMinima) => {
+  const params = {};
+  if (puntuacionMinima) {
+    params.puntuacion_minima = puntuacionMinima;
+  }
+  const response = await httpClient.get(`/vehiculos/catalogo`, { params });
   return response.data;
 };
 

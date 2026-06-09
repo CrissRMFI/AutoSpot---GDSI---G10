@@ -11,6 +11,8 @@ Esta capa NO valida campos obligatorios, año, formato o cantidad de fotos;
 esas responsabilidades pertenecen al schema Pydantic.
 """
 import uuid
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
@@ -496,21 +498,42 @@ def cambiar_disponibilidad_vehiculo(
     return vehiculo
 
 
-def listar_vehiculos_disponibles(db: Session) -> list[Vehiculo]:
+def listar_vehiculos_disponibles(
+    db: Session,
+    puntuacion_minima: Decimal | float | None = None,
+) -> list[Vehiculo]:
     """
     Lista todos los vehículos que están habilitados y disponibles para alquiler,
     y que tienen un precio por día definido.
+
+    US 8C — Motor de filtrado de catálogo por puntuación:
+        Si se recibe `puntuacion_minima`, se devuelven únicamente los vehículos
+        cuya calificación promedio sea mayor o igual a ese valor (CA 1). Los
+        vehículos sin calificación (aún sin valoraciones) quedan excluidos
+        cuando se aplica el filtro, ya que no alcanzan la puntuación pedida.
+        Si `puntuacion_minima` es None, se devuelve el catálogo completo (CA 4).
+
+    Args:
+        db: Sesión SQLAlchemy activa.
+        puntuacion_minima: Puntuación mínima (1 a 5) a exigir, o None.
+
+    Returns:
+        Lista de vehículos disponibles que cumplen el filtro.
     """
-    return (
-        db.query(Vehiculo)
-        .filter(
-            Vehiculo.estado_registro == "HABILITADO",
-            Vehiculo.disponible == True,
-            Vehiculo.precio_por_dia.isnot(None),
-            Vehiculo.precio_por_dia > 0
-        )
-        .all()
+    query = db.query(Vehiculo).filter(
+        Vehiculo.estado_registro == "HABILITADO",
+        Vehiculo.disponible == True,
+        Vehiculo.precio_por_dia.isnot(None),
+        Vehiculo.precio_por_dia > 0,
     )
+
+    if puntuacion_minima is not None:
+        query = query.filter(
+            Vehiculo.calificacion_promedio.isnot(None),
+            Vehiculo.calificacion_promedio >= puntuacion_minima,
+        )
+
+    return query.all()
 
 
 def cambiar_ubicacion_vehiculo(

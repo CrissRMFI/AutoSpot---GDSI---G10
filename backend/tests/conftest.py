@@ -25,7 +25,7 @@ import os
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
@@ -93,12 +93,31 @@ TEST_DATABASE_URL = (
 )
 
 
+def _reset_test_schema(engine) -> None:
+    """Limpia tablas y tipos PostgreSQL residuales de corridas previas."""
+    with engine.begin() as connection:
+        connection.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        connection.execute(text("CREATE SCHEMA public"))
+        connection.execute(text(f"GRANT ALL ON SCHEMA public TO {DB_USER}"))
+        connection.execute(text("GRANT ALL ON SCHEMA public TO public"))
+
+
 def _make_test_engine():
     """Crea un engine PostgreSQL para tests."""
+    reset_engine = create_engine(
+        TEST_DATABASE_URL,
+        pool_pre_ping=True,
+    )
+    try:
+        _reset_test_schema(reset_engine)
+    finally:
+        reset_engine.dispose()
+
     return create_engine(
         TEST_DATABASE_URL,
         pool_pre_ping=True,
     )
+
 
 
 # ── Fixture: sesión de DB para tests unitarios de servicios ──────────────────

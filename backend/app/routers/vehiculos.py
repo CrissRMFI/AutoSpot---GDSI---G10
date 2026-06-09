@@ -23,7 +23,7 @@ Seguridad:
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -272,7 +272,10 @@ def listar_vehiculos_usuario(
     summary="Listar vehículos disponibles para alquilar",
     description=(
         "Obtiene el catálogo de vehículos habilitados y disponibles para alquiler. "
-        "Requiere autenticación JWT."
+        "Requiere autenticación JWT. "
+        "US 8C: admite el filtro opcional `puntuacion_minima` (1 a 5) para "
+        "devolver únicamente los vehículos cuya calificación promedio sea mayor "
+        "o igual al valor indicado."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -281,20 +284,37 @@ def listar_vehiculos_usuario(
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Token ausente o inválido.",
         },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Parámetro de filtro inválido (puntuación fuera de 1 a 5).",
+        },
     },
 )
 def listar_catalogo_vehiculos(
     usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
+    puntuacion_minima: float | None = Query(
+        default=None,
+        ge=1,
+        le=5,
+        description=(
+            "Puntuación mínima (1 a 5). Filtra los vehículos cuya calificación "
+            "promedio sea mayor o igual a este valor (US 8C, CA 1)."
+        ),
+    ),
 ) -> list[VehiculoPublicoSchema]:
     """
     GET /vehiculos/catalogo
 
     Flujo:
         1. Valida el JWT del usuario.
-        2. Retorna la lista de vehículos habilitados y disponibles.
+        2. FastAPI valida que puntuacion_minima esté entre 1 y 5 (si se envía).
+        3. Retorna la lista de vehículos habilitados y disponibles, aplicando
+           el filtro de puntuación mínima cuando corresponda.
     """
-    vehiculos = listar_vehiculos_disponibles(db=db)
+    vehiculos = listar_vehiculos_disponibles(
+        db=db,
+        puntuacion_minima=puntuacion_minima,
+    )
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
         for vehiculo in vehiculos
