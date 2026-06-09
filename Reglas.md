@@ -164,12 +164,12 @@ docker compose up --build -d
 Antes de abrir un **Pull Request** hacia **develop**, correr en la raiz:
 
 ```bash
-docker compose down
-docker compose up --build -d
-docker compose ps
-curl -I http://localhost:8000/docs
-curl -I http://localhost:3000
-docker compose exec -T web pytest -v
+  docker compose down
+  docker compose up --build -d
+  docker compose ps
+  curl -I http://localhost:8000/docs
+  curl -I http://localhost:3000
+  docker compose exec -T web pytest -v
 ```
 
 y para el frontend (parado en la raíz)
