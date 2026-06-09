@@ -252,6 +252,30 @@ class DocumentacionVehiculoNoEditableError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("La documentación del vehículo no puede modificarse en este estado")
 
+class DocumentacionVehiculoNoExistenteError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar documentación de un vehículo
+    que no tiene documentación existente.
+    """
+    def __init__(self) -> None:
+        super().__init__("No existe documentación previa para este vehículo")
+
+class ActualizarDocumentacionVehiculoDisponibleError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar la documentación de un vehículo
+    que se encuentra disponible para alquilar, lo cual no está permitido
+    para evitar inconsistencias en reservas activas.
+    """
+    def __init__(self) -> None:
+        super().__init__("No es posible actualizar la documentación del vehículo mientras esté disponible para alquilar")
+
+class ActualizarDocumentacionVehiculoConReservaActivaError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar la documentación de un vehículo
+    que tiene una reserva activa en curso.
+    """
+    def __init__(self) -> None:
+        super().__init__("No es posible actualizar la documentación del vehículo mientras haya una reserva activa en curso")
 
 class MarcaNoEncontradaError(AutoSpotError):
     """Se lanza al referenciar una marca inexistente en el catálogo."""
