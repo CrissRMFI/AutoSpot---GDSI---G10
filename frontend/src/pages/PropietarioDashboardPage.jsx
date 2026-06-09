@@ -33,17 +33,25 @@ const obtenerEstadoVehiculo = (vehiculo) => {
   const estado = (vehiculo?.estado_registro || "").toUpperCase();
 
   if (estado === "HABILITADO" || estado === "APROBADO") {
-    return vehiculo?.disponible
-      ? {
-          label: "Disponible en estación",
-          detalle: "Esperando alquiler",
-          className: "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]",
-        }
-      : {
-          label: "Alquilado",
-          detalle: "No disponible",
-          className: "bg-[#dbeafe] text-[#1d4ed8] border-[#bfdbfe]",
-        };
+    if (vehiculo?.disponible) {
+      return {
+        label: "Disponible en estación",
+        detalle: "Esperando alquiler",
+        className: "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]",
+      };
+    }
+    if (vehiculo?.alquilado) {
+      return {
+        label: "Alquilado",
+        detalle: "Con alquiler activo",
+        className: "bg-[#dbeafe] text-[#1d4ed8] border-[#bfdbfe]",
+      };
+    }
+    return {
+      label: "No disponible",
+      detalle: "Pausado por el propietario",
+      className: "bg-[#f3f4f6] text-[#374151] border-[#e5e7eb]",
+    };
   }
 
   if (estado === "EN_REVISION") {

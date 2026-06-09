@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Box, Typography, Chip } from "@mui/material";
+import ImagenModal from "../../../components/ImagenModal";
 
 const Dato = ({ label, valor }) => (
   <Box>
@@ -9,22 +11,33 @@ const Dato = ({ label, valor }) => (
   </Box>
 );
 
-const Foto = ({ label, url }) => (
-  <Box sx={{ mb: 1 }}>
-    <Typography variant="caption" sx={{ display: "block", mb: 0.5 }}>{label}</Typography>
-    {url ? (
-      <a href={url} target="_blank" rel="noreferrer">
-        <img
-          src={url}
-          alt={label}
-          style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 8 }}
-        />
-      </a>
-    ) : (
-      <Typography variant="body2" color="textSecondary">—</Typography>
-    )}
-  </Box>
-);
+const Foto = ({ label, url }) => {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <Box sx={{ mb: 1 }}>
+      <Typography variant="caption" sx={{ display: "block", mb: 0.5 }}>{label}</Typography>
+      {url ? (
+        <button
+          type="button"
+          onClick={() => setAbierto(true)}
+          style={{ padding: 0, border: "none", background: "none", cursor: "pointer" }}
+        >
+          <img
+            src={url}
+            alt={label}
+            style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 8, display: "block" }}
+          />
+        </button>
+      ) : (
+        <Typography variant="body2" color="textSecondary">—</Typography>
+      )}
+      {abierto && (
+        <ImagenModal url={url} alt={label} onClose={() => setAbierto(false)} />
+      )}
+    </Box>
+  );
+};
 
 /**
  * Vista de solo lectura de un check-in, con el mismo diseño que el

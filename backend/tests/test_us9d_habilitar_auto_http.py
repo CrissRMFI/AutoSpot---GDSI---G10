@@ -301,6 +301,39 @@ class TestCA4_VehiculoConReservaHTTP:
             Base.metadata.drop_all(engine)
             engine.dispose()
 
+    def test_ca4b_no_se_puede_marcar_disponible_con_reserva_activa(self):
+        """
+        Un auto con un alquiler/reserva activo NO debe poder marcarse como
+        disponible (volver al catálogo) mientras el alquiler siga en curso.
+        """
+        engine, client_context = _crear_cliente()
+        try:
+            with client_context as client:
+                vehiculo, token = _registrar_vehiculo(client, "ca4b@autospot.com")
+                _forzar_estado_vehiculo(engine, vehiculo["id"], "HABILITADO")
+
+                conductor_id, _ = _registrar_y_loguear_usuario(
+                    client,
+                    "cliente.ca4b@autospot.com",
+                    rol="CLIENTE",
+                )
+                _crear_reserva_activa(engine, vehiculo["id"], conductor_id)
+
+                response = client.patch(
+                    f"/vehiculos/{vehiculo['id']}/disponibilidad",
+                    json={"disponible": True},
+                    headers=_auth_headers(token),
+                )
+
+                assert response.status_code in [400, 403, 409], response.text
+                assert "reserva o alquiler en curso" in response.text.lower(), (
+                    response.text
+                )
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
 
 class TestSeguridad_CambiarDisponibilidadHTTP:
     def test_sin_token_devuelve_401(self):

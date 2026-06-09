@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import NotificacionesBell from "../features/notificaciones/components/NotificacionesBell";
@@ -29,6 +29,15 @@ const DashboardLayout = ({ secciones = [], children }) => {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
   const [abierto, setAbierto] = useState(false);
+
+  // En mobile, cuando el menú está abierto ocupa toda la pantalla: bloqueamos
+  // el scroll del fondo para que no se vea nada detrás del menú.
+  useEffect(() => {
+    document.body.style.overflow = abierto ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [abierto]);
 
   const cerrarSesion = async () => {
     try {
@@ -98,7 +107,11 @@ const DashboardLayout = ({ secciones = [], children }) => {
       {/* Sidebar */}
       <aside
         id="dashboard-sidebar"
-        className={`${abierto ? "block" : "hidden"} flex flex-col gap-6 border-b border-white/10 bg-autospot-black px-5 py-6 text-autospot-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:border-b-0 lg:border-r lg:px-6 lg:py-8`}
+        className={`${
+          abierto
+            ? "fixed inset-0 z-[70] flex overflow-y-auto pt-20"
+            : "hidden"
+        } flex-col gap-6 bg-autospot-black px-5 pb-8 text-autospot-white lg:sticky lg:top-0 lg:z-auto lg:flex lg:h-screen lg:overflow-y-auto lg:border-r lg:border-white/10 lg:px-6 lg:py-8 lg:pt-8`}
       >
         <div>
           <Link

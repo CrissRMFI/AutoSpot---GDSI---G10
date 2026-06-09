@@ -76,6 +76,7 @@ from app.services.vehiculo import (
     actualizar_vehiculo,
     listar_vehiculos_disponibles,
     cambiar_ubicacion_vehiculo,
+    verificar_alquileres_activos,
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
@@ -425,6 +426,10 @@ def obtener_detalle_vehiculo(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+    vehiculo.alquilado = verificar_alquileres_activos(
+        db=db, vehiculo_id=vehiculo_id
+    )
 
     return VehiculoDetallePropietarioSchema.model_validate(vehiculo)
 
