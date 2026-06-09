@@ -23,7 +23,7 @@ Seguridad:
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -40,6 +40,9 @@ from app.exceptions import (
     VehiculoConReservaActivaError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
+    ActualizarDocumentacionVehiculoDisponibleError,
+    ActualizarDocumentacionVehiculoConReservaActivaError,
+    DocumentacionVehiculoNoExistenteError,
 )
 from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
@@ -64,6 +67,7 @@ from app.services.vehiculo import (
     agregar_foto_a_vehiculo,
     cambiar_disponibilidad_vehiculo,
     cargar_documentacion_vehiculo,
+    actualizar_documentacion_vehiculo,
     definir_precio_vehiculo,
     listar_vehiculos_por_propietario,
     reemplazar_foto_vehiculo,
@@ -72,6 +76,7 @@ from app.services.vehiculo import (
     actualizar_vehiculo,
     listar_vehiculos_disponibles,
     cambiar_ubicacion_vehiculo,
+    verificar_alquileres_activos,
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
@@ -272,7 +277,10 @@ def listar_vehiculos_usuario(
     summary="Listar vehículos disponibles para alquilar",
     description=(
         "Obtiene el catálogo de vehículos habilitados y disponibles para alquiler. "
-        "Requiere autenticación JWT."
+        "Requiere autenticación JWT. "
+        "US 8C: admite el filtro opcional `puntuacion_minima` (1 a 5) para "
+        "devolver únicamente los vehículos cuya calificación promedio sea mayor "
+        "o igual al valor indicado."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -281,20 +289,37 @@ def listar_vehiculos_usuario(
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Token ausente o inválido.",
         },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Parámetro de filtro inválido (puntuación fuera de 1 a 5).",
+        },
     },
 )
 def listar_catalogo_vehiculos(
     usuario_actual: dict = Depends(get_usuario_actual),
     db: Session = Depends(get_db),
+    puntuacion_minima: float | None = Query(
+        default=None,
+        ge=1,
+        le=5,
+        description=(
+            "Puntuación mínima (1 a 5). Filtra los vehículos cuya calificación "
+            "promedio sea mayor o igual a este valor (US 8C, CA 1)."
+        ),
+    ),
 ) -> list[VehiculoPublicoSchema]:
     """
     GET /vehiculos/catalogo
 
     Flujo:
         1. Valida el JWT del usuario.
-        2. Retorna la lista de vehículos habilitados y disponibles.
+        2. FastAPI valida que puntuacion_minima esté entre 1 y 5 (si se envía).
+        3. Retorna la lista de vehículos habilitados y disponibles, aplicando
+           el filtro de puntuación mínima cuando corresponda.
     """
-    vehiculos = listar_vehiculos_disponibles(db=db)
+    vehiculos = listar_vehiculos_disponibles(
+        db=db,
+        puntuacion_minima=puntuacion_minima,
+    )
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
         for vehiculo in vehiculos
@@ -401,6 +426,10 @@ def obtener_detalle_vehiculo(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+    vehiculo.alquilado = verificar_alquileres_activos(
+        db=db, vehiculo_id=vehiculo_id
+    )
 
     return VehiculoDetallePropietarioSchema.model_validate(vehiculo)
 
@@ -549,6 +578,90 @@ def cargar_documentacion_legal_vehiculo(
 
     return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
 
+
+@router.patch(
+    "/vehiculos/{vehiculo_id}/documentacion/actualizar",
+    response_model=VehiculoDocumentacionResponseSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Actualiza documentación legal del vehículo",
+    description=(
+        "Actualiza la documentación legal y operativa de un vehículo existente. "
+        "Requiere autenticación JWT y solo permite modificar vehículos propios."
+        "El vehiculo debe figurar como no disponible para poder actualizar su documentación."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Documentación legal actualizada exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta modificar un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Vehiculo no encontrado"}
+                }
+            },
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Payload inválido.",
+        },
+    },
+)
+def actualizar_documentacion_legal_vehiculo(
+    vehiculo_id: uuid.UUID,
+    payload: DocumentacionVehiculoSchema,
+    usuario_actual: dict = Depends(requerir_rol_propietario),
+    db: Session = Depends(get_db),
+) -> VehiculoDocumentacionResponseSchema:
+    """
+    PATCH /vehiculos/{vehiculo_id}/documentacion/actualizar
+
+    Flujo:
+        1. FastAPI valida vehiculo_id como UUID.
+        2. Pydantic valida los campos documentales obligatorios.
+        3. Se valida el JWT.
+        4. Se verifica que el vehículo exista y pertenezca al usuario autenticado.
+        5. El servicio actualiza la documentación legal del vehículo.
+    """
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        vehiculo = actualizar_documentacion_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            schema=payload,
+        )
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except DocumentacionVehiculoNoExistenteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except ActualizarDocumentacionVehiculoDisponibleError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except ActualizarDocumentacionVehiculoConReservaActivaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    
+    return VehiculoDocumentacionResponseSchema.model_validate(vehiculo)
 
 @router.patch(
     "/vehiculos/{vehiculo_id}/disponibilidad",

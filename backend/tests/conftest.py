@@ -25,8 +25,9 @@ import os
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.database import Base, get_db
 from app.main import app
@@ -42,10 +43,13 @@ from app.models.checkin_vehiculo import CheckinVehiculo  # noqa: F401
 from app.models.checkout_vehiculo import CheckoutVehiculo  # noqa: F401
 from app.models.marca import Marca, Modelo  # noqa: F401
 from app.models.notificacion import Notificacion  # noqa: F401
+from app.models.push_subscription import PushSubscription  # noqa: F401
 from app.models.reserva import Reserva  # noqa: F401
 from app.models.usuario import Usuario  # noqa: F401
 from app.models.vehiculo import Vehiculo  # noqa: F401
 from app.models.token_blacklist import TokenBlacklist  # noqa: F401
+from app.models.valoracion import Valoracion  # noqa: F401
+from app.models.testimonio import Testimonio  # noqa: F401
 
 
 # ── Catálogo inicial sembrado en cada test ───────────────────────────────────
@@ -91,12 +95,47 @@ TEST_DATABASE_URL = (
 )
 
 
+def _reset_test_schema(engine) -> None:
+    """Limpia tablas y tipos PostgreSQL residuales de corridas previas."""
+    with engine.begin() as connection:
+        connection.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        connection.execute(text("CREATE SCHEMA public"))
+        connection.execute(text(f"GRANT ALL ON SCHEMA public TO {DB_USER}"))
+        connection.execute(text("GRANT ALL ON SCHEMA public TO public"))
+
+
 def _make_test_engine():
-    """Crea un engine PostgreSQL para tests."""
-    return create_engine(
+    """
+    Crea un engine PostgreSQL para tests.
+
+    Usa NullPool a propósito: la suite comparte una sola base física
+    (`autospot_test_db`) y cada test recrea el schema con
+    `DROP SCHEMA public CASCADE`. Con un pool persistente (el QueuePool por
+    defecto), las conexiones quedaban abiertas entre tests y, como el TestClient
+    atiende los requests en otro hilo, una conexión reutilizada podía consultar
+    un schema a medio reconstruir por otro engine → fallos intermitentes del
+    tipo `relation "tokens_blacklist" does not exist`.
+
+    NullPool abre una conexión nueva por checkout y la cierra al devolverla, de
+    modo que ninguna conexión sobrevive al test que la creó y `engine.dispose()`
+    no deja nada colgado. Esto elimina la condición de carrera entre tests.
+    """
+    reset_engine = create_engine(
         TEST_DATABASE_URL,
+        poolclass=NullPool,
         pool_pre_ping=True,
     )
+    try:
+        _reset_test_schema(reset_engine)
+    finally:
+        reset_engine.dispose()
+
+    return create_engine(
+        TEST_DATABASE_URL,
+        poolclass=NullPool,
+        pool_pre_ping=True,
+    )
+
 
 
 # ── Fixture: sesión de DB para tests unitarios de servicios ──────────────────

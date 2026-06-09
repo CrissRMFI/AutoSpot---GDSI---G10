@@ -139,6 +139,14 @@ class Vehiculo(Base):
         doc="Tarifa diaria definida por el propietario para alquilar el vehículo.",
     )
 
+    # ── Valoración promedio (US 17C) ─────────────────────────────────────────
+    calificacion_promedio: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=3, scale=2),
+        nullable=True,
+        default=None,
+        doc="Promedio de calificación calculado a partir de las valoraciones recibidas.",
+    )
+
     # ── Estado del registro ──────────────────────────────────────────────────
     estado_registro: Mapped[str] = mapped_column(
         String(50),

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, CheckCircle2, Clock, LoaderCircle } from "lucide-react";
 import CheckinForm from "../components/CheckinForm";
+import MensajeModal from "../components/MensajeModal";
 import { obtenerMiAlquiler } from "../api/reservasService";
 import {
   crearCheckin,
@@ -35,6 +36,15 @@ const CheckInReservaPage = () => {
   const [errorInicial, setErrorInicial] = useState("");
   const [checkinExistente, setCheckinExistente] = useState(null);
   const [reserva, setReserva] = useState(null);
+  const [mensajeModal, setMensajeModal] = useState(null);
+
+  const cerrarMensajeModal = () => {
+    const irAReservas = mensajeModal?.irAReservas;
+    setMensajeModal(null);
+    if (irAReservas) {
+      navigate("/usuario/reservas", { replace: true });
+    }
+  };
 
   useEffect(() => {
     let cancelado = false;
@@ -121,8 +131,13 @@ const CheckInReservaPage = () => {
       }
       setCheckinExistente(checkinEnviado);
       recordarEstadoCheckinReserva(reservaId, checkinEnviado.estado || "PENDIENTE");
-      alert("Check-in enviado con éxito. Esperando validación del Administrador.");
-      navigate("/usuario/reservas", { replace: true });
+      setMensajeModal({
+        tipo: "exito",
+        titulo: "Check-in enviado",
+        mensaje:
+          "Check-in enviado con éxito. Esperando validación del administrador.",
+        irAReservas: true,
+      });
     } catch (error) {
       const detalle = error.response?.data?.detail || error.message;
       if (esErrorDeCheckinExistente(detalle)) {
@@ -137,9 +152,11 @@ const CheckInReservaPage = () => {
         return;
       }
 
-      alert(
-        "Error al enviar el check-in: " + detalle,
-      );
+      setMensajeModal({
+        tipo: "error",
+        titulo: "No se pudo enviar el check-in",
+        mensaje: detalle || "Ocurrió un error inesperado. Volvé a intentarlo.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -206,6 +223,14 @@ const CheckInReservaPage = () => {
           motivoRechazo={initialData?.motivo_rechazo}
         />
       )}
+
+      <MensajeModal
+        abierto={Boolean(mensajeModal)}
+        tipo={mensajeModal?.tipo}
+        titulo={mensajeModal?.titulo}
+        mensaje={mensajeModal?.mensaje}
+        onClose={cerrarMensajeModal}
+      />
     </section>
   );
 };

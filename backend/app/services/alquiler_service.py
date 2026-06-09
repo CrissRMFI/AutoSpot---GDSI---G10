@@ -22,18 +22,20 @@ from app.exceptions import (
     ReservaSinCheckinAprobadoError,
     VehiculoNoDisponibleParaReservaError,
     VehiculoNoEncontradoError,
+    DatosPersonalesNoRegistradosError
 )
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
-from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.schemas.alquiler import CrearReservaPayloadSchema
 from app.services.notificacion import (
+    RECURSO_RESERVA,
     TIPO_AUTO_DEVUELTO,
     cerrar_notificaciones_reserva_pendiente_verificacion,
     cerrar_notificaciones_de_reserva_por_tipo,
+    crear_notificacion_usuario,
     crear_notificacion_reserva_aprobada,
     crear_notificacion_reserva_rechazada,
     crear_notificaciones_reserva_pendiente_verificacion,
@@ -124,6 +126,14 @@ def crear_reserva_con_codigo(
 
     Para esta historia se bloquea el vehículo y se emite el código de retiro.
     """
+    datos_existentes = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == conductor_id)
+        .first()
+    )
+    if datos_existentes is None:
+        raise DatosPersonalesNoRegistradosError()
+    
     vehiculo = db.query(Vehiculo).filter(Vehiculo.id == schema.vehiculo_id).first()
     if vehiculo is None:
         raise VehiculoNoEncontradoError()
@@ -375,14 +385,15 @@ def registrar_salida(db: Session, reserva_id: uuid.UUID) -> Reserva:
     reserva.estado = "EN_CURSO"
     reserva.fecha_salida_real = datetime.now(timezone.utc)
 
-    db.add(Notificacion(
+    crear_notificacion_usuario(
+        db=db,
         usuario_id=reserva.vehiculo.propietario_id,
         tipo="ALQUILER_INICIADO",
         titulo="Alquiler Iniciado",
         mensaje=f"El alquiler de tu auto {reserva.vehiculo.marca} {reserva.vehiculo.modelo} ha iniciado.",
-        recurso_tipo="RESERVA",
+        recurso_tipo=RECURSO_RESERVA,
         recurso_id=reserva.id,
-    ))
+    )
 
     db.commit()
     db.refresh(reserva)
@@ -520,14 +531,15 @@ def _notificar_admins(
         .all()
     )
     for admin in admins:
-        db.add(Notificacion(
+        crear_notificacion_usuario(
+            db=db,
             usuario_id=admin.id,
             tipo=tipo,
             titulo=titulo,
             mensaje=mensaje,
-            recurso_tipo="RESERVA",
+            recurso_tipo=RECURSO_RESERVA,
             recurso_id=reserva.id,
-        ))
+        )
 
 
 def entregar_auto(

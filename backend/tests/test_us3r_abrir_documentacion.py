@@ -71,8 +71,7 @@ def _crear_documentacion_conductor(db_session, usuario_id):
     ahora = datetime.now(timezone.utc)
     documentacion = DocumentacionHabilitanteConductor(
         usuario_id=usuario_id,
-        numero_licencia="LIC-3R-001",
-        categoria="B",
+        categoria="B1",
         fecha_emision=date(2024, 1, 1),
         fecha_vencimiento=date(2029, 1, 1),
         foto_licencia_frente_url="https://cdn.autospot.test/lic-frente.jpg",
@@ -128,8 +127,7 @@ class TestUS3RServicioAbrirDocumentacion:
         assert detalle.tipo == TIPO_SOLICITUD_CONDUCTOR
         assert detalle.recurso_id == documentacion.id
         assert detalle.usuario_email == "conductor.us3r@autospot.com"
-        assert detalle.numero_licencia == "LIC-3R-001"
-        assert detalle.categoria_licencia == "B"
+        assert detalle.categoria_licencia == "B1"
         assert [documento.nombre for documento in detalle.documentos] == [
             "Licencia frente",
             "Licencia dorso",

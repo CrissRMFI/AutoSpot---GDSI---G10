@@ -1,5 +1,18 @@
 import { useEffect, useState } from "react";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
+import { useAuth } from "../../auth/hooks/useAuth";
+
+const rutaPorRol = (rol) => {
+  switch ((rol || "").toUpperCase()) {
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "PROPIETARIO":
+      return "/propietario/dashboard";
+    case "CLIENTE":
+    default:
+      return "/usuario/dashboard";
+  }
+};
 
 const cars = [
   {
@@ -372,6 +385,13 @@ function FeatureCard({ feature }) {
 const ESTACIONES_POR_PAGINA = 4;
 
 export default function LandingPage() {
+  const { estaAutenticado, usuario } = useAuth();
+  const destinoApp = estaAutenticado ? rutaPorRol(usuario?.rol) : null;
+  const hrefLogin = destinoApp ?? "/login";
+  const hrefRegistro = destinoApp ?? "/registro";
+  const labelPanel = (textoSinSesion) =>
+    estaAutenticado ? "Ir a mi panel" : textoSinSesion;
+
   const [estaciones, setEstaciones] = useState([]);
   const [paginaEstaciones, setPaginaEstaciones] = useState(0);
 
@@ -447,19 +467,19 @@ export default function LandingPage() {
           </li>
           <li>
             <a
-              href="/login"
+              href={hrefLogin}
               className="rounded-full bg-[#7b1c2e] px-5 py-2.5 text-sm font-medium !text-[#f5f2ed] transition hover:scale-[1.03] hover:bg-[#5a1420]"
             >
-              Empezar ahora
+              {labelPanel("Empezar ahora")}
             </a>
           </li>
         </ul>
 
         <a
-          href="/login"
+          href={hrefLogin}
           className="rounded-full bg-[#7b1c2e] px-4 py-2 text-xs font-medium !text-[#f5f2ed] lg:hidden"
         >
-          Entrar
+          {estaAutenticado ? "Mi panel" : "Entrar"}
         </a>
       </nav>
 
@@ -486,7 +506,9 @@ export default function LandingPage() {
           </p>
 
           <div className="animate-autospot-fade-up mt-10 flex flex-wrap gap-3.5">
-            <PrimaryButton href="/login">Empezar ahora →</PrimaryButton>
+            <PrimaryButton href={hrefLogin}>
+              {labelPanel("Empezar ahora")} →
+            </PrimaryButton>
             <SecondaryButton>Ver cómo funciona</SecondaryButton>
           </div>
 
@@ -756,7 +778,9 @@ export default function LandingPage() {
             </ul>
 
             <div className="mt-9">
-              <PrimaryButton href="/registro">Crear cuenta →</PrimaryButton>
+              <PrimaryButton href={hrefRegistro}>
+                {labelPanel("Crear cuenta")} →
+              </PrimaryButton>
             </div>
           </div>
 
@@ -852,12 +876,12 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-3.5">
-          <PrimaryButton href="/registro" light>
-            Crear cuenta
+          <PrimaryButton href={hrefRegistro} light>
+            {labelPanel("Crear cuenta")}
           </PrimaryButton>
 
-          <SecondaryButton href="/login" light>
-            Iniciar sesión
+          <SecondaryButton href={hrefLogin} light>
+            {labelPanel("Iniciar sesión")}
           </SecondaryButton>
         </div>
       </section>

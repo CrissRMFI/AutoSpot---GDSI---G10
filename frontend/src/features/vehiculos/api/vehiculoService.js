@@ -42,6 +42,18 @@ export const cargarDocumentacionVehiculo = async (
   return response.data;
 };
 
+export const actualizarDocumentacionVehiculo = async (
+  vehiculoId,
+  documentacion,
+) => {
+  const response = await httpClient.patch(
+    `/vehiculos/${vehiculoId}/documentacion/actualizar`,
+    documentacion,
+  );
+
+  return response.data;
+};
+
 export const listarVehiculosDelPropietario = async (propietarioId) => {
   const response = await httpClient.get(`/usuarios/${propietarioId}/vehiculos`);
 
@@ -78,8 +90,12 @@ export const actualizarVehiculo = async (vehiculoId, datosVehiculo) => {
   return response.data;
 };
 
-export const obtenerCatalogoVehiculos = async () => {
-  const response = await httpClient.get(`/vehiculos/catalogo`);
+export const obtenerCatalogoVehiculos = async (puntuacionMinima) => {
+  const params = {};
+  if (puntuacionMinima) {
+    params.puntuacion_minima = puntuacionMinima;
+  }
+  const response = await httpClient.get(`/vehiculos/catalogo`, { params });
   return response.data;
 };
 

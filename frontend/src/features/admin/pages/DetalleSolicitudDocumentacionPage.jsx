@@ -358,11 +358,6 @@ const DetalleSolicitudDocumentacionPage = () => {
         descripcion: "Datos de licencia cargados por el conductor.",
         campos: [
           {
-            id: "licencia",
-            label: "Número de licencia",
-            value: detalle.numero_licencia,
-          },
-          {
             id: "categoria-licencia",
             label: "Categoría",
             value: detalle.categoria_licencia,

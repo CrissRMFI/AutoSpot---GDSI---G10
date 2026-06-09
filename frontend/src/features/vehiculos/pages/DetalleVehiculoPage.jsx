@@ -478,16 +478,26 @@ const DetalleVehiculoPage = () => {
                   Disponibilidad
                 </p>
                 <p className="mt-1 text-sm !text-white">
-                  {vehiculo.disponible ? "Disponible para alquilar" : "No disponible"}
+                  {vehiculo.disponible
+                    ? "Disponible para alquilar"
+                    : vehiculo.alquilado
+                      ? "Alquilado"
+                      : "No disponible"}
                 </p>
                 <button
                   type="button"
                   onClick={handleToggleDisponible}
-                  disabled={togglingDisponible || isDisponibilidadInactiva}
+                  disabled={
+                    togglingDisponible ||
+                    isDisponibilidadInactiva ||
+                    vehiculo.alquilado
+                  }
                   title={
-                    isDisponibilidadInactiva
-                      ? "El vehículo debe estar Aprobado para definir disponibilidad"
-                      : ""
+                    vehiculo.alquilado
+                      ? "No se puede cambiar la disponibilidad: el vehículo tiene un alquiler activo"
+                      : isDisponibilidadInactiva
+                        ? "El vehículo debe estar Aprobado para definir disponibilidad"
+                        : ""
                   }
                   className={`mt-3 inline-flex w-full items-center justify-center rounded-full px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     vehiculo.disponible
@@ -592,7 +602,20 @@ const DetalleVehiculoPage = () => {
                 >
                   Modificar datos
                 </Link>
-                {puedeCargarDocumentacion ? (
+                {vehiculo?.estado_registro === "HABILITADO" ? (
+                  vehiculo.disponible ? (
+                    <span className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55" title="No se puede actualizar mientras el vehículo está disponible o tiene alquileres activos">
+                      Actualizar documentación
+                    </span>
+                  ) : (
+                    <Link
+                      to={`/vehiculos/${vehiculo.id}/documentacion/actualizar`}
+                      className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                    >
+                      Actualizar documentación
+                    </Link>
+                  )
+                ) : puedeCargarDocumentacion ? (
                   <Link
                     to={`/vehiculos/${vehiculo.id}/documentacion`}
                     className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"

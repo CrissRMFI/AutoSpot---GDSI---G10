@@ -252,6 +252,30 @@ class DocumentacionVehiculoNoEditableError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__("La documentación del vehículo no puede modificarse en este estado")
 
+class DocumentacionVehiculoNoExistenteError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar documentación de un vehículo
+    que no tiene documentación existente.
+    """
+    def __init__(self) -> None:
+        super().__init__("No existe documentación previa para este vehículo")
+
+class ActualizarDocumentacionVehiculoDisponibleError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar la documentación de un vehículo
+    que se encuentra disponible para alquilar, lo cual no está permitido
+    para evitar inconsistencias en reservas activas.
+    """
+    def __init__(self) -> None:
+        super().__init__("No es posible actualizar la documentación del vehículo mientras esté disponible para alquilar")
+
+class ActualizarDocumentacionVehiculoConReservaActivaError(AutoSpotError):
+    """
+    Se lanza cuando se intenta actualizar la documentación de un vehículo
+    que tiene una reserva activa en curso.
+    """
+    def __init__(self) -> None:
+        super().__init__("No es posible actualizar la documentación del vehículo mientras haya una reserva activa en curso")
 
 class MarcaNoEncontradaError(AutoSpotError):
     """Se lanza al referenciar una marca inexistente en el catálogo."""
@@ -297,3 +321,42 @@ class NotificacionNoEncontradaError(AutoSpotError):
     """Se lanza cuando una notificación no existe o no pertenece al usuario."""
     def __init__(self) -> None:
         super().__init__("Notificacion no encontrada")
+
+
+class ReservaNoFinalizadaError(AutoSpotError):
+    """
+    Se lanza al intentar valorar una reserva que no está FINALIZADA
+    o que no tiene devolución física registrada.
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "Solo se puede valorar una reserva finalizada con devolución registrada"
+        )
+
+
+class ValoracionYaRegistradaError(AutoSpotError):
+    """Se lanza al intentar registrar una segunda valoración para la misma reserva."""
+    def __init__(self) -> None:
+        super().__init__("Ya existe una valoración para esta reserva")
+
+
+class TestimonioYaRegistradoError(AutoSpotError):
+    """
+    Se lanza al intentar registrar un segundo testimonio para la misma reserva.
+
+    Corresponde al CA 3 de la US 18C: inmutabilidad y transparencia de reseñas.
+    Mensaje canónico: "Ya existe un testimonio para esta reserva"
+    """
+    def __init__(self) -> None:
+        super().__init__("Ya existe un testimonio para esta reserva")
+
+
+class ReservaNoFinalizadaParaTestimonioError(AutoSpotError):
+    """
+    Se lanza al intentar dejar un testimonio sobre una reserva que no está
+    en estado FINALIZADA con cierre administrativo (CA 1 US 18C).
+    """
+    def __init__(self) -> None:
+        super().__init__(
+            "Solo se puede dejar un testimonio sobre una contratación cerrada administrativamente"
+        )

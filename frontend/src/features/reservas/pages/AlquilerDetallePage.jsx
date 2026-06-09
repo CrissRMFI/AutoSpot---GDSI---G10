@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, RotateCcw, X } from "lucide-react";
@@ -7,10 +8,14 @@ import {
   obtenerCheckoutDeReserva,
   obtenerMiAlquiler,
   rechazarCheckout,
+  enviarValoracion,
+  enviarTestimonio,
 } from "../api/reservasService";
 import ConfirmacionModal from "../components/ConfirmacionModal";
 import MensajeModal from "../components/MensajeModal";
 import RechazoModal from "../components/RechazoModal";
+import ValoracionModal from "../components/ValoracionModal";
+import ImagenModal from "../../../components/ImagenModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const ESTADO_UI = {
@@ -75,6 +80,7 @@ const AlquilerDetallePage = () => {
   const [rechazoAbierto, setRechazoAbierto] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
   const cargarDetalle = useCallback(async () => {
     setCargando(true);
@@ -171,6 +177,34 @@ const AlquilerDetallePage = () => {
         tipo: "error",
         titulo: "No se pudo rechazar",
         mensaje: err.response?.data?.detail || "Ocurrió un error inesperado.",
+      });
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const handleEnviarValoracion = async (puntaje, descripcion) => {
+    setProcesando(true);
+    try {
+      const peticiones = [enviarValoracion(reservaId, puntaje)];
+      if (descripcion && descripcion.trim() !== "") {
+        peticiones.push(enviarTestimonio(reservaId, descripcion));
+      }
+      
+      await Promise.all(peticiones);
+
+      setIsRatingModalOpen(false);
+      setMensaje({
+        tipo: "exito",
+        titulo: "¡Gracias por tu valoración!",
+        mensaje: "Tu opinión nos ayuda a mejorar el servicio.",
+      });
+    } catch (err) {
+      setIsRatingModalOpen(false);
+      setMensaje({
+        tipo: "error",
+        titulo: "Error al enviar",
+        mensaje: err.response?.data?.detail || "No se pudo registrar la valoración o el testimonio.",
       });
     } finally {
       setProcesando(false);
@@ -388,7 +422,20 @@ const AlquilerDetallePage = () => {
         tipo={mensaje?.tipo}
         titulo={mensaje?.titulo}
         mensaje={mensaje?.mensaje}
-        onClose={() => setMensaje(null)}
+        onClose={() => {
+          const esCheckoutConfirmado = mensaje?.titulo === "Checkout confirmado";
+          setMensaje(null);
+          if (esCheckoutConfirmado) {
+            setIsRatingModalOpen(true);
+          }
+        }}
+      />
+
+      <ValoracionModal
+        abierto={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        onEnviar={handleEnviarValoracion}
+        cargando={procesando}
       />
     </section>
   );
@@ -431,24 +478,35 @@ const FotosCheckout = ({ checkout }) => {
   return (
     <div className="mt-5 grid grid-cols-2 gap-2">
       {fotos.map(([label, url]) => (
-        <a
-          key={`${label}-${url}`}
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="group overflow-hidden rounded-xl border border-autospot-border bg-white"
-        >
-          <img
-            src={url}
-            alt={label}
-            className="aspect-video w-full object-cover transition group-hover:scale-[1.03]"
-          />
-          <span className="block truncate px-2 py-1 text-[11px] font-bold text-autospot-muted">
-            {label}
-          </span>
-        </a>
+        <FotoCheckout key={`${label}-${url}`} label={label} url={url} />
       ))}
     </div>
+  );
+};
+
+const FotoCheckout = ({ label, url }) => {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="group overflow-hidden rounded-xl border border-autospot-border bg-white text-left"
+      >
+        <img
+          src={url}
+          alt={label}
+          className="aspect-video w-full object-cover transition group-hover:scale-[1.03]"
+        />
+        <span className="block truncate px-2 py-1 text-[11px] font-bold text-autospot-muted">
+          {label}
+        </span>
+      </button>
+      {abierto && (
+        <ImagenModal url={url} alt={label} onClose={() => setAbierto(false)} />
+      )}
+    </>
   );
 };
 

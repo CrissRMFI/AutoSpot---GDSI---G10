@@ -5,7 +5,7 @@ Criterios de Aceptación cubiertos a nivel servicio/schema:
   ┌─────┬──────────────────────────────────────────────────────────────────┐
   │ CA  │ Descripción                                                      │
   ├─────┼──────────────────────────────────────────────────────────────────┤
-  │ CA1 │ Cuenta creada + carga numero_licencia, categoria y fechas        │
+  │ CA1 │ Cuenta creada + carga categoria y fechas de la licencia          │
   │ CA2 │ Cuenta creada + sube foto frente y dorso de la licencia          │
   │ CA3 │ Campos vacíos o fechas inconsistentes → registro rechazado       │
   │ CA4 │ Documentación ya registrada → segundo registro rechazado         │
@@ -36,8 +36,7 @@ from app.services.usuario import crear_usuario
 
 
 PAYLOAD_VALIDO = {
-    "numero_licencia": "LIC-12345678",
-    "categoria": "B",
+    "categoria": "B1",
     "fecha_emision": date(2024, 1, 10),
     "fecha_vencimiento": date(2029, 1, 10),
     "foto_licencia_frente_url": "uploads/licencia/12345678/frente.jpg",
@@ -71,8 +70,7 @@ class TestCA1CA2_RegistroDocumentacionHabilitante:
         # CA1 — Datos de la licencia
         assert documentacion.id is not None
         assert documentacion.usuario_id == usuario.id
-        assert documentacion.numero_licencia == "LIC-12345678"
-        assert documentacion.categoria == "B"
+        assert documentacion.categoria == "B1"
         assert documentacion.fecha_emision == date(2024, 1, 10)
         assert documentacion.fecha_vencimiento == date(2029, 1, 10)
 
@@ -100,12 +98,6 @@ class TestCA3_ValidacionPayload:
         assert any(mensaje_esperado in msg for msg in mensajes), (
             f"Se esperaba '{mensaje_esperado}' en los errores, "
             f"pero se recibió: {mensajes}"
-        )
-
-    def test_numero_licencia_vacio_es_invalido(self):
-        self._assert_error_validacion(
-            {**PAYLOAD_VALIDO, "numero_licencia": ""},
-            "Campo obligatorio",
         )
 
     def test_foto_frente_vacia_es_invalida(self):
@@ -148,13 +140,13 @@ class TestCA3_ValidacionPayload:
 
     def test_campo_obligatorio_omitido_es_invalido(self):
         payload = PAYLOAD_VALIDO.copy()
-        payload.pop("numero_licencia")
+        payload.pop("foto_licencia_frente_url")
 
         with pytest.raises(ValidationError) as exc_info:
             DocumentacionHabilitanteConductorSchema(**payload)
 
         campos_con_error = [error["loc"][0] for error in exc_info.value.errors()]
-        assert "numero_licencia" in campos_con_error
+        assert "foto_licencia_frente_url" in campos_con_error
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -220,8 +212,7 @@ class TestCA5_ActualizacionDocumentacion:
         payload_actualizado = DocumentacionHabilitanteConductorSchema(
             **{
                 **PAYLOAD_VALIDO,
-                "numero_licencia": "LIC-99999999",
-                "categoria": "D",
+                "categoria": "B2",
                 "fecha_vencimiento": date(2031, 1, 10),
             }
         )
@@ -233,8 +224,7 @@ class TestCA5_ActualizacionDocumentacion:
         )
 
         assert documentacion_actualizada.usuario_id == usuario.id
-        assert documentacion_actualizada.numero_licencia == "LIC-99999999"
-        assert documentacion_actualizada.categoria == "D"
+        assert documentacion_actualizada.categoria == "B2"
         assert documentacion_actualizada.fecha_vencimiento == date(2031, 1, 10)
 
     def test_no_actualiza_si_no_hay_documentacion_previa(self, db_session):
@@ -273,7 +263,7 @@ class TestObtenerDocumentacion:
         )
 
         assert documentacion.usuario_id == usuario.id
-        assert documentacion.numero_licencia == "LIC-12345678"
+        assert documentacion.categoria == "B1"
 
     def test_lanza_excepcion_si_no_hay_documentacion(self, db_session):
         usuario = _crear_usuario_de_prueba(

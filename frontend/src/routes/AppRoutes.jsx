@@ -66,14 +66,9 @@ const PublicOnlyRoute = ({ children }) => {
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={
-          <PublicOnlyRoute>
-            <LandingPage />
-          </PublicOnlyRoute>
-        }
-      />
+      {/* El inicio es accesible siempre: un usuario logueado puede volver a la
+          landing. Los botones de la landing lo llevan a su panel si tiene sesión. */}
+      <Route path="/" element={<LandingPage />} />
 
       <Route
         path="/login"
@@ -226,6 +221,15 @@ const AppRoutes = () => {
 
         <Route
           path="/vehiculos/:vehiculoId/documentacion"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DocumentacionVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehiculos/:vehiculoId/documentacion/actualizar"
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
               <DocumentacionVehiculoPage />

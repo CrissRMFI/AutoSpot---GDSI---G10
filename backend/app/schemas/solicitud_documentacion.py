@@ -83,7 +83,6 @@ class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
     descripcion: str | None = None
     motivo_rechazo: str | None = None
 
-    numero_licencia: str | None = None
     categoria_licencia: str | None = None
     fecha_emision: date | None = None
     fecha_vencimiento: date | None = None

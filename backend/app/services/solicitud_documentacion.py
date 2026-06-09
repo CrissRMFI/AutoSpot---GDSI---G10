@@ -97,10 +97,7 @@ def listar_solicitudes_pendientes(
                 usuario_email=conductor.email,
                 estado=documentacion.estado_validacion,
                 fecha_solicitud=documentacion.updated_at,
-                resumen=(
-                    f"Licencia {documentacion.categoria} "
-                    f"N° {documentacion.numero_licencia}"
-                ),
+                resumen=f"Licencia categoría {documentacion.categoria}",
             )
         )
 
@@ -226,12 +223,8 @@ def _obtener_detalle_conductor(
         usuario_email=conductor.email,
         estado=documentacion.estado_validacion,
         fecha_solicitud=documentacion.updated_at,
-        resumen=(
-            f"Licencia {documentacion.categoria} "
-            f"N° {documentacion.numero_licencia}"
-        ),
+        resumen=f"Licencia categoría {documentacion.categoria}",
         documentos=documentos,
-        numero_licencia=documentacion.numero_licencia,
         categoria_licencia=documentacion.categoria,
         fecha_emision=documentacion.fecha_emision,
         fecha_vencimiento=documentacion.fecha_vencimiento,

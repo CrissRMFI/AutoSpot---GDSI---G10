@@ -133,8 +133,7 @@ def _agregar_documentacion_conductor(testing_session_local) -> str:
         ahora = datetime.now(timezone.utc)
         documentacion = DocumentacionHabilitanteConductor(
             usuario_id=conductor.id,
-            numero_licencia="LIC-HTTP-3R",
-            categoria="B",
+            categoria="B1",
             fecha_emision=date(2024, 1, 1),
             fecha_vencimiento=date(2029, 1, 1),
             foto_licencia_frente_url="https://cdn.autospot.test/frente.jpg",
@@ -191,7 +190,7 @@ class TestUS3RHTTPAbrirDocumentacion:
                 assert response.status_code == 200, response.text
                 body = response.json()
                 assert body["tipo"] == "CONDUCTOR"
-                assert body["numero_licencia"] == "LIC-HTTP-3R"
+                assert body["categoria_licencia"] == "B1"
                 assert len(body["documentos"]) == 2
                 assert body["documentos"][1]["nombre"] == "Licencia dorso"
         finally:

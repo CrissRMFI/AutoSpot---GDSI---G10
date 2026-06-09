@@ -11,10 +11,15 @@ Esta capa NO valida campos obligatorios, año, formato o cantidad de fotos;
 esas responsabilidades pertenecen al schema Pydantic.
 """
 import uuid
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 
 from app.exceptions import (
+    ActualizarDocumentacionVehiculoConReservaActivaError,
+    ActualizarDocumentacionVehiculoDisponibleError,
     DocumentacionVehiculoNoEditableError,
+    DocumentacionVehiculoNoExistenteError,
     FotoVehiculoNoEncontradaError,
     MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
@@ -40,6 +45,7 @@ from app.services.notificacion import (
 
 ESTADOS_DOCUMENTACION_EDITABLE = {"PENDIENTE_DOCUMENTACION", "RECHAZADO"}
 ESTADO_DOCUMENTACION_CORREGIBLE = "RECHAZADO"
+ESTADO_DOCUMENTACION_ACTUALIZABLE = "HABILITADO"
 CAMBIOS_DOCUMENTALES_ACTUALIZACION = (
     "patente",
     "chasis",
@@ -371,11 +377,31 @@ def listar_vehiculos_por_propietario(db: Session, propietario_id) -> list[Vehicu
     if propietario is None:
         raise UsuarioNoEncontradoError()
 
-    return (
+    vehiculos = (
         db.query(Vehiculo)
         .filter(Vehiculo.propietario_id == propietario_id)
         .all()
     )
+
+    # Marca cuáles tienen un alquiler/reserva activo para poder distinguir en el
+    # frontend "Alquilado" (tiene alquiler) de "No disponible" (pausado por el dueño).
+    ids = [vehiculo.id for vehiculo in vehiculos]
+    ids_alquilados = set()
+    if ids:
+        filas = (
+            db.query(Reserva.vehiculo_id)
+            .filter(
+                Reserva.vehiculo_id.in_(ids),
+                Reserva.estado.in_(ESTADOS_RESERVA_QUE_BLOQUEAN_DISPONIBILIDAD),
+            )
+            .all()
+        )
+        ids_alquilados = {fila[0] for fila in filas}
+
+    for vehiculo in vehiculos:
+        vehiculo.alquilado = vehiculo.id in ids_alquilados
+
+    return vehiculos
 
 def cargar_documentacion_vehiculo(
     db: Session,
@@ -435,6 +461,55 @@ def cargar_documentacion_vehiculo(
 
     return vehiculo
 
+def actualizar_documentacion_vehiculo(
+        db: Session,
+        vehiculo_id: uuid.UUID,
+        schema: DocumentacionVehiculoSchema,
+
+) -> Vehiculo:
+    """
+    Actualiza la documentación legal y operativa de un vehículo existente.
+    """
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(Vehiculo.id == vehiculo_id)
+        .first()
+    )
+
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    if vehiculo.estado_registro != ESTADO_DOCUMENTACION_ACTUALIZABLE:
+        raise DocumentacionVehiculoNoExistenteError()
+    
+    if vehiculo.disponible == True:
+        raise ActualizarDocumentacionVehiculoDisponibleError()
+    
+    if verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
+        raise ActualizarDocumentacionVehiculoConReservaActivaError()
+    
+
+    vehiculo.patente = schema.patente
+    vehiculo.chasis = schema.chasis
+    vehiculo.motor = schema.motor
+    vehiculo.titular = schema.titular
+    vehiculo.cedula = schema.cedula
+    vehiculo.poliza = schema.poliza
+    vehiculo.vtv = schema.vtv
+    vehiculo.estacion = schema.estacion
+    vehiculo.telefono = schema.telefono
+    vehiculo.descripcion = schema.descripcion
+    
+    # Cambia a estado EN_REVISION para la US 4D
+    vehiculo.estado_registro = "EN_REVISION"
+    # Si estaba rechazado, limpiamos el motivo
+    vehiculo.motivo_rechazo = None
+
+    db.commit()
+    db.refresh(vehiculo)
+
+    return vehiculo
+
 
 def verificar_alquileres_activos(db: Session, vehiculo_id: uuid.UUID) -> bool:
     """
@@ -485,7 +560,10 @@ def cambiar_disponibilidad_vehiculo(
     if vehiculo.estado_registro != "HABILITADO":
         raise VehiculoNoHabilitadoError()
 
-    if not disponible and verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
+    # Un auto con un alquiler/reserva activo no puede cambiar su disponibilidad
+    # en ninguna dirección: no se puede volver a marcar como disponible mientras
+    # está alquilado, ni "deshabilitarlo" porque ya está comprometido.
+    if verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
         raise VehiculoConReservaActivaError()
 
     vehiculo.disponible = disponible
@@ -496,21 +574,42 @@ def cambiar_disponibilidad_vehiculo(
     return vehiculo
 
 
-def listar_vehiculos_disponibles(db: Session) -> list[Vehiculo]:
+def listar_vehiculos_disponibles(
+    db: Session,
+    puntuacion_minima: Decimal | float | None = None,
+) -> list[Vehiculo]:
     """
     Lista todos los vehículos que están habilitados y disponibles para alquiler,
     y que tienen un precio por día definido.
+
+    US 8C — Motor de filtrado de catálogo por puntuación:
+        Si se recibe `puntuacion_minima`, se devuelven únicamente los vehículos
+        cuya calificación promedio sea mayor o igual a ese valor (CA 1). Los
+        vehículos sin calificación (aún sin valoraciones) quedan excluidos
+        cuando se aplica el filtro, ya que no alcanzan la puntuación pedida.
+        Si `puntuacion_minima` es None, se devuelve el catálogo completo (CA 4).
+
+    Args:
+        db: Sesión SQLAlchemy activa.
+        puntuacion_minima: Puntuación mínima (1 a 5) a exigir, o None.
+
+    Returns:
+        Lista de vehículos disponibles que cumplen el filtro.
     """
-    return (
-        db.query(Vehiculo)
-        .filter(
-            Vehiculo.estado_registro == "HABILITADO",
-            Vehiculo.disponible == True,
-            Vehiculo.precio_por_dia.isnot(None),
-            Vehiculo.precio_por_dia > 0
-        )
-        .all()
+    query = db.query(Vehiculo).filter(
+        Vehiculo.estado_registro == "HABILITADO",
+        Vehiculo.disponible == True,
+        Vehiculo.precio_por_dia.isnot(None),
+        Vehiculo.precio_por_dia > 0,
     )
+
+    if puntuacion_minima is not None:
+        query = query.filter(
+            Vehiculo.calificacion_promedio.isnot(None),
+            Vehiculo.calificacion_promedio >= puntuacion_minima,
+        )
+
+    return query.all()
 
 
 def cambiar_ubicacion_vehiculo(

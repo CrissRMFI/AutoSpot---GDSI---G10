@@ -4,6 +4,7 @@ Tests HTTP — US 14C: Obtener código de reserva.
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 import uuid
+import itertools
 
 from sqlalchemy.orm import sessionmaker
 
@@ -12,6 +13,7 @@ from app.main import app
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.utils.security import hash_password
+from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from tests.test_us9d_habilitar_auto_http import (
     _auth_headers,
     _crear_cliente,
@@ -20,6 +22,23 @@ from tests.test_us9d_habilitar_auto_http import (
     _registrar_y_loguear_usuario,
 )
 
+_dni_counter = itertools.count(10000000)
+
+def _registrar_datos_personales_directo(engine, usuario_id: str) -> None:
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    dni = str(next(_dni_counter))
+    with TestingSessionLocal() as db:
+        datos = DatosPersonalesUsuario(
+            usuario_id=uuid.UUID(usuario_id),
+            dni=dni,
+            nombre="Carla",
+            apellido="Reserva",
+            foto_dni_frente_url=f"uploads/dni/{dni}/frente.jpg",
+            foto_dni_dorso_url=f"uploads/dni/{dni}/dorso.jpg",
+            estado_validacion="APROBADO",
+        )
+        db.add(datos)
+        db.commit()
 
 def _hacer_vehiculo_reservable(engine, vehiculo_id: str) -> None:
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -61,11 +80,11 @@ class TestUS14CHTTP:
             with client_context as client:
                 vehiculo, _ = _registrar_vehiculo(client, "prop14c@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente14c@autospot.com",
                 )
-
+                _registrar_datos_personales_directo(engine, cliente_id)
                 response = client.post(
                     "/alquiler/reservas",
                     json=_payload_reserva(vehiculo["id"]),
@@ -109,10 +128,11 @@ class TestUS14CHTTP:
             with client_context as client:
                 vehiculo, _ = _registrar_vehiculo(client, "prop14c4@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente14c4@autospot.com",
                 )
+                _registrar_datos_personales_directo(engine, cliente_id)
 
                 primera = client.post(
                     "/alquiler/reservas",
@@ -171,10 +191,11 @@ class TestUS14CHTTP:
             with client_context as client:
                 vehiculo, _ = _registrar_vehiculo(client, "prop14c6@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente14c6@autospot.com",
                 )
+                _registrar_datos_personales_directo(engine, cliente_id)
 
                 creacion = client.post(
                     "/alquiler/reservas",
@@ -206,10 +227,11 @@ class TestUS14CHTTP:
                 vehiculo, _ = _registrar_vehiculo(client, "prop14c7@autospot.com")
                 _hacer_vehiculo_reservable(engine, vehiculo["id"])
                 _registrar_admin_directo(engine)
-                _, token_cliente = _registrar_y_loguear_usuario(
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
                     client,
                     "cliente14c7@autospot.com",
                 )
+                _registrar_datos_personales_directo(engine, cliente_id)
                 token_admin = _login_usuario(client, "admin14c@autospot.com")
 
                 creacion = client.post(

@@ -237,6 +237,10 @@ class VehiculoPublicoSchema(BaseModel):
     precio_por_dia: Decimal | None = None
     disponible: bool = False
     estacion: str | None = None
+    calificacion_promedio: Decimal | None = None
+    # True si el vehículo tiene una reserva/alquiler activo. Lo completa el
+    # servicio en las vistas del propietario; en el catálogo queda en False.
+    alquilado: bool = False
 
     model_config = {"from_attributes": True}
 
