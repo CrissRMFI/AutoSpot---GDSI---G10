@@ -33,8 +33,7 @@ from app.models.usuario import Usuario  # noqa: F401
 
 
 PAYLOAD_VALIDO = {
-    "numero_licencia": "LIC-12345678",
-    "categoria": "B",
+    "categoria": "B1",
     "fecha_emision": "2024-01-10",
     "fecha_vencimiento": "2029-01-10",
     "foto_licencia_frente_url": "uploads/licencia/12345678/frente.jpg",
@@ -133,8 +132,7 @@ class TestCA1CA2_RegistroDocumentacionHabilitanteHTTP:
                 assert response.status_code == 201, response.text
                 body = response.json()
                 assert body["usuario_id"] == usuario_id
-                assert body["numero_licencia"] == "LIC-12345678"
-                assert body["categoria"] == "B"
+                assert body["categoria"] == "B1"
                 assert body["fecha_emision"] == "2024-01-10"
                 assert body["fecha_vencimiento"] == "2029-01-10"
                 assert body["foto_licencia_frente_url"] == (
@@ -321,16 +319,14 @@ class TestActualizacionYObtencionHTTP:
                     f"/usuarios/{usuario_id}/documentacion-habilitante/actualizar",
                     json={
                         **PAYLOAD_VALIDO,
-                        "numero_licencia": "LIC-99999999",
-                        "categoria": "D",
+                        "categoria": "B2",
                     },
                     headers=_auth_headers(token),
                 )
 
                 assert response.status_code == 200, response.text
                 body = response.json()
-                assert body["numero_licencia"] == "LIC-99999999"
-                assert body["categoria"] == "D"
+                assert body["categoria"] == "B2"
         finally:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
@@ -385,7 +381,7 @@ class TestActualizacionYObtencionHTTP:
                 assert response.status_code == 200, response.text
                 body = response.json()
                 assert body["usuario_id"] == usuario_id
-                assert body["numero_licencia"] == "LIC-12345678"
+                assert body["categoria"] == "B1"
         finally:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)

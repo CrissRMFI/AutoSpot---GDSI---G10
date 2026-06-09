@@ -69,12 +69,10 @@ def _crear_doc_habilitante_pendiente(
     db_session,
     usuario_id,
     fecha_solicitud: datetime,
-    numero_licencia: str = "LIC-001",
 ) -> DocumentacionHabilitanteConductor:
     documentacion = DocumentacionHabilitanteConductor(
         usuario_id=usuario_id,
-        numero_licencia=numero_licencia,
-        categoria="B",
+        categoria="B1",
         fecha_emision=date(2024, 1, 1),
         fecha_vencimiento=date(2029, 1, 1),
         foto_licencia_frente_url="uploads/frente.jpg",

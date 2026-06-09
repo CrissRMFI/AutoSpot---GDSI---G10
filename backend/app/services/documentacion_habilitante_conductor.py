@@ -60,7 +60,6 @@ def registrar_documentacion_habilitante(
 
     documentacion = DocumentacionHabilitanteConductor(
         usuario_id=usuario_id,
-        numero_licencia=schema.numero_licencia,
         categoria=schema.categoria,
         fecha_emision=schema.fecha_emision,
         fecha_vencimiento=schema.fecha_vencimiento,
@@ -130,7 +129,6 @@ def actualizar_documentacion_habilitante(
     if documentacion is None:
         raise DocumentacionHabilitanteNoRegistradaError()
 
-    documentacion.numero_licencia = schema.numero_licencia
     documentacion.categoria = schema.categoria
     documentacion.fecha_emision = schema.fecha_emision
     documentacion.fecha_vencimiento = schema.fecha_vencimiento

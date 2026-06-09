@@ -66,15 +66,10 @@ class DocumentacionHabilitanteConductor(Base):
     )
 
     # ── Datos de la licencia (CA1) ───────────────────────────────────────────
-    numero_licencia: Mapped[str] = mapped_column(
-        String(30),
-        nullable=False,
-        doc="Número de la Licencia Nacional de Conducir.",
-    )
     categoria: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
-        doc="Categoría/clase de la licencia (A, B, C, D, E, F, G).",
+        doc="Categoría/clase de la licencia para autos (B1, B2).",
     )
     fecha_emision: Mapped[date] = mapped_column(
         Date,
@@ -133,5 +128,5 @@ class DocumentacionHabilitanteConductor(Base):
     def __repr__(self) -> str:
         return (
             f"<DocumentacionHabilitanteConductor id={self.id} "
-            f"usuario_id={self.usuario_id} numero_licencia={self.numero_licencia}>"
+            f"usuario_id={self.usuario_id} categoria={self.categoria}>"
         )
