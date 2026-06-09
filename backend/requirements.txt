@@ -13,6 +13,7 @@ pydantic[email]>=2.7.0      # Incluye email-validator para EmailStr
 # ── Seguridad / Hashing ─────────────────────────────────────────────────────
 bcrypt>=4.0.0               # Hashing bcrypt directamente (passlib no soporta bcrypt>=4)
 PyJWT>=2.8.0                # Tokens JWT para autenticación y logout (US 3U)
+pywebpush>=2.0.0            # Web Push API con VAPID
 
 # ── Almacenamiento de archivos ──────────────────────────────────────────────
 cloudinary>=1.40.0          # SDK Cloudinary para subida de imágenes

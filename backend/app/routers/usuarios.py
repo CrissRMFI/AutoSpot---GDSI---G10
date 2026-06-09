@@ -31,7 +31,7 @@ Lenguaje Ubicuo (dominio_actores.md):
 """
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -47,19 +47,14 @@ from app.exceptions import (
     UsuarioNoEncontradoError,
     TokenInvalidoError,
 )
-from app.exceptions import (
-    MailExistenteError,
-    MailInexistenteError,
-    ContraseniaIncorrectaError,
-    UsuarioNoEncontradoError,
-    TokenInvalidoError,
-)
 from app.schemas.usuario import (
     RegistroUsuarioSchema,
     UsuarioPublicoSchema,
     UsuarioLogin,
     LoginResponseSchema,
 )
+from app.schemas.push_subscription import PushSubscriptionDeleteSchema
+from app.services.push import eliminar_suscripcion_push
 from app.services.usuario import (
     crear_usuario,
     autenticar_usuario,
@@ -316,6 +311,7 @@ def iniciar_sesion(
     },
 )
 def logout(
+    payload: PushSubscriptionDeleteSchema | None = Body(default=None),
     credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
     db: Session = Depends(get_db),
 ) -> dict:
@@ -336,7 +332,13 @@ def logout(
         )
 
     try:
-        cerrar_sesion(db=db, token=credentials.credentials)
+        token_payload = cerrar_sesion(db=db, token=credentials.credentials)
+        if payload is not None:
+            eliminar_suscripcion_push(
+                db=db,
+                usuario_id=uuid.UUID(str(token_payload["sub"])),
+                endpoint=payload.endpoint,
+            )
     except TokenInvalidoError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

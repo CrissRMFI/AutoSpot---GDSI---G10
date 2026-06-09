@@ -12,7 +12,6 @@ from app.exceptions import (
     MotivoRechazoRequeridoError,
 )
 from app.models.checkout_vehiculo import CheckoutVehiculo
-from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.schemas.checkout_vehiculo import CheckoutCreatePayloadSchema
 from app.services.alquiler_service import _notificar_admins
@@ -23,6 +22,7 @@ from app.services.notificacion import (
     TIPO_CHECKOUT_PENDIENTE_CONFIRMACION,
     TIPO_CHECKOUT_RECHAZADO,
     cerrar_notificaciones_de_reserva_por_tipo,
+    crear_notificacion_usuario,
 )
 
 
@@ -80,7 +80,8 @@ def crear_checkout(
         tipos=[TIPO_AUTO_DEVUELTO],
     )
 
-    db.add(Notificacion(
+    crear_notificacion_usuario(
+        db=db,
         usuario_id=reserva.conductor_id,
         tipo=TIPO_CHECKOUT_PENDIENTE_CONFIRMACION,
         titulo="Revisá el checkout de tu alquiler",
@@ -90,7 +91,7 @@ def crear_checkout(
         ),
         recurso_tipo=RECURSO_RESERVA,
         recurso_id=reserva.id,
-    ))
+    )
 
     db.commit()
     db.refresh(nuevo_checkout)

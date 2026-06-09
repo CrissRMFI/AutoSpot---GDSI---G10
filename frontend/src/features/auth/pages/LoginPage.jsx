@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "../../../layouts/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 
@@ -22,7 +22,7 @@ const normalizarMensajeError = (err) => {
     return detalle.msg || JSON.stringify(detalle);
   }
 
-  return err?.message || "Error al iniciar sesión. Inténtelo de nuevo.";
+  return err?.message || "Error al iniciar sesión. Intentá de nuevo.";
 };
 
 const rutaPorRol = (rol) => {
@@ -50,7 +50,6 @@ const LoginPage = () => {
 
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const actualizarCampo = (evento) => {
     const { name, value } = evento.target;
@@ -78,27 +77,12 @@ const LoginPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Iniciar sesión"
-      description="Bienvenido de nuevo a AutoSpot. Accedé a tu cuenta para continuar con la gestión de tus vehículos, datos personales o alquileres."
-      asideText="¿No tenés cuenta?"
-      asideLinkText="Registrarme"
-      asideLinkTo="/registro"
-    >
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black sm:text-3xl">
-          Acceso a la plataforma
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-autospot-muted">
-          Ingresá tus credenciales para continuar.
-        </p>
-      </div>
-
-      <form onSubmit={enviarFormulario} className="space-y-5">
+    <AuthLayout>
+      <form onSubmit={enviarFormulario} className="space-y-6">
         <div>
           <label
             htmlFor="email"
-            className="mb-2 block text-sm font-bold text-autospot-black"
+            className="mb-2 block text-[11px] font-bold uppercase tracking-normal !text-autospot-black"
           >
             Email
           </label>
@@ -111,84 +95,40 @@ const LoginPage = () => {
             onChange={actualizarCampo}
             required
             autoComplete="email"
-            placeholder="tuemail@ejemplo.com"
-            className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
+            placeholder="tu@email.com"
+            className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent px-3 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
           />
         </div>
 
         <div>
           <label
             htmlFor="password"
-            className="mb-2 block text-sm font-bold text-autospot-black"
+            className="mb-2 block text-[11px] font-bold uppercase tracking-normal !text-autospot-black"
           >
             Contraseña
           </label>
 
-          <div className="relative">
-            <input
-              type={mostrarPassword ? "text" : "password"}
-              id="password"
-              name="password"
-              value={form.password}
-              onChange={actualizarCampo}
-              required
-              autoComplete="current-password"
-              placeholder="Ingresá tu contraseña"
-              className="w-full rounded-xl border border-autospot-border bg-autospot-white px-4 py-3 pr-12 text-sm text-autospot-black outline-none transition placeholder:text-autospot-muted/70 focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,0,32,0.18)]"
-            />
-
-            <button
-              type="button"
-              onClick={() => setMostrarPassword((valor) => !valor)}
-              aria-label={
-                mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-              }
-              aria-pressed={mostrarPassword}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-autospot-border bg-autospot-white text-autospot-muted transition hover:border-autospot-accent hover:text-autospot-accent focus:outline-none"
-            >
-              {mostrarPassword ? (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                  aria-hidden="true"
-                >
-                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                  <path d="M2 2l20 20" />
-                </svg>
-              ) : (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                  aria-hidden="true"
-                >
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
-            </button>
-          </div>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={form.password}
+            onChange={actualizarCampo}
+            required
+            autoComplete="current-password"
+            placeholder="••••••••"
+            className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent px-3 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
+          />
         </div>
 
         {mensaje && (
-          <div className="rounded-xl bg-[#e7f8ed] px-4 py-3 text-sm font-medium text-[#166534]">
+          <div className="rounded-[8px] bg-[#e7f8ed] px-4 py-3 text-sm font-medium !text-[#166534]">
             {mensaje}
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-[#b42318]">
+          <div className="rounded-[8px] bg-red-50 px-4 py-3 text-sm font-bold !text-[#b42318]">
             {error}
           </div>
         )}
@@ -196,11 +136,23 @@ const LoginPage = () => {
         <button
           type="submit"
           disabled={cargando}
-          className="flex w-full items-center justify-center rounded-full bg-autospot-accent px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
+          className="flex h-12 w-full items-center justify-center rounded-[8px] bg-autospot-black px-5 text-sm font-bold !text-white transition hover:bg-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
         >
           {cargando ? "Ingresando..." : "Ingresar"}
         </button>
       </form>
+
+      <div className="mt-6 space-y-2 text-center text-sm">
+        <p className="!text-autospot-muted">
+          ¿No tenés cuenta?{" "}
+          <Link to="/registro" className="font-bold !text-autospot-accent">
+            Registrate
+          </Link>
+        </p>
+        <Link to="/" className="text-xs font-bold !text-autospot-muted">
+          Volver al inicio
+        </Link>
+      </div>
     </AuthLayout>
   );
 };
