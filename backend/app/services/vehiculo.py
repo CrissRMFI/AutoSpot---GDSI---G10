@@ -31,6 +31,11 @@ from app.models.foto_vehiculo import FotoVehiculo
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
+from app.models.valoracion import Valoracion
+from app.models.testimonio import Testimonio
+from app.models.usuario import Usuario
+from app.models.datos_personales_usuario import DatosPersonalesUsuario
+from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import (
     DocumentacionVehiculoSchema,
     RegistroVehiculoSchema,
@@ -646,3 +651,38 @@ def cambiar_ubicacion_vehiculo(
     db.refresh(vehiculo)
 
     return vehiculo
+
+def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]:
+    """
+    Obtiene el listado de reseñas (Valoración + Testimonio) para un vehículo (US 10C).
+    Realiza un JOIN entre Valoracion, Testimonio y Usuario.
+    """
+    from sqlalchemy.orm import aliased
+    from sqlalchemy import desc
+
+    # Verificamos si existe el vehículo
+    vehiculo = db.query(Vehiculo).filter(Vehiculo.id == vehiculo_id).first()
+    if not vehiculo:
+        raise VehiculoNoEncontradoError()
+
+    # Query que junta Valoracion con Usuario (conductor) y hace left join con Testimonio
+    resultados = (
+        db.query(Valoracion, Testimonio, DatosPersonalesUsuario)
+        .join(DatosPersonalesUsuario, Valoracion.conductor_id == DatosPersonalesUsuario.usuario_id)
+        .outerjoin(Testimonio, Testimonio.reserva_id == Valoracion.reserva_id)
+        .filter(Valoracion.vehiculo_id == vehiculo_id)
+        .order_by(desc(Valoracion.created_at))
+        .all()
+    )
+
+    resenias = []
+    for val, test, usr in resultados:
+        resenias.append({
+            "id_reserva": val.reserva_id,
+            "puntaje": float(val.puntaje),
+            "descripcion": test.descripcion if test else None,
+            "conductor": f"{usr.nombre} {usr.apellido}",
+            "fecha": val.created_at,
+        })
+
+    return resenias

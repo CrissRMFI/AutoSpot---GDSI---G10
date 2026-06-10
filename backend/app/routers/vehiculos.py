@@ -62,6 +62,7 @@ from app.schemas.vehiculo import (
     ActualizarVehiculoPayloadSchema,
     CambiarUbicacionSchema,
     UbicacionVehiculoResponseSchema,
+    ReseniaVehiculoSchema,
 )
 from app.services.vehiculo import (
     agregar_foto_a_vehiculo,
@@ -77,6 +78,7 @@ from app.services.vehiculo import (
     listar_vehiculos_disponibles,
     cambiar_ubicacion_vehiculo,
     verificar_alquileres_activos,
+    obtener_resenias_vehiculo,
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
@@ -1010,3 +1012,37 @@ def cambiar_ubicacion_de_vehiculo(
         ) from exc
 
     return UbicacionVehiculoResponseSchema.model_validate(vehiculo)
+
+@router.get(
+    "/vehiculos/{vehiculo_id}/resenias",
+    response_model=list[ReseniaVehiculoSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Obtener las reseñas de un vehículo",
+    description="Devuelve el histórico de testimonios y valoraciones para el rol de Conductor.",
+    responses={
+        status.HTTP_200_OK: {"description": "Reseñas obtenidas exitosamente."},
+        status.HTTP_401_UNAUTHORIZED: {"description": "Token ausente o inválido."},
+        status.HTTP_404_NOT_FOUND: {"description": "Vehículo no encontrado."},
+    },
+)
+def obtener_resenias_de_vehiculo(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> list[ReseniaVehiculoSchema]:
+    """
+    GET /vehiculos/{vehiculo_id}/resenias
+
+    Flujo:
+        1. Valida el JWT y el ID de vehículo.
+        2. Obtiene las reseñas a través del servicio.
+    """
+    try:
+        resenias = obtener_resenias_vehiculo(db=db, vehiculo_id=vehiculo_id)
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return [ReseniaVehiculoSchema.model_validate(r) for r in resenias]
