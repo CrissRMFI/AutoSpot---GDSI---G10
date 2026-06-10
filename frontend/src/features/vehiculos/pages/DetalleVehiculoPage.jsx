@@ -627,6 +627,12 @@ const DetalleVehiculoPage = () => {
                     Documentación no editable
                   </span>
                 )}
+                <Link
+                  to={`/vehiculos/${vehiculo.id}/historial`}
+                  className="inline-flex w-full justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
+                >
+                  Historial de uso
+                </Link>
               </div>
             </div>
           )}

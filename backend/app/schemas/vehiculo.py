@@ -422,3 +422,30 @@ class ReseniaVehiculoSchema(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+class DetallesReporteSchema(BaseModel):
+    """
+    Schema para devolver los detalles de incidentes o rechazos en un historial.
+    """
+    descripcion_danios_checkin: str | None = None
+    motivo_rechazo_checkin: str | None = None
+    descripcion_danios_checkout: str | None = None
+    motivo_rechazo_checkout: str | None = None
+
+class RecordHistorialUsoSchema(BaseModel):
+    """
+    Schema para devolver un registro del historial de uso del vehículo.
+    """
+    conductor_nombre: str
+    fecha_inicio: datetime
+    fecha_fin: datetime
+    puntaje: int | None = None
+    resenia: str | None = None
+    fotos_entrega: list[str]
+    tiene_reporte: bool = False
+    detalles_reporte: DetallesReporteSchema | None = None
+
+    model_config = {
+        "from_attributes": True,
+    }
+

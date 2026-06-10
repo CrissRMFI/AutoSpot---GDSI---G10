@@ -17,6 +17,7 @@ import ModificarVehiculoPage from "../features/vehiculos/pages/ModificarVehiculo
 import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage";
 import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
 import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
+import { HistorialUsoVehiculoPage } from "../features/vehiculos/pages/HistorialUsoVehiculoPage";
 import MisReservasPage from "../features/reservas/pages/MisReservasPage";
 import MisAlquileresPage from "../features/reservas/pages/MisAlquileresPage";
 import AlquilerDetallePage from "../features/reservas/pages/AlquilerDetallePage";
@@ -242,6 +243,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
               <DetalleVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehiculos/:vehiculoId/historial"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <HistorialUsoVehiculoPage />
             </ProtectedRoute>
           }
         />
