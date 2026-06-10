@@ -63,6 +63,7 @@ from app.schemas.vehiculo import (
     CambiarUbicacionSchema,
     UbicacionVehiculoResponseSchema,
     ReseniaVehiculoSchema,
+    RecordHistorialUsoSchema,
 )
 from app.services.vehiculo import (
     agregar_foto_a_vehiculo,
@@ -79,6 +80,7 @@ from app.services.vehiculo import (
     cambiar_ubicacion_vehiculo,
     verificar_alquileres_activos,
     obtener_resenias_vehiculo,
+    obtener_historial_uso_vehiculo,
 )
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
@@ -434,6 +436,55 @@ def obtener_detalle_vehiculo(
     )
 
     return VehiculoDetallePropietarioSchema.model_validate(vehiculo)
+
+
+@router.get(
+    "/vehiculos/{vehiculo_id}/historial",
+    response_model=list[RecordHistorialUsoSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Obtener historial de uso de un vehículo",
+    description=(
+        "Obtiene el historial de uso (reservas) de un vehículo específico. "
+        "Requiere autenticación JWT y solo permite acceder a vehículos propios."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Historial obtenido exitosamente.",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Token ausente, inválido, expirado o invalidado.",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El usuario autenticado intenta acceder a un vehículo ajeno.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Vehículo no encontrado.",
+        },
+    },
+)
+def obtener_historial_vehiculo(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(requerir_rol_propietario),
+    db: Session = Depends(get_db),
+) -> list[RecordHistorialUsoSchema]:
+    validar_vehiculo_pertenece_a_usuario_autenticado(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        usuario_actual=usuario_actual,
+    )
+
+    try:
+        historial_dicts = obtener_historial_uso_vehiculo(db=db, vehiculo_id=vehiculo_id)
+    except VehiculoNoEncontradoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return [
+        RecordHistorialUsoSchema.model_validate(h)
+        for h in historial_dicts
+    ]
 
 
 @router.patch(

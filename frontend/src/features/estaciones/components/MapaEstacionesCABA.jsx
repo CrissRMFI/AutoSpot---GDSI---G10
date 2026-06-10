@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -35,43 +35,14 @@ function MapRecenter({ lat, lng, zoom }) {
   return null;
 }
 
-const MapaEstacionesCABA = ({ onEstacionSelect, datosEstaciones }) => {
-  const [ubicacion, setUbicacion] = useState(null);
-  const [errorUbicacion, setErrorUbicacion] = useState(null);
-  const [cargando, setCargando] = useState(true);
-
+const MapaEstacionesCABA = ({ onEstacionSelect, datosEstaciones, ubicacion, errorUbicacion, cargandoUbicacion }) => {
   // Centro por defecto: CABA
   const defaultCenter = [-34.6037, -58.3816];
   const defaultZoom = 12;
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setTimeout(() => {
-        setErrorUbicacion("Tu navegador no soporta geolocalización.");
-        setCargando(false);
-      }, 0);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUbicacion({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setCargando(false);
-      },
-      (error) => {
-        console.error("Error obteniendo ubicación:", error);
-        setErrorUbicacion("Ubicación no permitida. Mostrando mapa general.");
-        setCargando(false);
-      }
-    );
-  }, []);
-
   return (
     <div className="relative w-full overflow-hidden rounded-xl bg-gray-50 border border-autospot-border">
-      {cargando ? (
+      {cargandoUbicacion ? (
         <div className="flex h-[400px] items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-autospot-border border-t-autospot-accent"></div>
         </div>
