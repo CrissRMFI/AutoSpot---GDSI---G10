@@ -668,7 +668,7 @@ def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]
     # Query que junta Valoracion con Usuario (conductor) y hace left join con Testimonio
     resultados = (
         db.query(Valoracion, Testimonio, DatosPersonalesUsuario)
-        .join(DatosPersonalesUsuario, Valoracion.conductor_id == DatosPersonalesUsuario.usuario_id)
+        .outerjoin(DatosPersonalesUsuario, Valoracion.conductor_id == DatosPersonalesUsuario.usuario_id)
         .outerjoin(Testimonio, Testimonio.reserva_id == Valoracion.reserva_id)
         .filter(Valoracion.vehiculo_id == vehiculo_id)
         .order_by(desc(Valoracion.created_at))
@@ -677,11 +677,16 @@ def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]
 
     resenias = []
     for val, test, usr in resultados:
+        if usr:
+            conductor_str = f"{usr.nombre} {usr.apellido}"
+        else:
+            conductor_str = "Conductor Anónimo"
+
         resenias.append({
             "id_reserva": val.reserva_id,
             "puntaje": float(val.puntaje),
             "descripcion": test.descripcion if test else None,
-            "conductor": f"{usr.nombre} {usr.apellido}",
+            "conductor": conductor_str,
             "fecha": val.created_at,
         })
 
