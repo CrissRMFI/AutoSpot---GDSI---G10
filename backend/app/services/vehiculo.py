@@ -686,3 +686,84 @@ def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]
         })
 
     return resenias
+
+def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]:
+    """
+    Obtiene el historial de uso de un vehículo.
+    """
+    from sqlalchemy import desc
+    from app.models.checkout_vehiculo import CheckoutVehiculo
+    from app.models.checkin_vehiculo import CheckinVehiculo
+
+    vehiculo = db.query(Vehiculo).filter(Vehiculo.id == vehiculo_id).first()
+    if not vehiculo:
+        raise VehiculoNoEncontradoError()
+
+    resultados = (
+        db.query(Reserva, DatosPersonalesUsuario, Testimonio, Valoracion, CheckoutVehiculo, CheckinVehiculo)
+        .join(DatosPersonalesUsuario, Reserva.conductor_id == DatosPersonalesUsuario.usuario_id)
+        .outerjoin(Testimonio, Testimonio.reserva_id == Reserva.id)
+        .outerjoin(Valoracion, Valoracion.reserva_id == Reserva.id)
+        .outerjoin(CheckoutVehiculo, CheckoutVehiculo.reserva_id == Reserva.id)
+        .outerjoin(CheckinVehiculo, CheckinVehiculo.reserva_id == Reserva.id)
+        .filter(Reserva.vehiculo_id == vehiculo_id)
+        .order_by(desc(Reserva.created_at))
+        .all()
+    )
+
+    historial = []
+    for res, usr, test, val, checkout, checkin in resultados:
+        fotos = []
+        if checkout:
+            fotos.extend([
+                checkout.url_foto_frente, checkout.url_foto_trasera, 
+                checkout.url_foto_lateral_izq, checkout.url_foto_lateral_der, 
+                checkout.url_foto_panel
+            ])
+            if checkout.url_foto_extra:
+                fotos.append(checkout.url_foto_extra)
+            if checkout.urls_fotos_danios:
+                fotos.extend(checkout.urls_fotos_danios)
+        elif checkin:
+            fotos.extend([
+                checkin.url_foto_frente, checkin.url_foto_trasera, 
+                checkin.url_foto_lateral_izq, checkin.url_foto_lateral_der, 
+                checkin.url_foto_panel
+            ])
+            if checkin.url_foto_extra:
+                fotos.append(checkin.url_foto_extra)
+            if checkin.urls_fotos_danios:
+                fotos.extend(checkin.urls_fotos_danios)
+
+        tiene_reporte = False
+        detalles_reporte = None
+        
+        # Check para reportes o rechazos
+        ci_danios = checkin.descripcion_danios if checkin else None
+        ci_rechazo = checkin.motivo_rechazo if checkin else None
+        co_danios = checkout.descripcion_danios if checkout else None
+        co_rechazo = checkout.motivo_rechazo if checkout else None
+        
+        if (checkin and (checkin.tiene_danios or checkin.estado == "RECHAZADO")) or \
+           (checkout and (checkout.tiene_danios or checkout.estado == "RECHAZADO")):
+            tiene_reporte = True
+            detalles_reporte = {
+                "descripcion_danios_checkin": ci_danios,
+                "motivo_rechazo_checkin": ci_rechazo,
+                "descripcion_danios_checkout": co_danios,
+                "motivo_rechazo_checkout": co_rechazo,
+            }
+
+        historial.append({
+            "conductor_nombre": f"{usr.nombre} {usr.apellido}",
+            "fecha_inicio": res.fecha_salida_real or res.fecha_inicio,
+            "fecha_fin": res.fecha_devolucion_real or res.fecha_fin,
+            "puntaje": val.puntaje if val else None,
+            "resenia": test.descripcion if test else None,
+            "fotos_entrega": fotos,
+            "tiene_reporte": tiene_reporte,
+            "detalles_reporte": detalles_reporte,
+        })
+
+    return historial
+

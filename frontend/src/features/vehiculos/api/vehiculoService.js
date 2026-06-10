@@ -119,3 +119,9 @@ export const cambiarUbicacionVehiculo = async (vehiculoId, estacion) => {
   );
   return response.data;
 };
+
+export const getHistorialUsoVehiculo = async (vehiculoId) => {
+  const response = await httpClient.get(`/vehiculos/${vehiculoId}/historial`);
+  return response.data;
+};
+

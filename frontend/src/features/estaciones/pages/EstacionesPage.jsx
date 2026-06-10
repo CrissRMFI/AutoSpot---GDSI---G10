@@ -20,6 +20,10 @@ const EstacionesPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [error, setError] = useState("");
+  const [ubicacionUsuario, setUbicacionUsuario] = useState(null);
+  const [errorUbicacion, setErrorUbicacion] = useState(null);
+  const [cargandoUbicacion, setCargandoUbicacion] = useState(true);
+  const [ordenProximidad, setOrdenProximidad] = useState("cerca"); // "cerca" | "lejos"
 
   // Determinar si el modo es solo visualización
   const [soloVisualizacion, setSoloVisualizacion] = useState(
@@ -49,6 +53,30 @@ const EstacionesPage = () => {
     };
     verificarHabilitacion();
   }, [usuario?.id, usuario?.rol]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setTimeout(() => {
+        setErrorUbicacion("Tu navegador no soporta geolocalización.");
+        setCargandoUbicacion(false);
+      }, 0);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUbicacionUsuario({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setCargandoUbicacion(false);
+      },
+      (error) => {
+        console.error("Error obteniendo ubicación:", error);
+        setErrorUbicacion("Ubicación no permitida. Mostrando mapa general.");
+        setCargandoUbicacion(false);
+      }
+    );
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,12 +128,38 @@ const EstacionesPage = () => {
 
 
 
-  const estacionesFiltradas = estacionSeleccionada
+  const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const R = 6371; // Radio de la tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distancia en km
+  };
+
+  const estacionesFiltradas = (estacionSeleccionada
     ? estaciones.filter((e) => e.id === estacionSeleccionada.id)
     : (barrioSeleccionado
         ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
-        : estaciones)
-        .sort((a, b) => a.nombre.localeCompare(b.nombre));
+        : [...estaciones])
+  ).sort((a, b) => {
+    if (ubicacionUsuario && a.latitud && a.longitud && b.latitud && b.longitud) {
+      const distA = calcularDistancia(ubicacionUsuario.lat, ubicacionUsuario.lng, a.latitud, a.longitud);
+      const distB = calcularDistancia(ubicacionUsuario.lat, ubicacionUsuario.lng, b.latitud, b.longitud);
+      
+      if (ordenProximidad === "cerca") {
+        return distA - distB;
+      } else {
+        return distB - distA;
+      }
+    }
+    // Fallback a orden alfabético
+    return a.nombre.localeCompare(b.nombre);
+  });
 
   return (
     <>
@@ -154,11 +208,31 @@ const EstacionesPage = () => {
               <MapaEstacionesCABA 
                 onEstacionSelect={handleSeleccionarEstacion}
                 datosEstaciones={estaciones}
+                ubicacion={ubicacionUsuario}
+                errorUbicacion={errorUbicacion}
+                cargandoUbicacion={cargandoUbicacion}
               />
             </div>
 
             {/* Listado de estaciones y autos */}
             <div className="flex flex-col gap-4">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                <h2 className="font-display text-xl font-bold text-autospot-black">Estaciones Disponibles</h2>
+                
+                {ubicacionUsuario && !estacionSeleccionada && (
+                  <button
+                    onClick={() => setOrdenProximidad(ordenProximidad === "cerca" ? "lejos" : "cerca")}
+                    className="inline-flex items-center gap-2 rounded-full border border-autospot-border bg-white px-4 py-2 text-xs font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    {ordenProximidad === "cerca" ? "Orden: Más cercanas" : "Orden: Más lejanas"}
+                  </button>
+                )}
+              </div>
+
               {(barrioSeleccionado || estacionSeleccionada) && (
                 <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3">
                   <span className="text-sm font-bold text-autospot-black">
