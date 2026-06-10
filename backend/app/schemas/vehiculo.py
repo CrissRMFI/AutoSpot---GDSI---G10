@@ -408,3 +408,17 @@ class UbicacionVehiculoResponseSchema(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+class ReseniaVehiculoSchema(BaseModel):
+    """
+    Schema para devolver la reseña (testimonio + valoración) de un vehículo (US 10C).
+    """
+    id_reserva: uuid.UUID
+    puntaje: int
+    descripcion: str | None = None
+    conductor: str
+    fecha: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
