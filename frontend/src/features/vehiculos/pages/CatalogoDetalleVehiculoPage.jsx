@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
 import LightboxGaleria from "../components/LightboxGaleria";
 import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
+import ModalResenias from "../components/ModalResenias";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -20,6 +21,7 @@ const CatalogoDetalleVehiculoPage = () => {
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
+  const [modalReseniasAbierto, setModalReseniasAbierto] = useState(false);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -119,8 +121,14 @@ const CatalogoDetalleVehiculoPage = () => {
             {vehiculo.anio} · {vehiculo.categoria} · {vehiculo.estacion || "Sin estación"}
           </p>
 
-          <div className="mt-3">
+          <div className="mt-3 flex items-center gap-4">
             <PuntuacionVehiculo valor={vehiculo.calificacion_promedio} size="medium" />
+            <button
+              onClick={() => setModalReseniasAbierto(true)}
+              className="text-sm font-semibold text-autospot-accent hover:underline hover:text-[#5a1420] transition"
+            >
+              Ver reseñas
+            </button>
           </div>
 
           <div className="relative mt-6 overflow-hidden rounded-2xl bg-[#0f0f0f]">
@@ -261,6 +269,12 @@ const CatalogoDetalleVehiculoPage = () => {
         fotos={fotos}
         indiceActivo={indiceActivo}
         setIndiceActivo={setIndiceActivo}
+      />
+
+      <ModalResenias 
+        isOpen={modalReseniasAbierto} 
+        onClose={() => setModalReseniasAbierto(false)} 
+        vehiculoId={vehiculo.id} 
       />
     </>
   );

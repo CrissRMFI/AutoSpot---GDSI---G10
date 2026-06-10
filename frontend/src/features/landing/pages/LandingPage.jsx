@@ -134,36 +134,6 @@ const features = [
   },
 ];
 
-const categories = [
-  {
-    emoji: "🌿",
-    name: "Económico",
-    description:
-      "Autos compactos y accesibles para moverse por la ciudad sin gastar de más. Perfectos para uso cotidiano.",
-    price: "Desde $6.000/día",
-    className: "bg-gradient-to-br from-[#1a2e1a] to-[#2d4a2d]",
-  },
-  {
-    emoji: "🚙",
-    name: "Familiar",
-    description:
-      "SUVs y sedanes espaciosos para viajes en familia o grupos. Confort, equipaje y seguridad en equilibrio.",
-    price: "Desde $12.000/día",
-    badge: "⭐ Popular",
-    className: "bg-gradient-to-br from-[#1a1e2e] to-[#2d3355]",
-  },
-  {
-    emoji: "✨",
-    name: "Premium",
-    description:
-      "La mejor experiencia de conducción. Para reuniones de negocios, eventos especiales o simplemente porque lo merecés.",
-    price: "Desde $22.000/día",
-    badge: "✦ Premium",
-    className:
-      "border border-[#8b6914] bg-gradient-to-br from-[#2e1a10] to-[#4a2d14]",
-  },
-];
-
 const ownerBenefits = [
   "Cobrás por cada día que tu auto está alquilado",
   "Vos definís los días disponibles y el precio",
@@ -241,15 +211,14 @@ const featureDescriptionClasses = {
   dark: "text-[rgba(245,242,237,0.45)]",
 };
 
-function Logo({ light = false }) {
+function Logo() {
   return (
     <a
       href="#inicio"
-      className={`font-display text-xl font-black tracking-[-0.04em] ${
-        light ? "text-autospot-white" : "text-autospot-black"
-      }`}
+      className={`flex items-center gap-2 font-display text-xl font-black tracking-[-0.04em] text-white`}
     >
-      Auto<span className="text-autospot-accent">Spot</span>
+      <img src="/logo.png" alt="AutoSpot Logo" height="55px" />
+      <span>Auto<span className="text-white">Spot</span></span>
     </a>
   );
 }
@@ -429,13 +398,13 @@ export default function LandingPage() {
         className="autospot-noise pointer-events-none fixed inset-0 z-[9999] opacity-50"
       />
 
-      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-autospot-border bg-[rgba(240,235,226,0.88)] px-5 py-4 backdrop-blur-xl md:px-12">
+      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-[#7b1c2e] bg-[#7b1c2e] px-5 py-4 shadow-md md:px-12">
         <Logo />
 
         <ul className="hidden list-none items-center gap-8 lg:flex">
           <li>
             <a
-              className="text-sm text-autospot-muted hover:text-autospot-black"
+              className="text-sm text-white/90 hover:text-white font-medium"
               href="#como-funciona"
             >
               Cómo funciona
@@ -443,7 +412,7 @@ export default function LandingPage() {
           </li>
           <li>
             <a
-              className="text-sm text-autospot-muted hover:text-autospot-black"
+              className="text-sm text-white/90 hover:text-white font-medium"
               href="#features"
             >
               Funciones
@@ -451,15 +420,7 @@ export default function LandingPage() {
           </li>
           <li>
             <a
-              className="text-sm text-autospot-muted hover:text-autospot-black"
-              href="#categorias"
-            >
-              Categorías
-            </a>
-          </li>
-          <li>
-            <a
-              className="text-sm text-autospot-muted hover:text-autospot-black"
+              className="text-sm text-white/90 hover:text-white font-medium"
               href="#propietarios"
             >
               Para propietarios
@@ -470,7 +431,7 @@ export default function LandingPage() {
               href={hrefLogin}
               className="rounded-full bg-[#7b1c2e] px-5 py-2.5 text-sm font-medium !text-[#f5f2ed] transition hover:scale-[1.03] hover:bg-[#5a1420]"
             >
-              {labelPanel("Empezar ahora")}
+              {labelPanel("Iniciar sesión")}
             </a>
           </li>
         </ul>
@@ -708,47 +669,6 @@ export default function LandingPage() {
         <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <FeatureCard key={feature.title} feature={feature} />
-          ))}
-        </div>
-      </section>
-
-      <section
-        id="categorias"
-        className="bg-autospot-mid px-6 py-[72px] md:px-12 lg:px-[72px] lg:py-[100px]"
-      >
-        <SectionHeader
-          tag="Categorías"
-          title="Un auto para cada necesidad"
-          subtitle="Desde el viaje más económico hasta la experiencia más premium, AutoSpot tiene la categoría que buscás."
-          dark
-        />
-
-        <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {categories.map((category) => (
-            <article
-              key={category.name}
-              className={`relative cursor-default overflow-hidden rounded-[20px] p-8 transition hover:scale-[1.02] lg:p-10 ${category.className}`}
-            >
-              {category.badge && (
-                <div className="absolute right-5 top-5 rounded-full border border-[rgba(245,166,35,0.3)] bg-[rgba(245,166,35,0.15)] px-2.5 py-1 text-[0.7rem] font-medium uppercase tracking-[0.06em] text-autospot-accent-2">
-                  {category.badge}
-                </div>
-              )}
-
-              <span className="mb-5 block text-5xl">{category.emoji}</span>
-
-              <h3 className="mb-2 font-display text-xl font-bold tracking-[-0.03em] text-autospot-white">
-                {category.name}
-              </h3>
-
-              <p className="mb-6 text-sm leading-6 text-[rgba(245,242,237,0.5)]">
-                {category.description}
-              </p>
-
-              <div className="font-display text-xs font-bold uppercase tracking-[0.05em] text-autospot-accent-2">
-                {category.price}
-              </div>
-            </article>
           ))}
         </div>
       </section>
