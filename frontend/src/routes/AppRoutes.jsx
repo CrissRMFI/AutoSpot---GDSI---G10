@@ -6,6 +6,7 @@ import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ClienteDashboardPage from "../pages/ClienteDashboardPage";
 import MisVehiculosPage from "../pages/MisVehiculosPage";
 import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
+import PropietarioVehiculosPage from "../pages/PropietarioVehiculosPage";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthenticatedShell from "./AuthenticatedShell";
 import ProtectedRoute from "./ProtectedRoute";
@@ -34,31 +35,31 @@ import EntregaAutosPage from "../features/admin/pages/EntregaAutosPage";
 import RecepcionAutosPage from "../features/admin/pages/RecepcionAutosPage";
 import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
 
-const rutaPorRol = (rol) => {
-  switch ((rol || "").toUpperCase()) {
-    case "ADMIN":
-      return "/admin/dashboard";
-    case "PROPIETARIO":
-      return "/propietario/dashboard";
-    case "CLIENTE":
-    default:
-      return "/usuario/dashboard";
-  }
-};
-
-const DashboardRedirect = () => {
+const DashboardHome = () => {
   const { estaAutenticado, usuario } = useAuth();
+
   if (!estaAutenticado) {
     return <Navigate to="/login" replace />;
   }
-  return <Navigate to={rutaPorRol(usuario?.rol)} replace />;
+
+  switch ((usuario?.rol || "").toUpperCase()) {
+    case "ADMIN":
+      return <AdminDashboardPage />;
+    case "PROPIETARIO":
+      return <PropietarioDashboardPage />;
+    case "CLIENTE":
+    default:
+      return <ClienteDashboardPage />;
+  }
 };
 
+const rutaPorRol = () => "/dashboard";
+
 const PublicOnlyRoute = ({ children }) => {
-  const { estaAutenticado, usuario } = useAuth();
+  const { estaAutenticado } = useAuth();
 
   if (estaAutenticado) {
-    return <Navigate to={rutaPorRol(usuario?.rol)} replace />;
+    return <Navigate to={rutaPorRol()} replace />;
   }
 
   return children;
@@ -92,7 +93,7 @@ const AppRoutes = () => {
         <Route path="/estaciones" element={<EstacionesPage />} />
         <Route path="/estaciones/:id" element={<DetalleEstacionPublicoPage />} />
 
-        <Route path="/dashboard" element={<DashboardRedirect />} />
+        <Route path="/dashboard" element={<DashboardHome />} />
 
         <Route
           path="/datos-personales"
@@ -114,11 +115,7 @@ const AppRoutes = () => {
 
         <Route
           path="/usuario/dashboard"
-          element={
-            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
-              <ClienteDashboardPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dashboard" replace />}
         />
 
         <Route
@@ -186,20 +183,30 @@ const AppRoutes = () => {
 
         <Route
           path="/propietario/dashboard"
+          element={<Navigate to="/dashboard" replace />}
+        />
+
+        <Route
+          path="/vehiculos"
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-              <PropietarioDashboardPage />
+              <PropietarioVehiculosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehiculos/listado"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <MisVehiculosPage />
             </ProtectedRoute>
           }
         />
 
         <Route
           path="/propietario/vehiculos"
-          element={
-            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
-              <MisVehiculosPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/vehiculos" replace />}
         />
 
         <Route
@@ -258,11 +265,7 @@ const AppRoutes = () => {
 
         <Route
           path="/admin/dashboard"
-          element={
-            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
-              <AdminDashboardPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dashboard" replace />}
         />
 
         <Route

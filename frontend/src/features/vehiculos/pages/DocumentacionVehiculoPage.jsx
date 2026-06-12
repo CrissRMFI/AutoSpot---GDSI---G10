@@ -304,7 +304,7 @@ const DocumentacionVehiculoPage = () => {
         });
 
         setTimeout(() => {
-          navigate("/propietario/dashboard", {
+          navigate("/vehiculos", {
             state: {
               message: "Documentación del vehículo cargada correctamente.",
             },
@@ -664,7 +664,7 @@ const DocumentacionVehiculoPage = () => {
 
             <div className="flex flex-col gap-3 border-t border-autospot-border pt-6">
               <Link
-                to="/propietario/dashboard"
+                to="/vehiculos"
                 className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
               >
                 Cancelar

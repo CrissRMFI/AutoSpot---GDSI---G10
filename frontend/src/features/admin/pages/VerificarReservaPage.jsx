@@ -177,7 +177,7 @@ const VerificarReservaPage = () => {
     const accion = resultado?.accionPrimaria;
     setResultado(null);
     if (accion === "volver-dashboard") {
-      navigate("/admin/dashboard");
+      navigate("/dashboard");
     }
   };
 
@@ -193,7 +193,7 @@ const VerificarReservaPage = () => {
           </h1>
         </div>
         <Link
-          to="/admin/dashboard"
+          to="/dashboard"
           className="inline-flex items-center justify-center gap-2 rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.4} />

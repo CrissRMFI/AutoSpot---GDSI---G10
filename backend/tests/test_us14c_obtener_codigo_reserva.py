@@ -85,4 +85,6 @@ def test_crea_reserva_confirmada_con_codigo(db_session):
     assert reserva.codigo_verificado_at is None
     assert reserva.estacion_retiro == "Estación Belgrano"
     assert reserva.monto_total == Decimal("120000.00")
+    assert reserva.fecha_inicio == inicio
+    assert reserva.fecha_fin == fin
     assert vehiculo.disponible is False
