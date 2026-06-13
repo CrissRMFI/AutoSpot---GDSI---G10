@@ -8,3 +8,11 @@ export const obtenerGananciasGenerales = async (propietarioId, periodo) => {
 
   return response.data;
 };
+
+export const obtenerGananciasVehiculo = async (vehiculoId, periodo) => {
+  const response = await httpClient.get(`/vehiculos/${vehiculoId}/ganancias`, {
+    params: { periodo },
+  });
+
+  return response.data;
+};

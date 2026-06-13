@@ -7,6 +7,7 @@ import ClienteDashboardPage from "../pages/ClienteDashboardPage";
 import MisVehiculosPage from "../pages/MisVehiculosPage";
 import PropietarioDashboardPage from "../pages/PropietarioDashboardPage";
 import PropietarioVehiculosPage from "../pages/PropietarioVehiculosPage";
+import DashboardGananciasVehiculoPage from "../features/propietarios/pages/DashboardGananciasVehiculoPage";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthenticatedShell from "./AuthenticatedShell";
 import ProtectedRoute from "./ProtectedRoute";
@@ -250,6 +251,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
               <DetalleVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vehiculos/:vehiculoId/ganancias"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DashboardGananciasVehiculoPage />
             </ProtectedRoute>
           }
         />

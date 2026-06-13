@@ -1,17 +1,22 @@
 """
-Servicio de negocio — US 15D: Dashboard de ganancias generales.
+Servicio de negocio — Dashboards de ganancias para propietarios.
 """
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, ROUND_HALF_UP
 import uuid
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.exceptions import VehiculoNoEncontradoError
 from app.models.reserva import Reserva
 from app.models.vehiculo import Vehiculo
-from app.schemas.ganancias import GananciasGeneralesResponseSchema, PeriodoGanancias
+from app.schemas.ganancias import (
+    GananciasGeneralesResponseSchema,
+    GananciasVehiculoResponseSchema,
+    PeriodoGanancias,
+)
 from app.services.reglas_financieras import (
     PORCENTAJE_COMISION_PLATAFORMA,
     PORCENTAJE_GANANCIA_PROPIETARIO,
@@ -22,10 +27,16 @@ from app.services.reglas_financieras import (
 
 
 ZONA_REPORTE = ZoneInfo("America/Argentina/Buenos_Aires")
+DIAS_CENTAVOS = Decimal("0.01")
 
 
 def _inicio_mes(fecha: datetime) -> datetime:
     return fecha.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def _inicio_semana(fecha: datetime) -> datetime:
+    inicio_dia = fecha.replace(hour=0, minute=0, second=0, microsecond=0)
+    return inicio_dia - timedelta(days=inicio_dia.weekday())
 
 
 def _sumar_meses(fecha: datetime, meses: int) -> datetime:
@@ -37,6 +48,12 @@ def _sumar_meses(fecha: datetime, meses: int) -> datetime:
 
 def _inicio_anio(fecha: datetime) -> datetime:
     return fecha.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def _decimal_dias(inicio: datetime, fin: datetime) -> Decimal:
+    segundos = max((fin - inicio).total_seconds(), 0)
+    dias = Decimal(str(segundos)) / Decimal("86400")
+    return dias.quantize(DIAS_CENTAVOS, rounding=ROUND_HALF_UP)
 
 
 def obtener_rangos_periodo(
@@ -52,7 +69,12 @@ def obtener_rangos_periodo(
     referencia = ahora or datetime.now(timezone.utc)
     referencia_local = referencia.astimezone(ZONA_REPORTE)
 
-    if periodo == "este_mes":
+    if periodo == "esta_semana":
+        desde = _inicio_semana(referencia_local)
+        hasta = desde + timedelta(days=7)
+        desde_comparacion = desde - timedelta(days=7)
+        hasta_comparacion = desde
+    elif periodo == "este_mes":
         desde = _inicio_mes(referencia_local)
         hasta = _sumar_meses(desde, 1)
         desde_comparacion = _sumar_meses(desde, -1)
@@ -96,6 +118,65 @@ def _totales_periodo(
     )
 
     return cuantizar_monto(Decimal(total or 0)), int(cantidad or 0)
+
+
+def _totales_periodo_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    desde: datetime,
+    hasta: datetime,
+) -> tuple[Decimal, int]:
+    total, cantidad = (
+        db.query(
+            func.coalesce(func.sum(Reserva.monto_total), Decimal("0.00")),
+            func.count(Reserva.id),
+        )
+        .filter(
+            Reserva.vehiculo_id == vehiculo_id,
+            Reserva.estado == "FINALIZADA",
+            Reserva.fecha_devolucion_real.isnot(None),
+            Reserva.fecha_devolucion_real >= desde,
+            Reserva.fecha_devolucion_real < hasta,
+        )
+        .one()
+    )
+
+    return cuantizar_monto(Decimal(total or 0)), int(cantidad or 0)
+
+
+def _dias_alquilados_periodo_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    desde: datetime,
+    hasta: datetime,
+) -> Decimal:
+    reservas = (
+        db.query(Reserva)
+        .filter(
+            Reserva.vehiculo_id == vehiculo_id,
+            Reserva.estado == "FINALIZADA",
+            Reserva.fecha_devolucion_real.isnot(None),
+            Reserva.fecha_inicio < hasta,
+            Reserva.fecha_devolucion_real > desde,
+        )
+        .all()
+    )
+
+    dias = Decimal("0.00")
+    for reserva in reservas:
+        inicio_uso = reserva.fecha_salida_real or reserva.fecha_inicio
+        fin_uso = (
+            reserva.fecha_devolucion_real
+            or reserva.fecha_entrega_solicitada
+            or reserva.fecha_fin
+        )
+
+        inicio_solapado = max(inicio_uso, desde)
+        fin_solapado = min(fin_uso, hasta)
+        if fin_solapado > inicio_solapado:
+            dias += _decimal_dias(inicio_solapado, fin_solapado)
+
+    return dias.quantize(DIAS_CENTAVOS, rounding=ROUND_HALF_UP)
 
 
 def obtener_ganancias_generales_propietario(
@@ -143,6 +224,88 @@ def obtener_ganancias_generales_propietario(
         direccion_variacion=direccion_variacion,
         reservas_finalizadas=reservas_finalizadas,
         reservas_finalizadas_comparacion=reservas_comparacion,
+        porcentaje_comision_plataforma=PORCENTAJE_COMISION_PLATAFORMA,
+        porcentaje_ganancia_propietario=PORCENTAJE_GANANCIA_PROPIETARIO,
+    )
+
+
+def obtener_ganancias_vehiculo_propietario(
+    db: Session,
+    propietario_id: uuid.UUID,
+    vehiculo_id: uuid.UUID,
+    periodo: PeriodoGanancias,
+    ahora: datetime | None = None,
+) -> GananciasVehiculoResponseSchema:
+    """Obtiene ingresos y métricas de uso de un vehículo del propietario."""
+    vehiculo = (
+        db.query(Vehiculo)
+        .filter(
+            Vehiculo.id == vehiculo_id,
+            Vehiculo.propietario_id == propietario_id,
+        )
+        .first()
+    )
+    if vehiculo is None:
+        raise VehiculoNoEncontradoError()
+
+    desde, hasta, desde_comparacion, hasta_comparacion = obtener_rangos_periodo(
+        periodo=periodo,
+        ahora=ahora,
+    )
+
+    ingreso_bruto, reservas_finalizadas = _totales_periodo_vehiculo(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        desde=desde,
+        hasta=hasta,
+    )
+    ingreso_comparacion, reservas_comparacion = _totales_periodo_vehiculo(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        desde=desde_comparacion,
+        hasta=hasta_comparacion,
+    )
+    dias_alquilados = _dias_alquilados_periodo_vehiculo(
+        db=db,
+        vehiculo_id=vehiculo_id,
+        desde=desde,
+        hasta=hasta,
+    )
+    dias_disponibles = _decimal_dias(desde, hasta)
+    tasa_ocupacion = Decimal("0.00")
+    if dias_disponibles > 0:
+        tasa_ocupacion = (
+            dias_alquilados / dias_disponibles * Decimal("100")
+        ).quantize(DIAS_CENTAVOS, rounding=ROUND_HALF_UP)
+
+    desglose = calcular_desglose_ganancias(ingreso_bruto)
+    porcentaje_variacion, direccion_variacion = calcular_variacion_porcentual(
+        actual=ingreso_bruto,
+        comparacion=ingreso_comparacion,
+    )
+
+    return GananciasVehiculoResponseSchema(
+        vehiculo_id=str(vehiculo.id),
+        patente=vehiculo.patente,
+        marca=vehiculo.marca,
+        modelo=vehiculo.modelo,
+        categoria=vehiculo.categoria,
+        periodo=periodo,
+        fecha_desde=desde,
+        fecha_hasta=hasta,
+        fecha_desde_comparacion=desde_comparacion,
+        fecha_hasta_comparacion=hasta_comparacion,
+        ingreso_bruto=desglose["ingreso_bruto"],
+        comision_plataforma=desglose["comision_plataforma"],
+        ganancia_neta=desglose["ganancia_neta"],
+        ingreso_bruto_comparacion=ingreso_comparacion,
+        porcentaje_variacion=porcentaje_variacion,
+        direccion_variacion=direccion_variacion,
+        reservas_finalizadas=reservas_finalizadas,
+        reservas_finalizadas_comparacion=reservas_comparacion,
+        dias_alquilados=dias_alquilados,
+        dias_disponibles=dias_disponibles,
+        tasa_ocupacion=tasa_ocupacion,
         porcentaje_comision_plataforma=PORCENTAJE_COMISION_PLATAFORMA,
         porcentaje_ganancia_propietario=PORCENTAJE_GANANCIA_PROPIETARIO,
     )
