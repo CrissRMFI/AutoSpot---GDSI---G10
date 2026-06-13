@@ -209,9 +209,7 @@ const RecepcionAutosPage = () => {
                     <p className="font-bold text-autospot-black">
                       {formatearMonto(reserva.monto_total)}
                     </p>
-                    <p className="mt-1 text-autospot-muted">
-                      Penalización: {formatearMonto(reserva.monto_penalizacion)}
-                    </p>
+                    <p className="mt-1 text-autospot-muted">Total</p>
                   </div>
 
                   <div className="flex items-center justify-between gap-3 lg:justify-end">

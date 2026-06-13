@@ -190,8 +190,8 @@ const MisAlquileresPage = () => {
                   </div>
 
                   <dl className="grid gap-3 text-sm sm:grid-cols-3">
-                    <Dato label="Inicio" valor={formatearFechaHora(alquiler.fecha_inicio)} />
-                    <Dato label="Fin" valor={formatearFechaHora(alquiler.fecha_fin)} />
+                    <Dato label="Inicio registrado" valor={formatearFechaHora(alquiler.fecha_inicio)} />
+                    <Dato label="Devolución estimada" valor={formatearFechaHora(alquiler.fecha_fin)} />
                     <Dato label="Total" valor={formatearMonto(alquiler.monto_total)} />
                   </dl>
 

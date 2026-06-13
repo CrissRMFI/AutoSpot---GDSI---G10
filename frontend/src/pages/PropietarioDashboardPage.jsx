@@ -1,22 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  AlertCircle,
   ArrowRight,
+  BarChart3,
   CalendarDays,
-  Car,
-  ChevronLeft,
-  ChevronRight,
   CircleDollarSign,
-  ClipboardList,
-  Plus,
+  History,
+  Minus,
+  Percent,
+  TrendingDown,
+  TrendingUp,
   Wallet,
 } from "lucide-react";
-import ProximamenteModal from "../components/ProximamenteModal";
 import { useAuth } from "../features/auth/hooks/useAuth";
-import { listarVehiculosDelPropietario } from "../features/vehiculos/api/vehiculoService";
+import EvolucionMensualChart from "../features/propietarios/components/EvolucionMensualChart";
+import { obtenerGananciasGenerales } from "../features/propietarios/api/gananciasService";
 
-const AUTOS_PAGE_SIZE = 5;
+const PERIODOS_GANANCIAS = [
+  {
+    valor: "este_mes",
+    label: "Este mes",
+    comparacion: "vs mes anterior",
+    icono: CalendarDays,
+  },
+  {
+    valor: "mes_anterior",
+    label: "Mes anterior",
+    comparacion: "vs mes previo",
+    icono: History,
+  },
+  {
+    valor: "anio_actual",
+    label: "Reporte por año",
+    comparacion: "vs año anterior",
+    icono: BarChart3,
+  },
+];
+
+const DESCRIPCION_GRAFICO_PERIODO = {
+  este_mes: "Semanas del mes actual",
+  mes_anterior: "Semanas del mes anterior",
+  anio_actual: "Meses del año",
+};
 
 const formatearMonto = (valor) => {
   if (valor === null || valor === undefined || valor === "") return "Sin definir";
@@ -29,64 +54,14 @@ const formatearMonto = (valor) => {
   }).format(numero);
 };
 
-const obtenerEstadoVehiculo = (vehiculo) => {
-  const estado = (vehiculo?.estado_registro || "").toUpperCase();
-
-  if (estado === "HABILITADO" || estado === "APROBADO") {
-    if (vehiculo?.disponible) {
-      return {
-        label: "Disponible en estación",
-        detalle: "Esperando alquiler",
-        className: "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]",
-      };
-    }
-    if (vehiculo?.alquilado) {
-      return {
-        label: "Alquilado",
-        detalle: "Con alquiler activo",
-        className: "bg-[#dbeafe] text-[#1d4ed8] border-[#bfdbfe]",
-      };
-    }
-    return {
-      label: "No disponible",
-      detalle: "Pausado por el propietario",
-      className: "bg-[#f3f4f6] text-[#374151] border-[#e5e7eb]",
-    };
-  }
-
-  if (estado === "EN_REVISION") {
-    return {
-      label: "En revisión",
-      detalle: "Documentación pendiente",
-      className: "bg-[#fef3c7] text-[#92400e] border-[#fde68a]",
-    };
-  }
-
-  if (estado === "RECHAZADO") {
-    return {
-      label: "Rechazado",
-      detalle: "Requiere corrección",
-      className: "bg-[#fef2f2] text-[#b42318] border-[#fecaca]",
-    };
-  }
-
-  return {
-    label: "Pendiente",
-    detalle: "Carga incompleta",
-    className: "bg-[#f3f4f6] text-[#374151] border-[#e5e7eb]",
-  };
-};
-
 const PropietarioDashboardPage = () => {
   const location = useLocation();
   const { usuario } = useAuth();
 
-  const [vehiculos, setVehiculos] = useState([]);
-  const [cargandoVehiculos, setCargandoVehiculos] = useState(true);
-  const [errorVehiculos, setErrorVehiculos] = useState("");
-  const [paginaAutos, setPaginaAutos] = useState(1);
-  const [paginaAlquileres, setPaginaAlquileres] = useState(1);
-  const [modalProximamente, setModalProximamente] = useState(null);
+  const [periodoGanancias, setPeriodoGanancias] = useState("este_mes");
+  const [ganancias, setGanancias] = useState(null);
+  const [cargandoGanancias, setCargandoGanancias] = useState(true);
+  const [errorGanancias, setErrorGanancias] = useState("");
 
   const mensaje = location.state?.message;
 
@@ -95,52 +70,28 @@ const PropietarioDashboardPage = () => {
 
     let cancelado = false;
 
-    const cargarVehiculos = async () => {
-      setCargandoVehiculos(true);
-      setErrorVehiculos("");
+    const cargarGanancias = async () => {
+      setCargandoGanancias(true);
+      setErrorGanancias("");
 
       try {
-        const data = await listarVehiculosDelPropietario(usuario.id);
-        if (!cancelado) setVehiculos(Array.isArray(data) ? data : []);
+        const data = await obtenerGananciasGenerales(usuario.id, periodoGanancias);
+        if (!cancelado) setGanancias(data);
       } catch {
         if (!cancelado) {
-          setErrorVehiculos("No se pudieron cargar tus vehículos publicados.");
+          setErrorGanancias("No se pudieron cargar las ganancias generales.");
         }
       } finally {
-        if (!cancelado) setCargandoVehiculos(false);
+        if (!cancelado) setCargandoGanancias(false);
       }
     };
 
-    cargarVehiculos();
+    cargarGanancias();
 
     return () => {
       cancelado = true;
     };
-  }, [usuario?.id]);
-
-  const resumen = useMemo(() => {
-    const activos = vehiculos.filter(
-      (vehiculo) =>
-        ["HABILITADO", "APROBADO"].includes(
-          (vehiculo.estado_registro || "").toUpperCase(),
-        ) && vehiculo.disponible,
-    ).length;
-
-    return {
-      total: vehiculos.length,
-      activos,
-      noDisponibles: Math.max(vehiculos.length - activos, 0),
-    };
-  }, [vehiculos]);
-
-  const totalPaginasAutos = Math.max(
-    Math.ceil(vehiculos.length / AUTOS_PAGE_SIZE),
-    1,
-  );
-  const autosPagina = vehiculos.slice(
-    (paginaAutos - 1) * AUTOS_PAGE_SIZE,
-    paginaAutos * AUTOS_PAGE_SIZE,
-  );
+  }, [usuario?.id, periodoGanancias]);
 
   return (
     <section className="w-full min-w-0">
@@ -150,206 +101,130 @@ const PropietarioDashboardPage = () => {
         </div>
       )}
 
-      <div className="mb-6 min-w-0">
-        <h1 className="text-3xl font-black leading-tight text-autospot-black sm:text-4xl">
-          Mi panel de propietario
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-autospot-muted">
-          Resumen de tu flota: {resumen.activos} autos activos y{" "}
-          {resumen.noDisponibles} no disponibles.
-        </p>
-      </div>
-
-      <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          destacado
-          icono={CircleDollarSign}
-          titulo="Ingresos del mes"
-          valor="Próximo a implementar"
-          detalle="Métrica en preparación"
-        />
-        <StatCard
-          icono={CalendarDays}
-          titulo="Días alquilados"
-          valor="Próximo a implementar"
-          detalle="Métrica en preparación"
-        />
-        <StatCard
-          icono={Car}
-          titulo="Autos activos"
-          valor={resumen.activos}
-          detalle={`${resumen.total} auto${resumen.total === 1 ? "" : "s"} publicado${resumen.total === 1 ? "" : "s"}`}
-        />
-        <StatCard
-          icono={AlertCircle}
-          titulo="Incidentes abiertos"
-          valor="Próximo a implementar"
-          detalle="Módulo pendiente"
-        />
-      </section>
-
-      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        <div className="min-w-0 space-y-5">
-          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
-            <div className="flex flex-col gap-3 border-b border-autospot-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-black text-autospot-black">
-                  Mis autos activos ({resumen.total})
-                </h2>
-                <p className="mt-1 text-sm text-autospot-muted">
-                  Paginado de {AUTOS_PAGE_SIZE} en {AUTOS_PAGE_SIZE}.
-                </p>
-              </div>
-              <Link
-                to="/propietario/vehiculos"
-                className="inline-flex items-center gap-2 text-sm font-bold text-autospot-accent"
-              >
-                Ver detalle
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
-
-            {cargandoVehiculos && (
-              <div className="divide-y divide-autospot-border">
-                {[0, 1, 2, 3, 4].map((item) => (
-                  <div key={item} className="h-20 animate-pulse bg-white/55" />
-                ))}
-              </div>
-            )}
-
-            {!cargandoVehiculos && errorVehiculos && (
-              <div className="px-5 py-6 text-sm font-semibold text-[#b42318]">
-                {errorVehiculos}
-              </div>
-            )}
-
-            {!cargandoVehiculos && !errorVehiculos && vehiculos.length === 0 && (
-              <div className="px-5 py-8 text-center">
-                <p className="font-bold text-autospot-black">
-                  Todavía no publicaste autos.
-                </p>
-                <Link
-                  to="/propietario/publicar"
-                  className="mt-4 inline-flex rounded-full bg-autospot-accent px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-                >
-                  Publicar auto
-                </Link>
-              </div>
-            )}
-
-            {!cargandoVehiculos && !errorVehiculos && vehiculos.length > 0 && (
-              <>
-                <div className="divide-y divide-autospot-border">
-                  {autosPagina.map((vehiculo) => (
-                    <VehiculoRow key={vehiculo.id} vehiculo={vehiculo} />
-                  ))}
-                </div>
-                <Paginacion
-                  page={paginaAutos}
-                  pages={totalPaginasAutos}
-                  total={vehiculos.length}
-                  labelSingular="auto"
-                  labelPlural="autos"
-                  onChange={setPaginaAutos}
-                />
-              </>
-            )}
-          </section>
-
-          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
-            <div className="flex flex-col gap-3 border-b border-autospot-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-black text-autospot-black">
-                  Últimos alquileres
-                </h2>
-              </div>
-            </div>
-
-            <div className="px-5 py-8">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
-                  <ClipboardList className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="font-bold text-autospot-black">
-                    Próximo a implementar.
-                  </p>
-                  <p className="mt-1 text-sm text-autospot-muted">
-                    El historial de alquileres del propietario todavía no tiene
-                    endpoint dedicado.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <Paginacion
-              page={paginaAlquileres}
-              pages={1}
-              total={0}
-              labelSingular="alquiler"
-              labelPlural="alquileres"
-              onChange={setPaginaAlquileres}
-            />
-          </section>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-black leading-tight text-autospot-black sm:text-4xl">
+            Dashboard general
+          </h1>
         </div>
-
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-autospot-border bg-autospot-white p-5">
-            <h2 className="text-base font-black text-autospot-black">
-              Acciones del panel
-            </h2>
-            <div className="mt-4 grid gap-3">
-              <Link
-                to="/propietario/publicar"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Publicar auto
-              </Link>
-              <button
-                type="button"
-                onClick={() => setModalProximamente("Ver ingresos")}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent"
-              >
-                <Wallet className="h-4 w-4" aria-hidden="true" />
-                Ver ingresos
-              </button>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-autospot-border bg-autospot-white p-5">
-            <h2 className="text-base font-black text-autospot-black">
-              Publicaciones
-            </h2>
-            <div className="mt-4 flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
-                <Car className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="font-black text-autospot-black">
-                  {resumen.noDisponibles} auto
-                  {resumen.noDisponibles === 1 ? "" : "s"} no disponible
-                  {resumen.noDisponibles === 1 ? "" : "s"}
-                </p>
-                <p className="mt-1 text-sm text-autospot-muted">
-                  También convivís con autos activos en el panel.
-                </p>
-              </div>
-            </div>
-          </section>
-        </aside>
+        <Link
+          to="/vehiculos"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+        >
+          Ver vehículos
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
       </div>
 
-      <ProximamenteModal
-        abierto={Boolean(modalProximamente)}
-        titulo={modalProximamente || undefined}
-        onClose={() => setModalProximamente(null)}
+      <GananciasGeneralesSection
+        periodo={periodoGanancias}
+        reporte={ganancias}
+        cargando={cargandoGanancias}
+        error={errorGanancias}
+        onPeriodoChange={setPeriodoGanancias}
       />
     </section>
   );
 };
 
-const StatCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) => (
+const GananciasGeneralesSection = ({
+  periodo,
+  reporte,
+  cargando,
+  error,
+  onPeriodoChange,
+}) => {
+  const periodoActivo =
+    PERIODOS_GANANCIAS.find((item) => item.valor === periodo) ||
+    PERIODOS_GANANCIAS[0];
+
+  return (
+    <section id="ganancias-generales" className="mb-6 scroll-mt-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-black text-autospot-black">
+            Ganancias generales
+          </h2>
+        </div>
+        <div className="grid gap-2 rounded-lg border border-autospot-border bg-white p-2 sm:grid-cols-3">
+          {PERIODOS_GANANCIAS.map((item) => {
+            const activo = item.valor === periodo;
+            const Icono = item.icono;
+            return (
+              <button
+                key={item.valor}
+                type="button"
+                onClick={() => onPeriodoChange(item.valor)}
+                className={`flex min-h-16 items-center gap-3 rounded-md border px-3 py-3 text-left transition ${
+                  activo
+                    ? "border-autospot-black bg-autospot-black text-white shadow-sm"
+                    : "border-transparent bg-[#fafaf9] text-autospot-black hover:border-autospot-border"
+                }`}
+              >
+                <span
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+                    activo ? "bg-white/10 text-white" : "bg-white text-autospot-accent"
+                  }`}
+                >
+                  <Icono className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black leading-tight">
+                    {item.label}
+                  </span>
+                  <span
+                    className={`mt-1 block text-xs font-semibold ${
+                      activo ? "text-white/65" : "text-autospot-muted"
+                    }`}
+                  >
+                    {item.comparacion}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-4 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm font-semibold text-[#b42318]">
+          {error}
+        </div>
+      )}
+
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <GananciaCard
+          destacado
+          icono={CircleDollarSign}
+          titulo="Ingreso bruto"
+          valor={cargando ? "Cargando..." : formatearMonto(reporte?.ingreso_bruto)}
+          detalle={`${reporte?.reservas_finalizadas ?? 0} reserva${reporte?.reservas_finalizadas === 1 ? "" : "s"} finalizada${reporte?.reservas_finalizadas === 1 ? "" : "s"}`}
+        />
+        <GananciaCard
+          icono={Percent}
+          titulo="Comisión plataforma"
+          valor={cargando ? "Cargando..." : formatearMonto(reporte?.comision_plataforma)}
+          detalle="20% del ingreso bruto"
+        />
+        <GananciaCard
+          icono={Wallet}
+          titulo="Ganancia neta final"
+          valor={cargando ? "Cargando..." : formatearMonto(reporte?.ganancia_neta)}
+          detalle="80% para el propietario"
+        />
+      </div>
+
+      <GraficoGanancias
+        reporte={reporte}
+        cargando={cargando}
+        periodo={periodo}
+        periodoActivo={periodoActivo}
+      />
+    </section>
+  );
+};
+
+const GananciaCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) => (
   <article
     className={`rounded-lg border p-5 ${
       destacado
@@ -380,88 +255,70 @@ const StatCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) =
   </article>
 );
 
-const VehiculoRow = ({ vehiculo }) => {
-  const estado = obtenerEstadoVehiculo(vehiculo);
+const GraficoGanancias = ({ reporte, cargando, periodo, periodoActivo }) => {
+  const descripcionGrafico =
+    DESCRIPCION_GRAFICO_PERIODO[periodo] || "Evolución del período";
 
   return (
-    <Link
-      to={`/vehiculos/${vehiculo.id}/detalle`}
-      className="grid gap-4 px-5 py-4 transition hover:bg-[#fafaf9] md:grid-cols-[minmax(0,1fr)_minmax(140px,0.55fr)_auto] md:items-center"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
-          <Car className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-black text-autospot-black">
-            {vehiculo.marca} {vehiculo.modelo} {vehiculo.anio || ""}
-            {vehiculo.patente ? ` - ${vehiculo.patente}` : ""}
+    <article className="mt-4 rounded-lg border border-autospot-border bg-autospot-white p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-base font-black text-autospot-black">
+            Evolución de ingresos
           </h3>
-          <p className="mt-1 truncate text-xs text-autospot-muted">
-            {vehiculo.estacion || "Sin estación"} -{" "}
-            {vehiculo.categoria || "Sin categoría"}
+          <p className="mt-1 text-sm font-semibold text-autospot-muted">
+            {descripcionGrafico} · {periodoActivo.comparacion}
           </p>
         </div>
+        <IndicadorVariacion reporte={reporte} cargando={cargando} />
       </div>
 
-      <div className="text-sm">
-        <p className="font-black text-autospot-black">
-          {formatearMonto(vehiculo.precio_por_dia)}
-        </p>
-        <p className="mt-1 text-xs text-autospot-muted">Precio diario</p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 md:justify-end">
-        <div className="text-right">
-          <span
-            className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${estado.className}`}
-          >
-            {estado.label}
-          </span>
-          <p className="mt-1 text-xs text-autospot-muted">{estado.detalle}</p>
-        </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-autospot-accent" aria-hidden="true" />
-      </div>
-    </Link>
+      <EvolucionMensualChart
+        datos={reporte?.evolucion_periodo}
+        cargando={cargando}
+        emptyMessage="Sin ingresos registrados en este período."
+      />
+    </article>
   );
 };
 
-const Paginacion = ({
-  page,
-  pages,
-  total,
-  labelSingular,
-  labelPlural,
-  onChange,
-}) => (
-  <div className="flex flex-col gap-3 border-t border-autospot-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-    <p className="text-sm font-semibold text-autospot-muted">
-      {total} {total === 1 ? labelSingular : labelPlural}
-    </p>
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => onChange(page - 1)}
-        disabled={page <= 1}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-autospot-border bg-white px-4 text-sm font-bold text-autospot-black transition hover:border-autospot-accent disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        Anterior
-      </button>
-      <span className="px-2 text-sm font-bold text-autospot-muted">
-        {page} / {pages}
-      </span>
-      <button
-        type="button"
-        onClick={() => onChange(page + 1)}
-        disabled={page >= pages}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-autospot-border bg-white px-4 text-sm font-bold text-autospot-black transition hover:border-autospot-accent disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        Siguiente
-        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-      </button>
+const IndicadorVariacion = ({ reporte, cargando }) => {
+  if (cargando) {
+    return <p className="text-sm font-bold text-autospot-muted">Calculando comparación...</p>;
+  }
+
+  if (!reporte) {
+    return <p className="text-sm font-bold text-autospot-muted">Sin datos de comparación.</p>;
+  }
+
+  const direccion = reporte.direccion_variacion;
+  const porcentaje = reporte.porcentaje_variacion;
+  const actual = Number(reporte.ingreso_bruto ?? 0);
+  const comparacion = Number(reporte.ingreso_bruto_comparacion ?? 0);
+  const sube = direccion === "SUBE";
+  const baja = direccion === "BAJA";
+  const Icono = sube ? TrendingUp : baja ? TrendingDown : Minus;
+  const className = sube
+    ? "border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]"
+    : baja
+      ? "border-[#fecaca] bg-[#fef2f2] text-[#b42318]"
+      : "border-autospot-border bg-white text-autospot-muted";
+
+  let texto = "Sin cambios respecto del período anterior.";
+  if (actual === 0 && comparacion === 0) {
+    texto = "Sin ingresos registrados para comparar.";
+  } else if (direccion === "SIN_COMPARACION") {
+    texto = "Sin base previa para comparar.";
+  } else if (sube || baja) {
+    texto = `${porcentaje}% ${sube ? "de crecimiento" : "de caída"} de ingresos.`;
+  }
+
+  return (
+    <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-black ${className}`}>
+      <Icono className="h-4 w-4" aria-hidden="true" />
+      {texto}
     </div>
-  </div>
-);
+  );
+};
 
 export default PropietarioDashboardPage;

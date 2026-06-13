@@ -226,7 +226,7 @@ const PublicarVehiculoPage = () => {
       );
 
       setTimeout(() => {
-        navigate("/propietario/dashboard", {
+        navigate("/vehiculos", {
           state: {
             message: "Vehículo publicado correctamente.",
           },
@@ -273,26 +273,8 @@ const PublicarVehiculoPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-autospot-cream text-autospot-black">
-      <header className="sticky top-0 z-40 border-b border-autospot-border bg-autospot-cream/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-black tracking-[-0.04em] !text-autospot-black"
-          >
-            Auto<span className="!text-autospot-accent">Spot</span>
-          </Link>
-
-          <Link
-            to="/propietario/dashboard"
-            className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            Volver al panel
-          </Link>
-        </div>
-      </header>
-
-      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
+    <main className="w-full text-autospot-black">
+      <section className="grid w-full gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8 lg:sticky lg:top-28 lg:h-fit">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
             Publicación
@@ -622,7 +604,7 @@ const PublicarVehiculoPage = () => {
 
             <div className="flex flex-col gap-3 border-t border-autospot-border pt-6 sm:flex-row sm:items-center sm:justify-between">
               <Link
-                to="/propietario/dashboard"
+                to="/vehiculos"
                 className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
               >
                 Cancelar

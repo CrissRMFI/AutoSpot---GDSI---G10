@@ -84,7 +84,7 @@ class Reserva(Base):
         doc="Estación pactada originalmente para el retiro.",
     )
 
-    # ── Tiempos reales y penalización ───────────────────────────
+    # ── Tiempos reales ──────────────────────────────────────────
     fecha_entrega_solicitada: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -103,12 +103,12 @@ class Reserva(Base):
     minutos_retraso: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
-        doc="Minutos de retraso respecto de fecha_fin pactada al devolver el auto.",
+        doc="Minutos de retraso al avisar la entrega respecto de fecha_fin.",
     )
     monto_penalizacion: Mapped[Decimal | None] = mapped_column(
         Numeric(precision=12, scale=2),
         nullable=True,
-        doc="Penalización aplicada por devolución tardía.",
+        doc="Recargo calculado al avisar entrega tardía.",
     )
 
     created_at: Mapped[datetime] = mapped_column(

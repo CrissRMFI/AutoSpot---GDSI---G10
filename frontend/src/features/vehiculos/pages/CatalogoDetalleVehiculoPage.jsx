@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
+import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
+import { obtenerDatosPersonales } from "../../usuarios/api/usuarioService";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
 import LightboxGaleria from "../components/LightboxGaleria";
 import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
@@ -16,12 +26,16 @@ const LADO_LABEL = {
 
 const CatalogoDetalleVehiculoPage = () => {
   const { vehiculoId } = useParams();
+  const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [vehiculo, setVehiculo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [modalReseniasAbierto, setModalReseniasAbierto] = useState(false);
+  const [validandoAlquiler, setValidandoAlquiler] = useState(false);
+  const [requisitoPendiente, setRequisitoPendiente] = useState(null);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -59,6 +73,54 @@ const CatalogoDetalleVehiculoPage = () => {
 
   const irSiguiente = () => {
     setIndiceActivo((prev) => (prev + 1) % totalFotos);
+  };
+
+  const handleAlquilar = async () => {
+    if (!vehiculo?.id || !usuario?.id) return;
+
+    setValidandoAlquiler(true);
+    setRequisitoPendiente(null);
+
+    try {
+      await obtenerDatosPersonales(usuario.id);
+    } catch {
+      setRequisitoPendiente({
+        titulo: "Completá tus datos personales",
+        mensaje:
+          "Para iniciar un alquiler necesitamos tener registrados tus datos personales.",
+        accion: "Cargar datos personales",
+        to: "/datos-personales",
+      });
+      setValidandoAlquiler(false);
+      return;
+    }
+
+    try {
+      const documentacion = await obtenerDocumentacionHabilitante(usuario.id);
+      if (documentacion?.estado_validacion !== "APROBADO") {
+        setRequisitoPendiente({
+          titulo: "Documentación pendiente",
+          mensaje:
+            "Para alquilar un vehículo, tu documentación habilitante debe estar aprobada.",
+          accion: "Ver documentación",
+          to: "/documentacion-habilitante",
+        });
+        setValidandoAlquiler(false);
+        return;
+      }
+    } catch {
+      setRequisitoPendiente({
+        titulo: "Cargá tu documentación habilitante",
+        mensaje:
+          "Antes de alquilar necesitamos validar tu documentación habilitante.",
+        accion: "Cargar documentación",
+        to: "/documentacion-habilitante",
+      });
+      setValidandoAlquiler(false);
+      return;
+    }
+
+    navigate(`/catalogo/${vehiculo.id}/alquilar`);
   };
 
   if (cargando) {
@@ -244,12 +306,14 @@ const CatalogoDetalleVehiculoPage = () => {
             </div>
 
             {vehiculo.disponible ? (
-              <Link
-                to={`/catalogo/${vehiculo.id}/alquilar`}
+              <button
+                type="button"
+                onClick={handleAlquilar}
+                disabled={validandoAlquiler}
                 className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
               >
-                Alquilar
-              </Link>
+                {validandoAlquiler ? "Verificando..." : "Alquilar"}
+              </button>
             ) : (
               <button
                 type="button"
@@ -276,6 +340,12 @@ const CatalogoDetalleVehiculoPage = () => {
         onClose={() => setModalReseniasAbierto(false)} 
         vehiculoId={vehiculo.id} 
       />
+
+      <RequisitoAlquilerModal
+        abierto={Boolean(requisitoPendiente)}
+        requisito={requisitoPendiente}
+        onClose={() => setRequisitoPendiente(null)}
+      />
     </>
   );
 };
@@ -287,6 +357,67 @@ const DatoFicha = ({ label, valor }) => (
       {valor || "—"}
     </dd>
   </div>
+);
+
+const RequisitoAlquilerModal = ({ abierto, requisito, onClose }) => (
+  <Dialog
+    open={abierto}
+    onClose={onClose}
+    maxWidth="xs"
+    fullWidth
+    PaperProps={{
+      sx: {
+        borderRadius: 3,
+        bgcolor: "#f5f2ed",
+        border: "1px solid #d4cec6",
+      },
+    }}
+  >
+    <DialogTitle
+      sx={{
+        color: "#0a0a0a",
+        fontFamily: "Unbounded, sans-serif",
+        fontWeight: 900,
+        letterSpacing: "-0.04em",
+        pb: 1,
+      }}
+    >
+      {requisito?.titulo}
+    </DialogTitle>
+    <DialogContent>
+      <p className="m-0 text-sm font-semibold leading-6 text-autospot-muted">
+        {requisito?.mensaje}
+      </p>
+    </DialogContent>
+    <DialogActions sx={{ px: 3, pb: 3 }}>
+      <Button
+        onClick={onClose}
+        sx={{
+          color: "#0a0a0a",
+          fontWeight: 800,
+          borderRadius: 999,
+        }}
+      >
+        Cancelar
+      </Button>
+      {requisito?.to && (
+        <Button
+          component={Link}
+          to={requisito.to}
+          variant="contained"
+          sx={{
+            bgcolor: "#7b1c2e",
+            borderRadius: 999,
+            fontWeight: 900,
+            px: 3,
+            "&:hover": { bgcolor: "#5a1420" },
+          }}
+        >
+          {requisito.accion}
+        </Button>
+      )}
+    </DialogActions>
+  </Dialog>
 );
 
 export default CatalogoDetalleVehiculoPage;

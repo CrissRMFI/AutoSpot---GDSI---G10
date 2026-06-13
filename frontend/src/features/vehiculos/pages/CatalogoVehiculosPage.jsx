@@ -164,7 +164,7 @@ const CatalogoVehiculosPage = () => {
           los vehículos disponibles.
         </p>
         <Link
-          to="/usuario/dashboard"
+          to="/dashboard"
           className="mt-6 inline-flex justify-center rounded-full bg-autospot-accent px-6 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
         >
           Volver al panel

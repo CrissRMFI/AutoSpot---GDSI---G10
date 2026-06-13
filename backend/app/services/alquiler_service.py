@@ -3,7 +3,7 @@ Lógica de negocio para la gestión de alquileres.
 """
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone
-from math import ceil, floor
+from math import floor
 import secrets
 import uuid
 
@@ -40,6 +40,7 @@ from app.services.notificacion import (
     crear_notificacion_reserva_rechazada,
     crear_notificaciones_reserva_pendiente_verificacion,
 )
+from app.services.reglas_financieras import calcular_recargo_devolucion_tardia
 
 
 ESTADOS_RESERVA_ACTIVA = {
@@ -158,7 +159,8 @@ def crear_reserva_con_codigo(
     ):
         raise VehiculoNoDisponibleParaReservaError()
 
-    duracion = calcular_tiempo_alquiler(schema.fecha_inicio, schema.fecha_fin)
+    fecha_inicio = datetime.now(timezone.utc)
+    duracion = calcular_tiempo_alquiler(fecha_inicio, schema.fecha_fin)
     codigo = _generar_codigo_reserva(db)
 
     reserva = Reserva(
@@ -171,7 +173,7 @@ def crear_reserva_con_codigo(
             dias=duracion["dias"],
             horas=duracion["horas"],
         ),
-        fecha_inicio=schema.fecha_inicio,
+        fecha_inicio=fecha_inicio,
         fecha_fin=schema.fecha_fin,
         estacion_retiro=vehiculo.estacion,
     )
@@ -259,9 +261,6 @@ def motivo_bloqueo_entrega(reserva: Reserva) -> str | None:
     estado = (reserva.estado or "").upper()
     if estado in ESTADOS_RESERVA_BLOQUEADA_PARA_ENTREGA:
         return f"La reserva está {estado.lower()}."
-
-    if reserva.fecha_inicio < datetime.now(timezone.utc):
-        return "La fecha de inicio de la reserva ya expiró."
 
     return None
 
@@ -400,39 +399,9 @@ def registrar_salida(db: Session, reserva_id: uuid.UUID) -> Reserva:
     return reserva
 
 
-def _calcular_penalizacion(
-    reserva: Reserva,
-    fecha_devolucion: datetime,
-) -> tuple[int | None, Decimal | None]:
-    """
-    Calcula minutos de retraso y penalización por devolución tardía.
-
-    Regla (supuesto, ajustable): días de retraso redondeados hacia arriba
-    multiplicados por la tarifa diaria del vehículo.
-    """
-    if fecha_devolucion <= reserva.fecha_fin:
-        return None, None
-
-    delta = fecha_devolucion - reserva.fecha_fin
-    minutos = int(delta.total_seconds() // 60)
-
-    precio_por_dia = reserva.vehiculo.precio_por_dia if reserva.vehiculo else None
-    if precio_por_dia is None or precio_por_dia <= 0:
-        return minutos, None
-
-    dias_retraso = ceil(delta.total_seconds() / 86400)
-    monto = (Decimal(precio_por_dia) * Decimal(dias_retraso)).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
-    )
-    return minutos, monto
-
-
 def registrar_entrada(db: Session, reserva_id: uuid.UUID) -> Reserva:
     """
     Registra la entrada/devolución del auto y deja el alquiler DEVUELTO.
-
-    Aplica penalización automática si la devolución es posterior a la fecha
-    de fin pactada.
     """
     reserva = (
         db.query(Reserva)
@@ -448,10 +417,6 @@ def registrar_entrada(db: Session, reserva_id: uuid.UUID) -> Reserva:
 
     ahora = datetime.now(timezone.utc)
     reserva.fecha_devolucion_real = ahora
-    reserva.minutos_retraso, reserva.monto_penalizacion = _calcular_penalizacion(
-        reserva=reserva,
-        fecha_devolucion=ahora,
-    )
     reserva.estado = "DEVUELTO"
     cerrar_notificaciones_de_reserva_por_tipo(
         db=db,
@@ -551,8 +516,8 @@ def entregar_auto(
     US 22C — El conductor avisa que entrega el auto: EN_CURSO → ENTREGA_SOLICITADA.
 
     Es solo un aviso (registra `fecha_entrega_solicitada` para auditoría). La
-    fecha real de devolución y la penalización las fija el admin al registrar
-    la entrada, antes del checkout.
+    fecha real de devolución la fija el admin al registrar la entrada, antes
+    del checkout.
     """
     reserva = (
         db.query(Reserva)
@@ -566,8 +531,14 @@ def entregar_auto(
     if (reserva.estado or "").upper() != "EN_CURSO":
         raise ReservaNoEnCursoError()
 
+    fecha_entrega = datetime.now(timezone.utc)
     reserva.estado = "ENTREGA_SOLICITADA"
-    reserva.fecha_entrega_solicitada = datetime.now(timezone.utc)
+    reserva.fecha_entrega_solicitada = fecha_entrega
+    reserva.minutos_retraso, _, reserva.monto_penalizacion = calcular_recargo_devolucion_tardia(
+        precio_por_dia=reserva.vehiculo.precio_por_dia if reserva.vehiculo else None,
+        fecha_entrega_estimada=reserva.fecha_fin,
+        fecha_entrega_real=fecha_entrega,
+    )
 
     _notificar_admins(
         db=db,
