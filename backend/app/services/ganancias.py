@@ -16,6 +16,7 @@ from app.schemas.ganancias import (
     GananciasGeneralesResponseSchema,
     GananciasVehiculoResponseSchema,
     PeriodoGanancias,
+    PuntoEvolucionGananciasSchema,
 )
 from app.services.reglas_financieras import (
     PORCENTAJE_COMISION_PLATAFORMA,
@@ -28,6 +29,21 @@ from app.services.reglas_financieras import (
 
 ZONA_REPORTE = ZoneInfo("America/Argentina/Buenos_Aires")
 DIAS_CENTAVOS = Decimal("0.01")
+MESES_ABREVIADOS = (
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+)
+DIAS_SEMANA_ABREVIADOS = ("Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom")
 
 
 def _inicio_mes(fecha: datetime) -> datetime:
@@ -93,6 +109,61 @@ def obtener_rangos_periodo(
         raise ValueError("Periodo de ganancias invalido")
 
     return desde, hasta, desde_comparacion, hasta_comparacion
+
+
+def _buckets_evolucion_periodo(
+    periodo: PeriodoGanancias,
+    desde: datetime,
+    hasta: datetime,
+) -> list[tuple[str, str, datetime, datetime]]:
+    if periodo == "esta_semana":
+        return [
+            (
+                dia.strftime("%Y-%m-%d"),
+                DIAS_SEMANA_ABREVIADOS[index],
+                dia,
+                dia + timedelta(days=1),
+            )
+            for index, dia in enumerate(
+                desde + timedelta(days=offset) for offset in range(7)
+            )
+        ]
+
+    if periodo in {"este_mes", "mes_anterior"}:
+        buckets = []
+        actual = desde
+        numero_semana = 1
+        while actual < hasta:
+            fin = min(actual + timedelta(days=7), hasta)
+            buckets.append(
+                (
+                    actual.strftime("%Y-%m-%d"),
+                    f"Sem {numero_semana}",
+                    actual,
+                    fin,
+                )
+            )
+            actual = fin
+            numero_semana += 1
+        return buckets
+
+    if periodo == "anio_actual":
+        buckets = []
+        actual = desde
+        while actual < hasta:
+            fin = _sumar_meses(actual, 1)
+            buckets.append(
+                (
+                    actual.strftime("%Y-%m"),
+                    MESES_ABREVIADOS[actual.month - 1],
+                    actual,
+                    fin,
+                )
+            )
+            actual = fin
+        return buckets
+
+    raise ValueError("Periodo de ganancias invalido")
 
 
 def _totales_periodo(
@@ -179,6 +250,92 @@ def _dias_alquilados_periodo_vehiculo(
     return dias.quantize(DIAS_CENTAVOS, rounding=ROUND_HALF_UP)
 
 
+def _evolucion_periodo_general(
+    db: Session,
+    propietario_id: uuid.UUID,
+    periodo: PeriodoGanancias,
+    desde: datetime,
+    hasta: datetime,
+) -> list[PuntoEvolucionGananciasSchema]:
+    evolucion = []
+    for clave, etiqueta, bucket_desde, bucket_hasta in _buckets_evolucion_periodo(
+        periodo=periodo,
+        desde=desde,
+        hasta=hasta,
+    ):
+        ingreso_bruto, reservas_finalizadas = _totales_periodo(
+            db=db,
+            propietario_id=propietario_id,
+            desde=bucket_desde,
+            hasta=bucket_hasta,
+        )
+        desglose = calcular_desglose_ganancias(ingreso_bruto)
+        evolucion.append(
+            PuntoEvolucionGananciasSchema(
+                clave=clave,
+                etiqueta=etiqueta,
+                fecha_desde=bucket_desde,
+                fecha_hasta=bucket_hasta,
+                ingreso_bruto=desglose["ingreso_bruto"],
+                comision_plataforma=desglose["comision_plataforma"],
+                ganancia_neta=desglose["ganancia_neta"],
+                reservas_finalizadas=reservas_finalizadas,
+            )
+        )
+    return evolucion
+
+
+def _evolucion_periodo_vehiculo(
+    db: Session,
+    vehiculo_id: uuid.UUID,
+    periodo: PeriodoGanancias,
+    desde: datetime,
+    hasta: datetime,
+) -> list[PuntoEvolucionGananciasSchema]:
+    evolucion = []
+    for clave, etiqueta, bucket_desde, bucket_hasta in _buckets_evolucion_periodo(
+        periodo=periodo,
+        desde=desde,
+        hasta=hasta,
+    ):
+        ingreso_bruto, reservas_finalizadas = _totales_periodo_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            desde=bucket_desde,
+            hasta=bucket_hasta,
+        )
+        desglose = calcular_desglose_ganancias(ingreso_bruto)
+        dias_alquilados = _dias_alquilados_periodo_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            desde=bucket_desde,
+            hasta=bucket_hasta,
+        )
+        dias_disponibles = _decimal_dias(bucket_desde, bucket_hasta)
+        tasa_ocupacion = Decimal("0.00")
+        if dias_disponibles > 0:
+            tasa_ocupacion = (
+                dias_alquilados / dias_disponibles * Decimal("100")
+            ).quantize(DIAS_CENTAVOS, rounding=ROUND_HALF_UP)
+
+        evolucion.append(
+            PuntoEvolucionGananciasSchema(
+                clave=clave,
+                etiqueta=etiqueta,
+                fecha_desde=bucket_desde,
+                fecha_hasta=bucket_hasta,
+                ingreso_bruto=desglose["ingreso_bruto"],
+                comision_plataforma=desglose["comision_plataforma"],
+                ganancia_neta=desglose["ganancia_neta"],
+                reservas_finalizadas=reservas_finalizadas,
+                dias_alquilados=dias_alquilados,
+                dias_disponibles=dias_disponibles,
+                tasa_ocupacion=tasa_ocupacion,
+            )
+        )
+    return evolucion
+
+
 def obtener_ganancias_generales_propietario(
     db: Session,
     propietario_id: uuid.UUID,
@@ -226,6 +383,13 @@ def obtener_ganancias_generales_propietario(
         reservas_finalizadas_comparacion=reservas_comparacion,
         porcentaje_comision_plataforma=PORCENTAJE_COMISION_PLATAFORMA,
         porcentaje_ganancia_propietario=PORCENTAJE_GANANCIA_PROPIETARIO,
+        evolucion_periodo=_evolucion_periodo_general(
+            db=db,
+            propietario_id=propietario_id,
+            periodo=periodo,
+            desde=desde,
+            hasta=hasta,
+        ),
     )
 
 
@@ -308,4 +472,11 @@ def obtener_ganancias_vehiculo_propietario(
         tasa_ocupacion=tasa_ocupacion,
         porcentaje_comision_plataforma=PORCENTAJE_COMISION_PLATAFORMA,
         porcentaje_ganancia_propietario=PORCENTAJE_GANANCIA_PROPIETARIO,
+        evolucion_periodo=_evolucion_periodo_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            periodo=periodo,
+            desde=desde,
+            hasta=hasta,
+        ),
     )

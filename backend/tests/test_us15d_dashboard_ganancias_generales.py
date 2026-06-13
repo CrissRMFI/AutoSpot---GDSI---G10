@@ -141,6 +141,11 @@ def test_ganancias_generales_calcula_80_20_y_filtra_por_propietario_periodo_y_es
     assert reporte.direccion_variacion == "SUBE"
     assert reporte.reservas_finalizadas == 2
     assert reporte.reservas_finalizadas_comparacion == 1
+    assert len(reporte.evolucion_periodo) == 5
+    assert reporte.evolucion_periodo[1].clave == "2026-06-08"
+    assert reporte.evolucion_periodo[1].etiqueta == "Sem 2"
+    assert reporte.evolucion_periodo[1].ingreso_bruto == Decimal("150000.00")
+    assert reporte.evolucion_periodo[1].ganancia_neta == Decimal("120000.00")
 
 
 def test_ganancias_generales_sin_base_previa_informa_sin_comparacion(db_session):
@@ -216,6 +221,7 @@ class TestUS15DHTTP:
                 assert Decimal(str(body["comision_plataforma"])) == Decimal("20000.00")
                 assert Decimal(str(body["ganancia_neta"])) == Decimal("80000.00")
                 assert body["fecha_imputacion"] == "fecha_devolucion_real"
+                assert len(body["evolucion_periodo"]) == 5
         finally:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)

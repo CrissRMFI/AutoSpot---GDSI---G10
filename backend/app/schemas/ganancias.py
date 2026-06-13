@@ -5,10 +5,26 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 PeriodoGanancias = Literal["esta_semana", "este_mes", "mes_anterior", "anio_actual"]
+
+
+class PuntoEvolucionGananciasSchema(BaseModel):
+    """Punto temporal para graficar evolución de ingresos."""
+
+    clave: str
+    etiqueta: str
+    fecha_desde: datetime
+    fecha_hasta: datetime
+    ingreso_bruto: Decimal
+    comision_plataforma: Decimal
+    ganancia_neta: Decimal
+    reservas_finalizadas: int
+    dias_alquilados: Decimal | None = None
+    dias_disponibles: Decimal | None = None
+    tasa_ocupacion: Decimal | None = None
 
 
 class GananciasGeneralesResponseSchema(BaseModel):
@@ -30,6 +46,7 @@ class GananciasGeneralesResponseSchema(BaseModel):
     reservas_finalizadas_comparacion: int
     porcentaje_comision_plataforma: Decimal
     porcentaje_ganancia_propietario: Decimal
+    evolucion_periodo: list[PuntoEvolucionGananciasSchema] = Field(default_factory=list)
 
 
 class GananciasVehiculoResponseSchema(BaseModel):
@@ -58,3 +75,4 @@ class GananciasVehiculoResponseSchema(BaseModel):
     tasa_ocupacion: Decimal
     porcentaje_comision_plataforma: Decimal
     porcentaje_ganancia_propietario: Decimal
+    evolucion_periodo: list[PuntoEvolucionGananciasSchema] = Field(default_factory=list)

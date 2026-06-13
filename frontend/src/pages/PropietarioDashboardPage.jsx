@@ -13,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import EvolucionMensualChart from "../features/propietarios/components/EvolucionMensualChart";
 import { obtenerGananciasGenerales } from "../features/propietarios/api/gananciasService";
 
 const PERIODOS_GANANCIAS = [
@@ -35,6 +36,12 @@ const PERIODOS_GANANCIAS = [
     icono: BarChart3,
   },
 ];
+
+const DESCRIPCION_GRAFICO_PERIODO = {
+  este_mes: "Semanas del mes actual",
+  mes_anterior: "Semanas del mes anterior",
+  anio_actual: "Meses del año",
+};
 
 const formatearMonto = (valor) => {
   if (valor === null || valor === undefined || valor === "") return "Sin definir";
@@ -210,6 +217,7 @@ const GananciasGeneralesSection = ({
       <GraficoGanancias
         reporte={reporte}
         cargando={cargando}
+        periodo={periodo}
         periodoActivo={periodoActivo}
       />
     </section>
@@ -247,84 +255,29 @@ const GananciaCard = ({ destacado = false, icono: Icono, titulo, valor, detalle 
   </article>
 );
 
-const GraficoGanancias = ({ reporte, cargando, periodoActivo }) => {
-  const actual = Number(reporte?.ingreso_bruto ?? 0);
-  const comparacion = Number(reporte?.ingreso_bruto_comparacion ?? 0);
-  const maximo = Math.max(actual, comparacion, 1);
-  const barras = [
-    {
-      label: periodoActivo.label,
-      valor: actual,
-      className: "bg-autospot-accent",
-    },
-    {
-      label: "Comparación",
-      valor: comparacion,
-      className: "bg-[#d8c7b0]",
-    },
-  ];
+const GraficoGanancias = ({ reporte, cargando, periodo, periodoActivo }) => {
+  const descripcionGrafico =
+    DESCRIPCION_GRAFICO_PERIODO[periodo] || "Evolución del período";
 
   return (
     <article className="mt-4 rounded-lg border border-autospot-border bg-autospot-white p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-base font-black text-autospot-black">
-            Comparativa de ingresos
+            Evolución de ingresos
           </h3>
           <p className="mt-1 text-sm font-semibold text-autospot-muted">
-            {periodoActivo.comparacion}
+            {descripcionGrafico} · {periodoActivo.comparacion}
           </p>
         </div>
         <IndicadorVariacion reporte={reporte} cargando={cargando} />
       </div>
 
-      <div className="mt-5 rounded-lg border border-autospot-border bg-[#fafaf9] p-4">
-        <div className="relative h-56 overflow-hidden rounded-md bg-white px-4 pb-12 pt-4 sm:h-64 sm:px-8">
-          <div className="absolute inset-x-4 top-4 h-px bg-autospot-border sm:inset-x-8" />
-          <div className="absolute inset-x-4 top-1/3 h-px bg-autospot-border sm:inset-x-8" />
-          <div className="absolute inset-x-4 top-2/3 h-px bg-autospot-border sm:inset-x-8" />
-          <div className="absolute inset-x-4 bottom-12 h-px bg-autospot-black/20 sm:inset-x-8" />
-
-          <div className="relative z-10 grid h-full grid-cols-2 items-end gap-5">
-            {barras.map((barra) => {
-              const alto = cargando
-                ? 36
-                : barra.valor > 0
-                  ? Math.max((barra.valor / maximo) * 100, 8)
-                  : 0;
-
-              return (
-                <div
-                  key={barra.label}
-                  className="flex h-full min-w-0 flex-col justify-end"
-                >
-                  <div className="mb-2 text-center text-xs font-black text-autospot-black sm:text-sm">
-                    {cargando ? "..." : formatearMonto(barra.valor)}
-                  </div>
-                  <div className="flex h-[calc(100%-3rem)] items-end justify-center">
-                    <div
-                      className={`w-full max-w-28 rounded-t-md transition-all duration-300 ${barra.className} ${
-                        cargando ? "animate-pulse opacity-60" : ""
-                      }`}
-                      style={{ height: `${alto}%` }}
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <p className="mt-3 truncate text-center text-xs font-bold text-autospot-muted">
-                    {barra.label}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {!cargando && actual === 0 && comparacion === 0 && (
-          <p className="mt-3 text-center text-sm font-semibold text-autospot-muted">
-            Sin ganancias registradas en los períodos comparados.
-          </p>
-        )}
-      </div>
+      <EvolucionMensualChart
+        datos={reporte?.evolucion_periodo}
+        cargando={cargando}
+        emptyMessage="Sin ingresos registrados en este período."
+      />
     </article>
   );
 };

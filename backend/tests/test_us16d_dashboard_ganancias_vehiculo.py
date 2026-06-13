@@ -162,6 +162,12 @@ def test_ganancias_vehiculo_calcula_desglose_y_ocupacion_del_auto_seleccionado(d
     assert reporte.dias_alquilados == Decimal("15.00")
     assert reporte.dias_disponibles == Decimal("30.00")
     assert reporte.tasa_ocupacion == Decimal("50.00")
+    assert len(reporte.evolucion_periodo) == 5
+    assert reporte.evolucion_periodo[2].clave == "2026-06-15"
+    assert reporte.evolucion_periodo[2].etiqueta == "Sem 3"
+    assert reporte.evolucion_periodo[2].ingreso_bruto == Decimal("100000.00")
+    assert reporte.evolucion_periodo[2].dias_alquilados == Decimal("1.00")
+    assert reporte.evolucion_periodo[2].tasa_ocupacion == Decimal("14.29")
 
 
 def test_ganancias_vehiculo_esta_semana_usa_periodo_de_siete_dias(db_session):
@@ -193,6 +199,10 @@ def test_ganancias_vehiculo_esta_semana_usa_periodo_de_siete_dias(db_session):
     assert reporte.dias_disponibles == Decimal("7.00")
     assert reporte.dias_alquilados == Decimal("6.96")
     assert reporte.tasa_ocupacion == Decimal("99.43")
+    assert len(reporte.evolucion_periodo) == 7
+    assert reporte.evolucion_periodo[-1].clave == "2026-06-14"
+    assert reporte.evolucion_periodo[-1].etiqueta == "Dom"
+    assert reporte.evolucion_periodo[-1].ingreso_bruto == Decimal("70000.00")
 
 
 def test_ganancias_vehiculo_rechaza_auto_ajeno(db_session):
@@ -261,6 +271,7 @@ def test_endpoint_ganancias_vehiculo_requiere_propietario_autenticado():
             assert Decimal(str(body["ingreso_bruto"])) == Decimal("120000.00")
             assert Decimal(str(body["comision_plataforma"])) == Decimal("24000.00")
             assert Decimal(str(body["ganancia_neta"])) == Decimal("96000.00")
+            assert len(body["evolucion_periodo"]) == 5
     finally:
         app.dependency_overrides.clear()
         Base.metadata.drop_all(engine)

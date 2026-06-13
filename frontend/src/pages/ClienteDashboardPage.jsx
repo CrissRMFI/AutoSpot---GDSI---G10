@@ -24,8 +24,6 @@ const PAGE_SIZE = 10;
 const ESTADOS_ACTIVOS = new Set([
   "EN_CURSO",
   "ENTREGA_SOLICITADA",
-  "DEVUELTO",
-  "CHECKOUT_PENDIENTE",
 ]);
 
 const ESTADO_ALQUILER_UI = {
