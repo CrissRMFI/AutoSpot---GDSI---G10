@@ -427,11 +427,11 @@ const MisReservasPage = () => {
 
                     <div className="grid gap-2 text-sm text-autospot-muted sm:grid-cols-2">
                       <DatoLista
-                        label="Inicio"
+                        label="Inicio registrado"
                         valor={formatearFechaHora(reserva.fecha_inicio)}
                       />
                       <DatoLista
-                        label="Fin"
+                        label="Devolución estimada"
                         valor={formatearFechaHora(reserva.fecha_fin)}
                       />
                       <DatoLista

@@ -28,12 +28,12 @@ const normalizarMensajeError = (err) => {
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
     case "ADMIN":
-      return "/admin/dashboard";
+      return "/dashboard";
     case "PROPIETARIO":
-      return "/propietario/dashboard";
+      return "/dashboard";
     case "CLIENTE":
     default:
-      return "/usuario/dashboard";
+      return "/dashboard";
   }
 };
 

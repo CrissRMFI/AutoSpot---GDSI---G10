@@ -25,7 +25,6 @@ class CrearReservaPayloadSchema(BaseModel):
     """Payload HTTP para confirmar una reserva y obtener el código."""
 
     vehiculo_id: uuid.UUID
-    fecha_inicio: datetime
     fecha_fin: datetime
 
 
@@ -128,8 +127,6 @@ class RegistrarEntradaResponseSchema(ReservaCodigoResponseSchema):
     """Respuesta de registrar la entrada/devolución del auto."""
 
     hubo_retraso: bool = False
-    minutos_retraso: int | None = None
-    monto_penalizacion: Decimal | None = None
 
 
 class PaginaReservasSchema(BaseModel):

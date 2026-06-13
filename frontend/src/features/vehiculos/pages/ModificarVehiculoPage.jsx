@@ -315,7 +315,7 @@ const ModificarVehiculoPage = () => {
       );
 
       setTimeout(() => {
-        navigate("/propietario/dashboard", {
+        navigate("/vehiculos", {
           state: {
             message: "Datos del vehículo actualizados correctamente.",
           },
@@ -382,7 +382,7 @@ const ModificarVehiculoPage = () => {
           </Link>
 
           <Link
-            to="/propietario/dashboard"
+            to="/vehiculos"
             className="inline-flex justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
           >
             Volver al panel
@@ -827,7 +827,7 @@ const ModificarVehiculoPage = () => {
 
             <div className="flex flex-col gap-3 border-t border-autospot-border pt-6">
               <Link
-                to="/propietario/dashboard"
+                to="/vehiculos"
                 className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
               >
                 Cancelar

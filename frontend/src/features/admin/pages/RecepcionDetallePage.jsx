@@ -134,13 +134,9 @@ const RecepcionDetallePage = () => {
       setReserva(actualizada);
       setConfirmarEntrada(false);
       setMensaje({
-        tipo: actualizada.monto_penalizacion ? "advertencia" : "exito",
-        titulo: actualizada.monto_penalizacion
-          ? "Entrada registrada con penalización"
-          : "Entrada registrada",
-        mensaje: actualizada.monto_penalizacion
-          ? `Se registró la devolución y se aplicó una penalización de ${formatearMonto(actualizada.monto_penalizacion)}.`
-          : "La devolución quedó registrada. Ya podés realizar el checkout.",
+        tipo: "exito",
+        titulo: "Entrada registrada",
+        mensaje: "La devolución quedó registrada. Ya podés realizar el checkout.",
       });
     } catch (err) {
       setConfirmarEntrada(false);
@@ -228,13 +224,12 @@ const RecepcionDetallePage = () => {
               <DatoLinea label="Cliente" valor={nombreConductor(conductor)} />
               <DatoLinea label="Email" valor={conductor.email} />
               <DatoLinea label="DNI" valor={conductor.dni} />
-              <DatoLinea label="Inicio pactado" valor={formatearFechaHora(reserva.fecha_inicio)} />
-              <DatoLinea label="Fin pactado" valor={formatearFechaHora(reserva.fecha_fin)} />
+              <DatoLinea label="Inicio registrado" valor={formatearFechaHora(reserva.fecha_inicio)} />
+              <DatoLinea label="Devolución estimada" valor={formatearFechaHora(reserva.fecha_fin)} />
               <DatoLinea label="Salida real" valor={formatearFechaHora(reserva.fecha_salida_real)} />
               <DatoLinea label="Aviso de entrega" valor={formatearFechaHora(reserva.fecha_entrega_solicitada)} />
               <DatoLinea label="Devolución registrada" valor={formatearFechaHora(reserva.fecha_devolucion_real)} />
               <DatoLinea label="Total" valor={formatearMonto(reserva.monto_total)} />
-              <DatoLinea label="Penalización" valor={formatearMonto(reserva.monto_penalizacion)} />
             </dl>
           </section>
 
@@ -280,7 +275,7 @@ const RecepcionDetallePage = () => {
                 Registrar entrada
               </h2>
               <p className="mx-auto mt-2 max-w-lg text-center text-sm leading-6 text-autospot-muted">
-                Este paso fija la fecha real de devolución y calcula la penalización si corresponde.
+                Este paso fija la fecha real de devolución del auto.
               </p>
               <button
                 type="button"
@@ -308,7 +303,7 @@ const RecepcionDetallePage = () => {
       <ConfirmacionModal
         abierto={confirmarEntrada}
         titulo="Registrar entrada"
-        mensaje="¿Confirmás la recepción del auto? Este momento se usará para calcular retrasos y penalizaciones."
+        mensaje="¿Confirmás la recepción del auto?"
         onConfirmar={handleRegistrarEntrada}
         onCancelar={() => setConfirmarEntrada(false)}
         cargando={registrandoEntrada}

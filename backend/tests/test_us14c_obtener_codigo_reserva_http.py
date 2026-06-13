@@ -65,11 +65,10 @@ def _registrar_admin_directo(engine, email: str = "admin14c@autospot.com") -> No
 
 
 def _payload_reserva(vehiculo_id: str) -> dict:
-    inicio = datetime.now(timezone.utc) + timedelta(days=3)
+    fin = datetime.now(timezone.utc) + timedelta(days=3)
     return {
         "vehiculo_id": vehiculo_id,
-        "fecha_inicio": inicio.isoformat(),
-        "fecha_fin": (inicio + timedelta(days=2)).isoformat(),
+        "fecha_fin": fin.isoformat(),
     }
 
 

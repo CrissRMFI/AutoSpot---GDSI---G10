@@ -2,10 +2,19 @@ import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
+import { obtenerDatosPersonales } from "../../usuarios/api/usuarioService";
 import {
   getDetalleVehiculoCatalogo,
   verificarDisponibilidad,
@@ -14,9 +23,9 @@ import { crearReservaConCodigo } from "../api/reservasService";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const PASOS_ALQUILER = [
-  { label: "Fechas", historia: "US 3C" },
-  { label: "Pago", historia: "US 13C" },
-  { label: "Código", historia: "US 14C" },
+  { label: "Devolución" },
+  { label: "Pago" },
+  { label: "Código" },
 ];
 
 const inputClass =
@@ -31,16 +40,18 @@ const AlquilerStepperPage = () => {
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [estaHabilitado, setEstaHabilitado] = useState(false);
+  const [revisandoRequisitos, setRevisandoRequisitos] = useState(false);
+  const [bloqueoRequisito, setBloqueoRequisito] = useState(null);
   const [pasoActivo, setPasoActivo] = useState(0);
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [horaInicio, setHoraInicio] = useState("10:00");
   const [fechaFin, setFechaFin] = useState("");
   const [horaFin, setHoraFin] = useState("10:00");
+  const [inicioEstimado, setInicioEstimado] = useState(null);
   const [resultadoVerificacion, setResultadoVerificacion] = useState(null);
   const [reservaConfirmada, setReservaConfirmada] = useState(null);
   const [errorAlquiler, setErrorAlquiler] = useState("");
   const [verificando, setVerificando] = useState(false);
   const [reservando, setReservando] = useState(false);
+  const [advertenciaPagoAbierta, setAdvertenciaPagoAbierta] = useState(false);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -69,17 +80,70 @@ const AlquilerStepperPage = () => {
   useEffect(() => {
     if (!usuario?.id) return;
 
-    obtenerDocumentacionHabilitante(usuario.id)
-      .then((data) => {
-        setEstaHabilitado(data?.estado_validacion === "APROBADO");
-      })
-      .catch(() => setEstaHabilitado(false));
+    let cancelado = false;
+
+    const revisarRequisitos = async () => {
+      setRevisandoRequisitos(true);
+      setBloqueoRequisito(null);
+
+      try {
+        await obtenerDatosPersonales(usuario.id);
+      } catch {
+        if (!cancelado) {
+          setBloqueoRequisito({
+            titulo: "Completá tus datos personales",
+            mensaje:
+              "Para iniciar un alquiler necesitamos tener registrados tus datos personales.",
+            accion: "Cargar datos personales",
+            to: "/datos-personales",
+          });
+          setEstaHabilitado(false);
+          setRevisandoRequisitos(false);
+        }
+        return;
+      }
+
+      try {
+        const data = await obtenerDocumentacionHabilitante(usuario.id);
+        const aprobada = data?.estado_validacion === "APROBADO";
+        if (!cancelado) {
+          setEstaHabilitado(aprobada);
+          if (!aprobada) {
+            setBloqueoRequisito({
+              titulo: "Documentación pendiente",
+              mensaje:
+                "Para alquilar un vehículo, tu documentación habilitante debe estar aprobada.",
+              accion: "Ver documentación",
+              to: "/documentacion-habilitante",
+            });
+          }
+        }
+      } catch {
+        if (!cancelado) {
+          setEstaHabilitado(false);
+          setBloqueoRequisito({
+            titulo: "Cargá tu documentación habilitante",
+            mensaje:
+              "Antes de alquilar necesitamos validar tu documentación habilitante.",
+            accion: "Cargar documentación",
+            to: "/documentacion-habilitante",
+          });
+        }
+      } finally {
+        if (!cancelado) setRevisandoRequisitos(false);
+      }
+    };
+
+    revisarRequisitos();
+
+    return () => {
+      cancelado = true;
+    };
   }, [usuario?.id]);
 
-  const inicio = obtenerFechaCompleta(fechaInicio, horaInicio);
   const fin = obtenerFechaCompleta(fechaFin, horaFin);
-  const horasAlquiler = inicio && fin ? (fin - inicio) / (1000 * 60 * 60) : 0;
-  const fechasValidas = horasAlquiler >= 24;
+  const horasAlquiler = fin ? (fin - new Date()) / (1000 * 60 * 60) : 0;
+  const fechasValidas = Boolean(fin) && horasAlquiler >= 24;
   const montoEstimado = calcularMontoEstimado(
     vehiculo?.precio_por_dia,
     resultadoVerificacion?.dias,
@@ -89,13 +153,16 @@ const AlquilerStepperPage = () => {
   const limpiarVerificacion = () => {
     setResultadoVerificacion(null);
     setReservaConfirmada(null);
+    setInicioEstimado(null);
     setErrorAlquiler("");
     setPasoActivo(0);
   };
 
   const handleVerificar = async () => {
     if (!estaHabilitado) {
-      setErrorAlquiler("Para alquilar necesitás tener tu documentación aprobada.");
+      setErrorAlquiler(
+        "Para alquilar necesitás tener tu documentación aprobada.",
+      );
       return;
     }
 
@@ -108,11 +175,13 @@ const AlquilerStepperPage = () => {
     setErrorAlquiler("");
 
     try {
+      const inicioActual = new Date();
       const data = await verificarDisponibilidad(
         vehiculo.id,
-        inicio.toISOString(),
+        inicioActual.toISOString(),
         fin.toISOString(),
       );
+      setInicioEstimado(inicioActual);
       setResultadoVerificacion(data);
       setPasoActivo(1);
     } catch (err) {
@@ -137,13 +206,15 @@ const AlquilerStepperPage = () => {
     try {
       const data = await crearReservaConCodigo({
         vehiculoId: vehiculo.id,
-        fechaInicio: inicio.toISOString(),
         fechaFin: fin.toISOString(),
       });
 
+      setAdvertenciaPagoAbierta(false);
+      setInicioEstimado(new Date(data.fecha_inicio));
       setReservaConfirmada(data);
       setPasoActivo(2);
     } catch (err) {
+      setAdvertenciaPagoAbierta(false);
       setErrorAlquiler(
         err.response?.data?.detail || "No se pudo confirmar la reserva.",
       );
@@ -152,11 +223,38 @@ const AlquilerStepperPage = () => {
     }
   };
 
-  if (cargando) {
+  if (cargando || revisandoRequisitos) {
     return (
       <div className="w-full min-w-0 px-5 py-12 sm:px-8 lg:px-10">
         <div className="h-96 animate-pulse rounded-[28px] border border-autospot-border bg-white/70" />
       </div>
+    );
+  }
+
+  if (bloqueoRequisito) {
+    return (
+      <section className="mx-auto w-full max-w-2xl px-5 py-16 text-center sm:px-8">
+        <h1 className="font-display text-2xl font-black text-autospot-black">
+          {bloqueoRequisito.titulo}
+        </h1>
+        <p className="mx-auto mt-3 max-w-lg text-sm font-semibold leading-6 text-autospot-muted">
+          {bloqueoRequisito.mensaje}
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            to={`/catalogo/${vehiculoId}`}
+            className="inline-flex justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            Volver al auto
+          </Link>
+          <Link
+            to={bloqueoRequisito.to}
+            className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+          >
+            {bloqueoRequisito.accion}
+          </Link>
+        </div>
+      </section>
     );
   }
 
@@ -195,9 +293,9 @@ const AlquilerStepperPage = () => {
             {tituloVehiculo}
           </h1>
         </div>
-        <div className="rounded-2xl border border-autospot-border bg-transparent px-4 py-3 text-sm">
+        <div className="rounded-2xl  bg-transparent px-4 py-3 text-sm">
           <p className="font-bold text-autospot-muted">Precio por día</p>
-          <p className="font-display text-xl font-black text-autospot-black">
+          <p className="font-display text-2xl font-black text-autospot-black">
             {formatearMonto(vehiculo.precio_por_dia)}
           </p>
         </div>
@@ -221,9 +319,6 @@ const AlquilerStepperPage = () => {
             <Step key={paso.label}>
               <StepLabel>
                 <span className="block">{paso.label}</span>
-                <span className="block text-[11px] font-bold text-autospot-muted">
-                  {paso.historia}
-                </span>
               </StepLabel>
             </Step>
           ))}
@@ -232,22 +327,12 @@ const AlquilerStepperPage = () => {
         <div className="mt-8">
           {pasoActivo === 0 && (
             <PasoFechas
-              fechaInicio={fechaInicio}
               fechaFin={fechaFin}
-              horaInicio={horaInicio}
               horaFin={horaFin}
               fechasValidas={fechasValidas}
               verificando={verificando}
               error={errorAlquiler}
               requiereDocumentacion={!estaHabilitado}
-              onFechaInicioChange={(valor) => {
-                setFechaInicio(valor);
-                limpiarVerificacion();
-              }}
-              onHoraInicioChange={(valor) => {
-                setHoraInicio(valor);
-                limpiarVerificacion();
-              }}
               onFechaFinChange={(valor) => {
                 setFechaFin(valor);
                 limpiarVerificacion();
@@ -263,56 +348,49 @@ const AlquilerStepperPage = () => {
           {pasoActivo === 1 && (
             <PasoPago
               resultadoVerificacion={resultadoVerificacion}
-              inicio={inicio}
+              inicio={inicioEstimado}
               fin={fin}
               montoEstimado={montoEstimado}
               onBack={() => setPasoActivo(0)}
-              onPagar={handleConfirmarReserva}
+              onPagar={() => setAdvertenciaPagoAbierta(true)}
               pagando={reservando}
               error={errorAlquiler}
             />
           )}
 
-          {pasoActivo === 2 && (
-            <PasoCodigo
-              reserva={reservaConfirmada}
-            />
-          )}
+          {pasoActivo === 2 && <PasoCodigo reserva={reservaConfirmada} />}
         </div>
       </div>
+
+      <AdvertenciaPagoModal
+        abierto={advertenciaPagoAbierta}
+        cargando={reservando}
+        precioPorDia={vehiculo.precio_por_dia}
+        onCancelar={() => setAdvertenciaPagoAbierta(false)}
+        onConfirmar={handleConfirmarReserva}
+      />
     </section>
   );
 };
 
 const PasoFechas = ({
-  fechaInicio,
   fechaFin,
-  horaInicio,
   horaFin,
   fechasValidas,
   verificando,
   error,
   requiereDocumentacion,
-  onFechaInicioChange,
   onFechaFinChange,
-  onHoraInicioChange,
   onHoraFinChange,
   onVerificar,
 }) => (
   <div>
     <h2 className="font-display text-xl font-black text-autospot-black">
-      Seleccionar fechas de alquiler
+      Seleccionar devolución
     </h2>
     <div className="mt-4 grid gap-4 md:grid-cols-2">
       <FechaHoraField
-        label="Inicio"
-        fecha={fechaInicio}
-        hora={horaInicio}
-        onFechaChange={onFechaInicioChange}
-        onHoraChange={onHoraInicioChange}
-      />
-      <FechaHoraField
-        label="Fin"
+        label="Devolución estimada"
         fecha={fechaFin}
         hora={horaFin}
         onFechaChange={onFechaFinChange}
@@ -323,12 +401,15 @@ const PasoFechas = ({
     {requiereDocumentacion && (
       <EstadoMensaje tipo="info">
         Necesitás documentación aprobada para avanzar.{" "}
-        <Link className="font-black text-autospot-accent" to="/documentacion-habilitante">
+        <Link
+          className="font-black text-autospot-accent"
+          to="/documentacion-habilitante"
+        >
           Cargar documentación
         </Link>
       </EstadoMensaje>
     )}
-    {fechaInicio && fechaFin && !fechasValidas && (
+    {fechaFin && !fechasValidas && (
       <EstadoMensaje tipo="error">
         El tiempo mínimo de alquiler es de 1 día.
       </EstadoMensaje>
@@ -366,9 +447,7 @@ const PasoPago = ({
     <h2 className="font-display text-xl font-black text-autospot-black">
       Pago
     </h2>
-    <p className="mt-2 text-sm font-semibold text-autospot-muted">
-      Próximo a implementar: US 13C Alquiler de auto.
-    </p>
+
     <ResumenReserva
       inicio={inicio}
       fin={fin}
@@ -417,7 +496,9 @@ const PasoCodigo = ({ reserva }) => (
         </p>
       </div>
     ) : (
-      <EstadoMensaje tipo="error">La reserva todavía no fue confirmada.</EstadoMensaje>
+      <EstadoMensaje tipo="error">
+        La reserva todavía no fue confirmada.
+      </EstadoMensaje>
     )}
 
     <div className="mt-4 rounded-2xl border border-autospot-border bg-white p-4">
@@ -452,7 +533,13 @@ const PasoCodigo = ({ reserva }) => (
   </div>
 );
 
-const FechaHoraField = ({ label, fecha, hora, onFechaChange, onHoraChange }) => (
+const FechaHoraField = ({
+  label,
+  fecha,
+  hora,
+  onFechaChange,
+  onHoraChange,
+}) => (
   <div className="rounded-2xl border border-autospot-border bg-white p-4">
     <label className="text-xs font-bold uppercase text-autospot-muted">
       {label}
@@ -525,6 +612,87 @@ const calcularMontoEstimado = (precioPorDia, dias = 0, horas = 0) => {
   if (!Number.isFinite(precio)) return 0;
 
   return precio * (Number(dias) + Number(horas) / 24);
+};
+
+const AdvertenciaPagoModal = ({
+  abierto,
+  cargando,
+  precioPorDia,
+  onCancelar,
+  onConfirmar,
+}) => {
+  const precio = Number(precioPorDia) || 0;
+  const recargoPorDia = precio * 1.1;
+
+  return (
+    <Dialog
+      open={abierto}
+      onClose={cargando ? undefined : onCancelar}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          bgcolor: "#f5f2ed",
+          border: "1px solid #d4cec6",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          color: "#0a0a0a",
+          fontFamily: "Unbounded, sans-serif",
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          pb: 1,
+        }}
+      >
+        Confirmar pago
+      </DialogTitle>
+      <DialogContent>
+        <div className="rounded-lg border border-autospot-border bg-white p-4">
+          <p className="text-sm font-bold leading-6 text-autospot-black">
+            Al confirmar el pago aceptás que una devolución posterior a la fecha
+            estimada podrá generar un recargo diario.
+          </p>
+          <div className="mt-4 rounded-lg bg-autospot-black px-4 py-3 text-sm font-bold !text-white">
+            {formatearMonto(recargoPorDia)} por día de retraso.
+          </div>
+        </div>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button
+          onClick={onCancelar}
+          disabled={cargando}
+          sx={{
+            color: "#0a0a0a",
+            fontWeight: 800,
+            borderRadius: 999,
+          }}
+        >
+          Cancelar
+        </Button>
+        <Button
+          onClick={onConfirmar}
+          disabled={cargando}
+          variant="contained"
+          sx={{
+            bgcolor: "#7b1c2e",
+            borderRadius: 999,
+            fontWeight: 900,
+            px: 3,
+            "&:hover": { bgcolor: "#5a1420" },
+          }}
+        >
+          {cargando ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : (
+            "Pagar y aceptar"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 
 export default AlquilerStepperPage;
