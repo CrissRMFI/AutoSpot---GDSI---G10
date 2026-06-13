@@ -206,7 +206,7 @@ def simular_tiempo(payload: SimularTiempoAlquilerRequest):
             "description": "Vehiculo no disponible para reserva o ya existe una reserva activa para el conductor.",
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Fechas inválidas (inicio posterior a fin, periodo menor a 1 día, etc.).",
+            "description": "Fecha de devolución inválida o periodo menor a 1 día.",
         },
         status.HTTP_428_PRECONDITION_REQUIRED: {
             "description": "El conductor no tiene datos personales registrados.",
@@ -422,7 +422,7 @@ def registrar_entrada_endpoint(
     _usuario_actual: dict = Depends(requerir_rol_admin),
     db: Session = Depends(get_db),
 ) -> ReservaCodigoResponseSchema:
-    """US 7R — Registra recepción, congela fecha real y calcula penalización."""
+    """US 7R — Registra recepción y congela la fecha real de devolución."""
     try:
         reserva = registrar_entrada(db=db, reserva_id=reserva_id)
     except ReservaNoEncontradaError as exc:

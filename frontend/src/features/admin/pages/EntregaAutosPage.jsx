@@ -138,10 +138,10 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
           </Typography>
         </Box>
 
-        {/* Inicio pactado */}
+        {/* Inicio registrado */}
         <Box>
           <Typography variant="subtitle2" color="textSecondary">
-            Inicio pactado
+            Inicio registrado
           </Typography>
           <Typography variant="body2">
             {new Date(reserva.fecha_inicio).toLocaleString("es-AR", {

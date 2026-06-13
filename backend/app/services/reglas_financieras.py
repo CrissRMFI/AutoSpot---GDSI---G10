@@ -4,13 +4,19 @@ Reglas financieras compartidas para reportes de propietarios.
 MVP US 15D:
   - El propietario recibe el 80% del ingreso bruto.
   - La plataforma retiene el 20%.
-  - Penalizaciones fuera de scope.
+
+Penalización por devolución tardía:
+  - Monto = precio por día * 1.10 * días de retraso.
+  - Los días de retraso se redondean hacia arriba.
 """
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
+from math import ceil
 
 
 PORCENTAJE_GANANCIA_PROPIETARIO = Decimal("0.80")
 PORCENTAJE_COMISION_PLATAFORMA = Decimal("0.20")
+MULTIPLICADOR_DEVOLUCION_TARDIA = Decimal("1.10")
 MONTO_CENTAVOS = Decimal("0.01")
 PORCENTAJE_CENTAVOS = Decimal("0.01")
 
@@ -31,6 +37,33 @@ def calcular_desglose_ganancias(ingreso_bruto: Decimal) -> dict[str, Decimal]:
         "comision_plataforma": comision,
         "ganancia_neta": ganancia_neta,
     }
+
+
+def calcular_recargo_devolucion_tardia(
+    precio_por_dia: Decimal | None,
+    fecha_entrega_estimada: datetime,
+    fecha_entrega_real: datetime,
+) -> tuple[int | None, int, Decimal | None]:
+    """
+    Calcula el recargo por entregar luego de la fecha estimada.
+
+    Retorna: minutos de retraso, días de retraso redondeados hacia arriba y
+    monto del recargo. Si no hay retraso, retorna sin monto.
+    """
+    if fecha_entrega_real <= fecha_entrega_estimada:
+        return None, 0, None
+
+    delta = fecha_entrega_real - fecha_entrega_estimada
+    minutos_retraso = int(delta.total_seconds() // 60)
+    dias_retraso = ceil(delta.total_seconds() / 86400)
+
+    if precio_por_dia is None or precio_por_dia <= 0:
+        return minutos_retraso, dias_retraso, None
+
+    monto = cuantizar_monto(
+        Decimal(precio_por_dia) * MULTIPLICADOR_DEVOLUCION_TARDIA * Decimal(dias_retraso),
+    )
+    return minutos_retraso, dias_retraso, monto
 
 
 def calcular_variacion_porcentual(

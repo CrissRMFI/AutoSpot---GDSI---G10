@@ -3,6 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, RotateCcw, X } from "lucide-react";
 import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
+import {
   confirmarCheckout,
   entregarAuto,
   obtenerCheckoutDeReserva,
@@ -118,10 +126,13 @@ const AlquilerDetallePage = () => {
       const actualizado = await entregarAuto(reservaId);
       setAlquiler(actualizado);
       setConfirmarEntrega(false);
+      const tieneRecargo = Number(actualizado.monto_penalizacion || 0) > 0;
       setMensaje({
-        tipo: "exito",
+        tipo: tieneRecargo ? "advertencia" : "exito",
         titulo: "Entrega avisada",
-        mensaje: "Avisamos al administrador para que registre la entrada del auto.",
+        mensaje: tieneRecargo
+          ? `Avisamos al administrador para que registre la entrada. Recargo por entrega tardía: ${formatearMonto(actualizado.monto_penalizacion)}.`
+          : "Avisamos al administrador para que registre la entrada del auto.",
       });
     } catch (err) {
       setConfirmarEntrega(false);
@@ -316,14 +327,18 @@ const AlquilerDetallePage = () => {
               Alquiler
             </h2>
             <dl className="mt-5 space-y-4">
-              <DatoLinea label="Inicio pactado" valor={formatearFechaHora(alquiler.fecha_inicio)} />
-              <DatoLinea label="Fin pactado" valor={formatearFechaHora(alquiler.fecha_fin)} />
+              <DatoLinea label="Inicio registrado" valor={formatearFechaHora(alquiler.fecha_inicio)} />
+              <DatoLinea label="Devolución estimada" valor={formatearFechaHora(alquiler.fecha_fin)} />
               <DatoLinea label="Salida real" valor={formatearFechaHora(alquiler.fecha_salida_real)} />
               <DatoLinea label="Aviso de entrega" valor={formatearFechaHora(alquiler.fecha_entrega_solicitada)} />
               <DatoLinea label="Devolución registrada" valor={formatearFechaHora(alquiler.fecha_devolucion_real)} />
               <DatoLinea label="Monto total" valor={formatearMonto(alquiler.monto_total)} />
-              <DatoLinea label="Retraso" valor={alquiler.minutos_retraso ? `${alquiler.minutos_retraso} min` : "Sin retraso"} />
-              <DatoLinea label="Penalización" valor={formatearMonto(alquiler.monto_penalizacion)} />
+              {Number(alquiler.monto_penalizacion || 0) > 0 && (
+                <DatoLinea
+                  label="Recargo por entrega tardía"
+                  valor={formatearMonto(alquiler.monto_penalizacion)}
+                />
+              )}
             </dl>
 
             {puedeEntregar && (
@@ -388,14 +403,12 @@ const AlquilerDetallePage = () => {
         </aside>
       </div>
 
-      <ConfirmacionModal
+      <EntregaAutoModal
         abierto={confirmarEntrega}
-        titulo="Entregar el auto"
-        mensaje="¿Confirmás que vas a entregar el auto? El administrador recibirá una notificación para registrar la entrada."
+        alquiler={alquiler}
         onConfirmar={handleEntregar}
         onCancelar={() => setConfirmarEntrega(false)}
         cargando={procesando}
-        textoConfirmar="Entregar"
       />
 
       <ConfirmacionModal
@@ -458,6 +471,121 @@ const DatoLinea = ({ label, valor }) => (
     </dd>
   </div>
 );
+
+const calcularRecargoEstimadoEntrega = (alquiler) => {
+  const fechaEstimada = new Date(alquiler?.fecha_fin);
+  const precioPorDia = Number(alquiler?.vehiculo?.precio_por_dia || 0);
+
+  if (!fechaEstimada || Number.isNaN(fechaEstimada.getTime()) || precioPorDia <= 0) {
+    return {
+      diasRetraso: 0,
+      monto: 0,
+    };
+  }
+
+  const diferenciaMs = Date.now() - fechaEstimada.getTime();
+  if (diferenciaMs <= 0) {
+    return {
+      diasRetraso: 0,
+      monto: 0,
+    };
+  }
+
+  const diasRetraso = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+  return {
+    diasRetraso,
+    monto: precioPorDia * 1.1 * diasRetraso,
+  };
+};
+
+const EntregaAutoModal = ({
+  abierto,
+  alquiler,
+  onConfirmar,
+  onCancelar,
+  cargando,
+}) => {
+  const { diasRetraso, monto } = calcularRecargoEstimadoEntrega(alquiler);
+  const tieneRecargo = monto > 0;
+  const precioPorDia = Number(alquiler?.vehiculo?.precio_por_dia || 0);
+
+  return (
+    <Dialog
+      open={abierto}
+      onClose={cargando ? undefined : onCancelar}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          bgcolor: "#f5f2ed",
+          border: "1px solid #d4cec6",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          color: "#0a0a0a",
+          fontFamily: "Unbounded, sans-serif",
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          pb: 1,
+        }}
+      >
+        Entregar el auto
+      </DialogTitle>
+      <DialogContent>
+        <div className="rounded-lg border border-autospot-border bg-white p-4">
+          <p className="text-sm font-bold leading-6 text-autospot-black">
+            El administrador recibirá una notificación para registrar la entrada
+            del auto.
+          </p>
+          <div
+            className={`mt-4 rounded-lg px-4 py-3 text-sm font-bold ${
+              tieneRecargo
+                ? "border border-[#fecaca] bg-[#fef2f2] text-[#b42318]"
+                : "border border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]"
+            }`}
+          >
+            {tieneRecargo
+              ? `Recargo estimado: ${formatearMonto(monto)} (${diasRetraso} día${diasRetraso === 1 ? "" : "s"} de retraso).`
+              : "No hay recargo estimado por retraso."}
+          </div>
+          <p className="mt-3 text-xs font-semibold leading-5 text-autospot-muted">
+            Fórmula: {formatearMonto(precioPorDia)} x 1.1 x días de retraso.
+          </p>
+        </div>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button
+          onClick={onCancelar}
+          disabled={cargando}
+          sx={{
+            color: "#0a0a0a",
+            fontWeight: 800,
+            borderRadius: 999,
+          }}
+        >
+          Cancelar
+        </Button>
+        <Button
+          onClick={onConfirmar}
+          disabled={cargando}
+          variant="contained"
+          sx={{
+            bgcolor: "#7b1c2e",
+            borderRadius: 999,
+            fontWeight: 900,
+            px: 3,
+            "&:hover": { bgcolor: "#5a1420" },
+          }}
+        >
+          {cargando ? <CircularProgress size={20} color="inherit" /> : "Confirmar entrega"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const FotosCheckout = ({ checkout }) => {
   const fotos = [

@@ -760,8 +760,8 @@ def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[
 
         historial.append({
             "conductor_nombre": f"{usr.nombre} {usr.apellido}",
-            "fecha_inicio": res.fecha_salida_real or res.fecha_inicio,
-            "fecha_fin": res.fecha_devolucion_real or res.fecha_fin,
+            "fecha_inicio": res.fecha_inicio,
+            "fecha_fin": res.fecha_fin,
             "puntaje": val.puntaje if val else None,
             "resenia": test.descripcion if test else None,
             "fotos_entrega": fotos,

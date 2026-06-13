@@ -116,11 +116,11 @@ const ReservaCodigoModal = ({ reserva, verificandoCheckin = false, onClose }) =>
           <DatoReserva label="Patente" valor={vehiculo?.patente || "—"} />
           <DatoReserva label="Estación" valor={reserva.estacion_retiro} />
           <DatoReserva
-            label="Inicio"
+            label="Inicio registrado"
             valor={formatearFechaHora(reserva.fecha_inicio)}
           />
           <DatoReserva
-            label="Fin"
+            label="Devolución estimada"
             valor={formatearFechaHora(reserva.fecha_fin)}
           />
           <DatoReserva label="Total" valor={formatearMonto(reserva.monto_total)} />

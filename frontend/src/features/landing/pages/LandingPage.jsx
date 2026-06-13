@@ -99,9 +99,9 @@ const features = [
   },
   {
     icon: "⚡",
-    title: "Penalizaciones automáticas",
+    title: "Seguimiento operativo",
     description:
-      "Sistema de sanciones por retrasos y daños. Económicas o bloqueo temporal según la gravedad del incumplimiento.",
+      "Estados claros para retiro, check-in, devolución y revisión del vehículo durante todo el flujo.",
     variant: "light",
   },
   {
@@ -115,7 +115,7 @@ const features = [
     icon: "🚨",
     title: "Reporte de incidentes",
     description:
-      "Accidentes, retrasos o problemas mecánicos: reportalos desde la app y el equipo de soporte actúa de inmediato.",
+      "Accidentes, daños o problemas mecánicos: reportalos desde la app y el equipo de soporte actúa de inmediato.",
     variant: "light",
   },
   {
@@ -183,9 +183,9 @@ const trustItems = [
   },
   {
     icon: "🛡️",
-    title: "Penalizaciones claras",
+    title: "Reglas claras",
     description:
-      "Reglas transparentes y aplicadas automáticamente. Todos saben las consecuencias antes de aceptar.",
+      "Condiciones transparentes para que propietarios y conductores sepan cómo avanza cada alquiler.",
   },
   {
     icon: "💬",

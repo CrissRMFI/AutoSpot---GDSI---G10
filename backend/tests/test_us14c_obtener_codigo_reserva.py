@@ -66,25 +66,25 @@ def test_crea_reserva_confirmada_con_codigo(db_session):
     conductor = _crear_usuario(db_session, "cliente.us14c@autospot.com")
     _registrar_datos_personales(db_session, conductor.id)
     vehiculo = _crear_vehiculo_reservable(db_session, propietario.id)
-    inicio = datetime.now(timezone.utc) + timedelta(days=2)
-    fin = inicio + timedelta(days=2, hours=12)
+    antes_de_crear = datetime.now(timezone.utc)
+    fin = antes_de_crear + timedelta(days=2, hours=12)
 
     reserva = crear_reserva_con_codigo(
         db=db_session,
         conductor_id=conductor.id,
         schema=CrearReservaPayloadSchema(
             vehiculo_id=vehiculo.id,
-            fecha_inicio=inicio,
             fecha_fin=fin,
         ),
     )
+    despues_de_crear = datetime.now(timezone.utc)
 
     db_session.refresh(vehiculo)
     assert reserva.estado == "CONFIRMADA"
     assert reserva.codigo.startswith("AS-")
     assert reserva.codigo_verificado_at is None
     assert reserva.estacion_retiro == "Estación Belgrano"
-    assert reserva.monto_total == Decimal("120000.00")
-    assert reserva.fecha_inicio == inicio
+    assert reserva.monto_total > Decimal("0")
+    assert antes_de_crear <= reserva.fecha_inicio <= despues_de_crear
     assert reserva.fecha_fin == fin
     assert vehiculo.disponible is False

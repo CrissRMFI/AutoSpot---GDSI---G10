@@ -500,11 +500,11 @@ const DetalleReservaVerificacion = ({
         <DatoDetalle label="Email" valor={conductor.email} />
         <DatoDetalle label="Patente" valor={vehiculo.patente || "—"} />
         <DatoDetalle
-          label="Inicio"
+          label="Inicio registrado"
           valor={formatearFechaHora(detalle.fecha_inicio)}
         />
         <DatoDetalle
-          label="Fin"
+          label="Devolución estimada"
           valor={formatearFechaHora(detalle.fecha_fin)}
         />
         <DatoDetalle label="Estación" valor={detalle.estacion_retiro} />

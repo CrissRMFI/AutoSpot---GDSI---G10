@@ -3,10 +3,24 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { subirFotoDni } from "../../../api/uploadService";
 import {
-  obtenerDatosPersonales,
+  obtenerDatosPersonalesSiExisten,
   actualizarDatosPersonales,
   registrarDatosPersonales,
 } from "../api/usuarioService";
+
+const mensajeCargaDatosPersonales = (err) => {
+  const status = err?.response?.status;
+
+  if (status === 401) {
+    return "Tu sesión expiró. Volvé a iniciar sesión.";
+  }
+
+  if (status === 403) {
+    return "No tenés permiso para consultar estos datos personales.";
+  }
+
+  return "";
+};
 
 const DatosPersonalesPage = () => {
   const navigate = useNavigate();
@@ -36,8 +50,15 @@ const DatosPersonalesPage = () => {
     if (!usuario?.id) return;
 
     const cargarDatosExistentes = async () => {
+      setError("");
       try {
-        const datos = await obtenerDatosPersonales(usuario.id);
+        const datos = await obtenerDatosPersonalesSiExisten(usuario.id);
+
+        if (!datos) {
+          setModoEdicion(false);
+          return;
+        }
+
         setForm({
           dni: datos.dni,
           nombre: datos.nombre,
@@ -47,10 +68,7 @@ const DatosPersonalesPage = () => {
         });
         setModoEdicion(true);
       } catch (err) {
-        if (err.response?.status !== 404) {
-          setError("No se pudieron cargar los datos existentes.");
-        }
-        // 404 → el usuario aún no cargó datos, modo registro
+        setError(mensajeCargaDatosPersonales(err));
       } finally {
         setCargandoInicial(false);
       }
