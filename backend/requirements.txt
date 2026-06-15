@@ -22,6 +22,9 @@ python-multipart>=0.0.9     # Requerido por FastAPI para recibir multipart/form-
 # ── Configuración ──────────────────────────────────────────────────────────
 python-dotenv>=1.0.0        # Carga .env automáticamente
 
+# ── Inteligencia Artificial ───────────────────────────────────────────
+google-generativeai>=0.5.4
+
 # ── Testing ─────────────────────────────────────────────────────────────────
 pytest>=8.2.0
 pytest-asyncio>=0.23.0

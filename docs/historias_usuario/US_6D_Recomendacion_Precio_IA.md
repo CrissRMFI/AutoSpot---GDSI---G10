@@ -20,8 +20,3 @@
 **Dado que** estoy realizando una modificación de datos,
 **cuando** actualizo el precio de alquiler de mi vehículo,
 **entonces** debo recibir precios sugeridos de mercado.
-
-### CA 3
-**Dado que** los precios de mercado pueden variar,
-**cuando** el precio de uno de mis autos en particular quede desactualizado,
-**entonces** recibiré una notificación para actualizar el mismo.

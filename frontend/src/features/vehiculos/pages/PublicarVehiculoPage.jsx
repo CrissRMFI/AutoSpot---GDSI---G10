@@ -7,6 +7,8 @@ import {
   publicarVehiculo,
   subirFotoVehiculo,
 } from "../api/vehiculoService";
+import { Sparkles } from "lucide-react";
+import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
 
 const LADOS_REQUERIDOS = [
   { codigo: "FRENTE", label: "Frente" },
@@ -44,6 +46,7 @@ const PublicarVehiculoPage = () => {
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [cargando, setCargando] = useState(false);
   const [catalogo, setCatalogo] = useState([]);
+  const [isModalIAOpen, setIsModalIAOpen] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -489,17 +492,27 @@ const PublicarVehiculoPage = () => {
                     Precio por día *
                   </label>
 
-                  <input
-                    id="precio_por_dia"
-                    name="precio_por_dia"
-                    className={inputClassName}
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    placeholder="Ej. 35000"
-                    value={form.precio_por_dia}
-                    onChange={actualizarCampo}
-                  />
+                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                    <input
+                      id="precio_por_dia"
+                      name="precio_por_dia"
+                      className={inputClassName}
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      placeholder="Ej. 35000"
+                      value={form.precio_por_dia}
+                      onChange={actualizarCampo}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsModalIAOpen(true)}
+                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#fce7f3] bg-[#fce7f3] px-4 py-3 text-sm font-bold text-autospot-accent transition hover:bg-autospot-accent hover:text-white"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Generar precio
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -621,6 +634,13 @@ const PublicarVehiculoPage = () => {
           </form>
         </section>
       </section>
+
+      <ModalGenerarPrecioAI
+        isOpen={isModalIAOpen}
+        onClose={() => setIsModalIAOpen(false)}
+        datosVehiculo={form}
+        onAccept={(precio) => setForm({ ...form, precio_por_dia: precio })}
+      />
     </main>
   );
 };
