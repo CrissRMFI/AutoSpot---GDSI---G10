@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { ArrowLeft, BarChart3, Sparkles } from "lucide-react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import {
   agregarFotoAVehiculo,
@@ -14,6 +14,7 @@ import {
 } from "../api/vehiculoService";
 import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
 import LightboxGaleria from "../components/LightboxGaleria";
+import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -44,6 +45,7 @@ const DetalleVehiculoPage = () => {
   const [editandoPrecio, setEditandoPrecio] = useState(false);
   const [inputPrecio, setInputPrecio] = useState("");
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [isModalIAOpen, setIsModalIAOpen] = useState(false);
   const [togglingDisponible, setTogglingDisponible] = useState(false);
 
   const isDisponibilidadInactiva =
@@ -568,21 +570,30 @@ const DetalleVehiculoPage = () => {
                       }}
                       className="w-full min-w-0 rounded-lg bg-white px-2 py-1.5 text-sm font-bold text-autospot-black focus:outline-none focus:ring-2 focus:ring-autospot-accent"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleActualizarPrecio}
+                          disabled={guardandoPrecio}
+                          className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        >
+                          {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoPrecio(false)}
+                          className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
+                        >
+                          ✕ Cancelar
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={handleActualizarPrecio}
-                        disabled={guardandoPrecio}
-                        className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        onClick={() => setIsModalIAOpen(true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#fce7f3] bg-[#fce7f3] px-2 py-1.5 text-xs font-bold text-autospot-accent transition hover:bg-autospot-accent hover:text-white"
                       >
-                        {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditandoPrecio(false)}
-                        className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
-                      >
-                        ✕ Cancelar
+                        <Sparkles className="h-3.5 w-3.5" /> Generar precio con IA
                       </button>
                     </div>
                   </div>
@@ -664,6 +675,16 @@ const DetalleVehiculoPage = () => {
         fotos={fotos}
         indiceActivo={indiceActivo}
         setIndiceActivo={setIndiceActivo}
+      />
+
+      <ModalGenerarPrecioAI
+        isOpen={isModalIAOpen}
+        onClose={() => setIsModalIAOpen(false)}
+        datosVehiculo={vehiculo}
+        onAccept={(precio) => {
+          setInputPrecio(precio);
+          // Opcional: auto-guardar o dejar que el usuario haga clic en guardar
+        }}
       />
     </section>
   );

@@ -31,6 +31,7 @@ from app.routers import checkouts as router_checkouts
 from app.routers import ganancias as router_ganancias
 from app.routers import valoraciones as router_valoraciones
 from app.routers import testimonios as router_testimonios
+from app.routers import ia as router_ia
 
 def obtener_origenes_cors() -> list[str]:
     """
@@ -85,3 +86,4 @@ app.include_router(router_checkouts.router)
 app.include_router(router_ganancias.router)
 app.include_router(router_valoraciones.router)
 app.include_router(router_testimonios.router)
+app.include_router(router_ia.router)

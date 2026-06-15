@@ -125,3 +125,7 @@ export const getHistorialUsoVehiculo = async (vehiculoId) => {
   return response.data;
 };
 
+export const generarPrecioIA = async (datosVehiculo) => {
+  const response = await httpClient.post("/ia/generar-precio", datosVehiculo);
+  return response.data;
+};
