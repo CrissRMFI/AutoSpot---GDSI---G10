@@ -29,9 +29,9 @@ async def generar_sugerencia_precio(datos: DatosVehiculoIA) -> SugerenciaPrecioI
             resumen="[MOCK] Basado en los datos ingresados, se estima un valor competitivo en el mercado actual considerando el año y la categoría del vehículo. Configura tu API Key de Gemini en el backend para obtener estimaciones reales."
         )
 
-    # Inicializamos el modelo (usamos gemini-flash-latest que está garantizado en tu tier)
+    # Inicializamos el modelo (usamos gemini-3.1-flash-lite según requerimiento)
     try:
-        model = genai.GenerativeModel('gemini-flash-latest')
+        model = genai.GenerativeModel('gemini-3.1-flash-lite')
         
         # --- PROMPT PARA LA IA ---
         # Puedes modificar este prompt libremente para ajustar el comportamiento y tono de la IA.

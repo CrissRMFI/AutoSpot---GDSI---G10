@@ -1,6 +1,6 @@
 # Integración con Google Gemini (IA de Precios)
 
-Se ha implementado una nueva funcionalidad que permite sugerir al propietario un precio de alquiler diario basado en las características de su vehículo. Para lograr esto, se utiliza el modelo `gemini-1.5-flash` de Google.
+Se ha implementado una nueva funcionalidad que permite sugerir al propietario un precio de alquiler diario basado en las características de su vehículo. Para lograr esto, se utiliza el modelo `gemini-3.1-flash-lite` de Google.
 
 A continuación se detallan los pasos necesarios para configurar y probar esta integración en el backend.
 
