@@ -66,6 +66,10 @@ const SECCIONES_POR_ROL = {
           to: "/admin/historial-conductores",
           label: "Historial conductores",
         },
+        {
+          to: "/admin/historial-autos",
+          label: "Historial de Autos",
+        },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },
