@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../../../layouts/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 
@@ -48,6 +49,7 @@ const LoginPage = () => {
     password: "",
   });
 
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -108,17 +110,31 @@ const LoginPage = () => {
             Contraseña
           </label>
 
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={form.password}
-            onChange={actualizarCampo}
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent px-3 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
-          />
+          <div className="relative">
+            <input
+              type={mostrarPassword ? "text" : "password"}
+              id="password"
+              name="password"
+              value={form.password}
+              onChange={actualizarCampo}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="h-11 w-full rounded-[8px] border border-autospot-border bg-transparent pl-3 pr-10 text-sm !text-autospot-black outline-none transition placeholder:!text-[#9a8f86] focus:border-autospot-accent focus:ring-2 focus:ring-[rgba(122,28,46,0.16)]"
+            />
+            <button
+              type="button"
+              onClick={() => setMostrarPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-autospot-muted transition hover:text-autospot-accent"
+              aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {mostrarPassword ? (
+                <EyeOff className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Eye className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
 
         {mensaje && (

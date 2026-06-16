@@ -35,6 +35,7 @@ import RevisionCheckinDetallePage from "../features/admin/pages/RevisionCheckinD
 import EntregaAutosPage from "../features/admin/pages/EntregaAutosPage";
 import RecepcionAutosPage from "../features/admin/pages/RecepcionAutosPage";
 import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
+import HistorialConductoresPage from "../features/admin/pages/HistorialConductoresPage";
 
 const DashboardHome = () => {
   const { estaAutenticado, usuario } = useAuth();
@@ -346,6 +347,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <Navigate to="/admin/recepcion" replace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/historial-conductores"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <HistorialConductoresPage />
             </ProtectedRoute>
           }
         />
