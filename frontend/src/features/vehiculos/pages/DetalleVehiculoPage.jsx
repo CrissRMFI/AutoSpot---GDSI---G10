@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { ArrowLeft, BarChart3, Sparkles } from "lucide-react";
 import { useAuth } from "../../auth/hooks/useAuth";
+import httpClient from "../../../api/httpClient";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
+import ModalResenias from "../components/ModalResenias";
 import {
   agregarFotoAVehiculo,
   reemplazarFotoVehiculo,
@@ -14,6 +17,7 @@ import {
 } from "../api/vehiculoService";
 import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
 import LightboxGaleria from "../components/LightboxGaleria";
+import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -33,9 +37,11 @@ const DetalleVehiculoPage = () => {
   const fileInputReemplazoRef = useRef(null);
 
   const [vehiculo, setVehiculo] = useState(null);
+  const [reputacion, setReputacion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+  const [modalReseniasAbierto, setModalReseniasAbierto] = useState(false);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
@@ -44,6 +50,7 @@ const DetalleVehiculoPage = () => {
   const [editandoPrecio, setEditandoPrecio] = useState(false);
   const [inputPrecio, setInputPrecio] = useState("");
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [isModalIAOpen, setIsModalIAOpen] = useState(false);
   const [togglingDisponible, setTogglingDisponible] = useState(false);
 
   const isDisponibilidadInactiva =
@@ -110,9 +117,13 @@ const DetalleVehiculoPage = () => {
       setError("");
 
       try {
-        const data = await getDetalleVehiculo(vehiculoId);
+        const [data, reputacionData] = await Promise.all([
+          getDetalleVehiculo(vehiculoId),
+          httpClient.get(`/vehiculos/${vehiculoId}/reputacion`).then(r => r.data).catch(() => null),
+        ]);
         setVehiculo(data);
         setIndiceActivo(0);
+        if (reputacionData) setReputacion(reputacionData);
       } catch (err) {
         if (err.response?.status === 403) {
           setError("No tenés permiso para ver este vehículo.");
@@ -475,6 +486,19 @@ const DetalleVehiculoPage = () => {
             />
           </dl>
 
+          {reputacion && (
+            <div className="mt-5 flex items-center gap-4">
+              <PuntuacionVehiculo valor={reputacion.promedio_estrellas} size="medium" variante="dark" />
+              <button
+                type="button"
+                onClick={() => setModalReseniasAbierto(true)}
+                className="text-sm font-semibold !text-autospot-accent-2 hover:underline transition"
+              >
+                Ver reseñas ({reputacion.cantidad_total})
+              </button>
+            </div>
+          )}
+
           {esPropietario && vehiculo.estado_registro === "RECHAZADO" &&
             vehiculo.motivo_rechazo && (
               <div className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-3 text-xs text-[#b42318]">
@@ -568,21 +592,30 @@ const DetalleVehiculoPage = () => {
                       }}
                       className="w-full min-w-0 rounded-lg bg-white px-2 py-1.5 text-sm font-bold text-autospot-black focus:outline-none focus:ring-2 focus:ring-autospot-accent"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleActualizarPrecio}
+                          disabled={guardandoPrecio}
+                          className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        >
+                          {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoPrecio(false)}
+                          className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
+                        >
+                          ✕ Cancelar
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={handleActualizarPrecio}
-                        disabled={guardandoPrecio}
-                        className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        onClick={() => setIsModalIAOpen(true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#fce7f3] bg-[#fce7f3] px-2 py-1.5 text-xs font-bold text-autospot-accent transition hover:bg-autospot-accent hover:text-white"
                       >
-                        {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditandoPrecio(false)}
-                        className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
-                      >
-                        ✕ Cancelar
+                        <Sparkles className="h-3.5 w-3.5" /> Generar precio con IA
                       </button>
                     </div>
                   </div>
@@ -664,6 +697,23 @@ const DetalleVehiculoPage = () => {
         fotos={fotos}
         indiceActivo={indiceActivo}
         setIndiceActivo={setIndiceActivo}
+      />
+
+      <ModalResenias
+        isOpen={modalReseniasAbierto}
+        onClose={() => setModalReseniasAbierto(false)}
+        vehiculoId={vehiculoId}
+        esPropietario={true}
+      />
+
+      <ModalGenerarPrecioAI
+        isOpen={isModalIAOpen}
+        onClose={() => setIsModalIAOpen(false)}
+        datosVehiculo={vehiculo}
+        onAccept={(precio) => {
+          setInputPrecio(precio);
+          // Opcional: auto-guardar o dejar que el usuario haga clic en guardar
+        }}
       />
     </section>
   );
