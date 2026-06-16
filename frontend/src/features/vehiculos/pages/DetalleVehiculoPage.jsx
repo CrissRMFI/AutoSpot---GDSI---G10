@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, BarChart3, Sparkles } from "lucide-react";
 import { useAuth } from "../../auth/hooks/useAuth";
+import httpClient from "../../../api/httpClient";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
+import ModalResenias from "../components/ModalResenias";
 import {
   agregarFotoAVehiculo,
   reemplazarFotoVehiculo,
@@ -34,9 +37,11 @@ const DetalleVehiculoPage = () => {
   const fileInputReemplazoRef = useRef(null);
 
   const [vehiculo, setVehiculo] = useState(null);
+  const [reputacion, setReputacion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+  const [modalReseniasAbierto, setModalReseniasAbierto] = useState(false);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
@@ -112,9 +117,13 @@ const DetalleVehiculoPage = () => {
       setError("");
 
       try {
-        const data = await getDetalleVehiculo(vehiculoId);
+        const [data, reputacionData] = await Promise.all([
+          getDetalleVehiculo(vehiculoId),
+          httpClient.get(`/vehiculos/${vehiculoId}/reputacion`).then(r => r.data).catch(() => null),
+        ]);
         setVehiculo(data);
         setIndiceActivo(0);
+        if (reputacionData) setReputacion(reputacionData);
       } catch (err) {
         if (err.response?.status === 403) {
           setError("No tenés permiso para ver este vehículo.");
@@ -477,6 +486,19 @@ const DetalleVehiculoPage = () => {
             />
           </dl>
 
+          {reputacion && (
+            <div className="mt-5 flex items-center gap-4">
+              <PuntuacionVehiculo valor={reputacion.promedio_estrellas} size="medium" variante="dark" />
+              <button
+                type="button"
+                onClick={() => setModalReseniasAbierto(true)}
+                className="text-sm font-semibold !text-autospot-accent-2 hover:underline transition"
+              >
+                Ver reseñas ({reputacion.cantidad_total})
+              </button>
+            </div>
+          )}
+
           {esPropietario && vehiculo.estado_registro === "RECHAZADO" &&
             vehiculo.motivo_rechazo && (
               <div className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-3 text-xs text-[#b42318]">
@@ -675,6 +697,13 @@ const DetalleVehiculoPage = () => {
         fotos={fotos}
         indiceActivo={indiceActivo}
         setIndiceActivo={setIndiceActivo}
+      />
+
+      <ModalResenias
+        isOpen={modalReseniasAbierto}
+        onClose={() => setModalReseniasAbierto(false)}
+        vehiculoId={vehiculoId}
+        esPropietario={true}
       />
 
       <ModalGenerarPrecioAI
