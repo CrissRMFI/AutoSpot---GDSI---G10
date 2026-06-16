@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import httpClient from "../../../api/httpClient";
 import PuntuacionVehiculo from "./PuntuacionVehiculo";
 
-const ModalResenias = ({ isOpen, onClose, vehiculoId }) => {
+const ModalResenias = ({ isOpen, onClose, vehiculoId, esPropietario = false }) => {
   const [resenias, setResenias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -13,8 +13,13 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId }) => {
         setCargando(true);
         setError("");
         try {
-          const response = await httpClient.get(`/vehiculos/${vehiculoId}/resenias`);
-          setResenias(response.data);
+          if (esPropietario) {
+            const response = await httpClient.get(`/vehiculos/${vehiculoId}/reputacion`);
+            setResenias(response.data.resenias || []);
+          } else {
+            const response = await httpClient.get(`/vehiculos/${vehiculoId}/resenias`);
+            setResenias(response.data || []);
+          }
         } catch {
           setError("No se pudieron cargar las reseñas.");
         } finally {
@@ -23,7 +28,7 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId }) => {
       };
       fetchResenias();
     }
-  }, [isOpen, vehiculoId]);
+  }, [isOpen, vehiculoId, esPropietario]);
 
   if (!isOpen) return null;
 
@@ -75,22 +80,40 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId }) => {
             </div>
           ) : (
             <div className="space-y-4">
-              {resenias.map((resenia, idx) => (
-                <div key={idx} className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="font-semibold text-autospot-black">{resenia.conductor}</div>
-                    <div className="text-xs text-gray-400">
-                      {new Date(resenia.fecha).toLocaleDateString()}
+              {resenias.map((resenia, idx) => {
+                const esCritica = esPropietario && resenia.puntaje < 3;
+                
+                const nombreConductor = resenia.conductor;
+                const textoResenia = esPropietario ? resenia.comentario : resenia.descripcion;
+
+                return (
+                  <div 
+                    key={idx} 
+                    className={`rounded-2xl p-5 shadow-sm border ${
+                      esCritica 
+                        ? "border-[#fecaca] bg-[#fef2f2]" 
+                        : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-semibold text-autospot-black">
+                        {nombreConductor}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(resenia.fecha).toLocaleDateString()}
+                      </div>
                     </div>
+                    <PuntuacionVehiculo valor={resenia.puntaje} size="small" />
+                    {textoResenia && (
+                      <p className={`mt-3 text-sm leading-relaxed ${
+                        esCritica ? "text-[#b42318]" : "text-gray-600"
+                      }`}>
+                        {textoResenia}
+                      </p>
+                    )}
                   </div>
-                  <PuntuacionVehiculo valor={resenia.puntaje} size="small" />
-                  {resenia.descripcion && (
-                    <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                      {resenia.descripcion}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

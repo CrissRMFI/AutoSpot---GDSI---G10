@@ -65,6 +65,7 @@ from app.schemas.vehiculo import (
     ReseniaVehiculoSchema,
     RecordHistorialUsoSchema,
 )
+from app.schemas.reputacion import MetricasReputacionSchema
 from app.services.vehiculo import (
     agregar_foto_a_vehiculo,
     cambiar_disponibilidad_vehiculo,
@@ -82,6 +83,7 @@ from app.services.vehiculo import (
     obtener_resenias_vehiculo,
     obtener_historial_uso_vehiculo,
 )
+from app.services.reputacion_service import obtener_metricas_reputacion_vehiculo
 from app.models.documentacion_habilitante_conductor import (
     DocumentacionHabilitanteConductor,
     EstadoHabilitacion,
@@ -485,6 +487,26 @@ def obtener_historial_vehiculo(
         RecordHistorialUsoSchema.model_validate(h)
         for h in historial_dicts
     ]
+
+
+@router.get(
+    "/vehiculos/{vehiculo_id}/reputacion",
+    response_model=MetricasReputacionSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener métricas de reputación del vehículo",
+    description=(
+        "Calcula el promedio de estrellas y devuelve el listado de reseñas "
+        "de un vehículo. Requiere autenticación JWT."
+    ),
+)
+def obtener_reputacion_vehiculo(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> MetricasReputacionSchema:
+    # Se podría validar que el vehículo exista, pero el servicio
+    # simplemente devuelve 0 si no hay resultados, lo que es seguro.
+    return obtener_metricas_reputacion_vehiculo(db=db, vehiculo_id=vehiculo_id)
 
 
 @router.patch(
