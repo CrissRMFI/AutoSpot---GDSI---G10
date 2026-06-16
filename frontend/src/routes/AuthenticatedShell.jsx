@@ -62,6 +62,10 @@ const SECCIONES_POR_ROL = {
           to: "/admin/recepcion",
           label: "Recepción de autos",
         },
+        {
+          to: "/admin/historial-conductores",
+          label: "Historial conductores",
+        },
         { to: "/estaciones", label: "Estaciones" },
       ],
     },
