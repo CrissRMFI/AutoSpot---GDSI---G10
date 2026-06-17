@@ -147,6 +147,15 @@ const EstacionesPage = () => {
         ? estaciones.filter((e) => e.zona?.toLowerCase() === barrioSeleccionado.toLowerCase())
         : [...estaciones])
   ).sort((a, b) => {
+    // Si el usuario es PROPIETARIO, priorizar estaciones donde tiene vehículos
+    if (usuario?.rol === "PROPIETARIO") {
+      const aTieneAutos = vehiculos.some(v => v.estacion === a.nombre);
+      const bTieneAutos = vehiculos.some(v => v.estacion === b.nombre);
+      
+      if (aTieneAutos && !bTieneAutos) return -1;
+      if (!aTieneAutos && bTieneAutos) return 1;
+    }
+
     if (ubicacionUsuario && a.latitud && a.longitud && b.latitud && b.longitud) {
       const distA = calcularDistancia(ubicacionUsuario.lat, ubicacionUsuario.lng, a.latitud, a.longitud);
       const distB = calcularDistancia(ubicacionUsuario.lat, ubicacionUsuario.lng, b.latitud, b.longitud);

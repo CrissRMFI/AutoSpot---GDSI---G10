@@ -66,8 +66,8 @@ function Row({ auto }) {
                     {auto.movimientos.map((mov) => (
                       <TableRow key={mov.id}>
                         <TableCell>
-                          {mov.conductor_nombre && mov.conductor_apellido 
-                            ? `${mov.conductor_nombre} ${mov.conductor_apellido}` 
+                          {mov.conductor_nombre && mov.conductor_apellido
+                            ? `${mov.conductor_nombre} ${mov.conductor_apellido}`
                             : mov.conductor_email}
                         </TableCell>
                         <TableCell>{mov.estado}</TableCell>
@@ -122,12 +122,13 @@ const HistorialAutosPage = () => {
 
   // Cargar al inicio sin filtros
   useEffect(() => {
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarHistorial();
 
     getEstacionesActivas()
       .then((data) => setEstacionesLista(data))
       .catch((err) => console.error("Error al cargar estaciones:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleBuscar = (e) => {
