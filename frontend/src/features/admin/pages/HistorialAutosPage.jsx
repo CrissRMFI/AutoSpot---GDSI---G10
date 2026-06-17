@@ -14,6 +14,10 @@ import {
   CircularProgress,
   Collapse,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -21,6 +25,7 @@ import {
   Inbox as InboxIcon,
 } from "@mui/icons-material";
 import { getHistorialAutos } from "../api/historialAutosApi";
+import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 
 function Row({ auto }) {
   const [open, setOpen] = useState(false);
@@ -95,6 +100,7 @@ const HistorialAutosPage = () => {
   const [filtroEstacion, setFiltroEstacion] = useState("");
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroPatente, setFiltroPatente] = useState("");
+  const [estacionesLista, setEstacionesLista] = useState([]);
 
   const cargarHistorial = async () => {
     setCargando(true);
@@ -118,6 +124,10 @@ const HistorialAutosPage = () => {
   useEffect(() => {
     // eslint-disable-next-line
     cargarHistorial();
+
+    getEstacionesActivas()
+      .then((data) => setEstacionesLista(data))
+      .catch((err) => console.error("Error al cargar estaciones:", err));
   }, []);
 
   const handleBuscar = (e) => {
@@ -135,14 +145,24 @@ const HistorialAutosPage = () => {
       </Typography>
 
       <Box component="form" onSubmit={handleBuscar} sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
-        <TextField
-          label="Estación"
-          variant="outlined"
-          size="small"
-          value={filtroEstacion}
-          onChange={(e) => setFiltroEstacion(e.target.value)}
-          placeholder="Ej. Obelisco"
-        />
+        <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="select-estacion-label">Estación</InputLabel>
+          <Select
+            labelId="select-estacion-label"
+            label="Estación"
+            value={filtroEstacion}
+            onChange={(e) => setFiltroEstacion(e.target.value)}
+          >
+            <MenuItem value="">
+              <em>Todas</em>
+            </MenuItem>
+            {estacionesLista.map((est) => (
+              <MenuItem key={est.id} value={est.nombre}>
+                {est.nombre}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <TextField
           label="Fecha"
           type="date"
