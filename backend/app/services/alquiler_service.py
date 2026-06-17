@@ -41,6 +41,7 @@ from app.services.notificacion import (
     crear_notificaciones_reserva_pendiente_verificacion,
 )
 from app.services.reglas_financieras import calcular_recargo_devolucion_tardia
+from app.models.reporte import Reporte
 
 
 ESTADOS_RESERVA_ACTIVA = {
@@ -637,3 +638,43 @@ def listar_recepcion(
         .all()
     )
     return items, total
+
+def registrar_reporte_incidente(
+    db: Session,
+    reserva_id: uuid.UUID,
+    conductor_id: uuid.UUID,
+    descripcion: str,
+    url_foto_adjuntada: str | None,
+) -> Reporte:
+    """
+    Registra un reporte de incidente para una reserva dada (US 16C).
+
+    El reporte se asocia a la reserva, al conductor y al vehículo, e incluye
+    una descripción del incidente y opcionalmente una foto adjunta.
+    """
+    reserva = (
+        db.query(Reserva)
+        .filter(Reserva.id == reserva_id)
+        .first()
+    )
+    if reserva is None or reserva.conductor_id != conductor_id:
+        raise ReservaNoEncontradaError()
+
+    if (reserva.estado or "").upper() not in ESTADOS_ALQUILER:
+        raise ReservaNoEnCursoError("Solo se pueden reportar incidentes de reservas activas.")
+
+    if reserva.vehiculo is None:
+        raise VehiculoNoEncontradoError("La reserva no tiene un vehículo asociado.")
+
+    reporte = Reporte(
+        reserva_id=reserva.id,
+        conductor_id=conductor_id,
+        vehiculo_id=reserva.vehiculo.id,
+        descripcion=descripcion.strip(),
+        url_foto_adjuntada=url_foto_adjuntada.strip() if url_foto_adjuntada else None,
+    )
+
+    db.add(reporte)
+    db.commit()
+    db.refresh(reporte)
+    return reporte

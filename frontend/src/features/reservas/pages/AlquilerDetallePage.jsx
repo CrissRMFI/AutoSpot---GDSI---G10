@@ -89,6 +89,11 @@ const AlquilerDetallePage = () => {
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportFile, setReportFile] = useState(null);
+  const [reportProcesando, setReportProcesando] = useState(false);
+  const [reportSuccessOpen, setReportSuccessOpen] = useState(false);
 
   const cargarDetalle = useCallback(async () => {
     setCargando(true);
@@ -222,6 +227,35 @@ const AlquilerDetallePage = () => {
     }
   };
 
+  const handleEnviarReporte = async () => {
+    setReportProcesando(true);
+    try {
+      const formData = new FormData();
+      formData.append("descripcion", reportDescription || "");
+      if (reportFile) formData.append("foto", reportFile);
+
+      await fetch(`/alquiler/reservas/${reservaId}/reporte`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      setReportModalOpen(false);
+      setReportDescription("");
+      setReportFile(null);
+      setReportSuccessOpen(true);
+    } catch (err) {
+      setReportModalOpen(false);
+      setMensaje({
+        tipo: "error",
+        titulo: "No se pudo enviar el reporte",
+        mensaje: err?.response?.data?.detail || "Ocurrió un error inesperado.",
+      });
+    } finally {
+      setReportProcesando(false);
+    }
+  };
+
   if (cargando) {
     return (
       <div className="w-full">
@@ -351,6 +385,15 @@ const AlquilerDetallePage = () => {
                 Entregar el auto
               </button>
             )}
+            {puedeEntregar && (
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(true)}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent"
+              >
+                Reportar problema
+              </button>
+            )}
           </section>
 
           {checkout && (
@@ -450,6 +493,19 @@ const AlquilerDetallePage = () => {
         onEnviar={handleEnviarValoracion}
         cargando={procesando}
       />
+
+      <ReporteModal
+        abierto={reportModalOpen}
+        descripcion={reportDescription}
+        onChangeDescripcion={(e) => setReportDescription(e.target.value)}
+        onFileChange={(e) => setReportFile(e.target.files ? e.target.files[0] : null)}
+        onConfirmar={handleEnviarReporte}
+        onCancelar={() => setReportModalOpen(false)}
+        cargando={reportProcesando}
+        file={reportFile}
+      />
+
+      <ReporteEnviadoModal abierto={reportSuccessOpen} onClose={() => setReportSuccessOpen(false)} />
     </section>
   );
 };
@@ -637,5 +693,61 @@ const FotoCheckout = ({ label, url }) => {
     </>
   );
 };
+
+const ReporteModal = ({ abierto, descripcion, onChangeDescripcion, onFileChange, onConfirmar, onCancelar, cargando, file }) => (
+  <Dialog
+    open={abierto}
+    onClose={cargando ? undefined : onCancelar}
+    maxWidth="sm"
+    fullWidth
+    PaperProps={{ sx: { borderRadius: 3, bgcolor: "#f5f2ed", border: "1px solid #d4cec6" } }}
+  >
+    <DialogTitle sx={{ color: "#0a0a0a", fontFamily: "Unbounded, sans-serif", fontWeight: 900, letterSpacing: "-0.04em", pb: 1 }}>
+      Reportar un problema
+    </DialogTitle>
+    <DialogContent>
+      <div className="rounded-lg border border-autospot-border bg-white p-4 space-y-3">
+        <textarea
+          value={descripcion}
+          onChange={onChangeDescripcion}
+          placeholder="Describa el problema (obligatorio)"
+          className="w-full min-h-[120px] rounded-md border border-autospot-border p-3 text-sm"
+        />
+
+        <div>
+          <label className="text-sm font-bold text-autospot-muted">Adjuntar foto (opcional)</label>
+          <input type="file" accept="image/*" onChange={onFileChange} className="mt-2" />
+          {file && (
+            <div className="mt-3">
+              <img src={URL.createObjectURL(file)} alt="preview" className="max-h-40 rounded-md object-cover" />
+            </div>
+          )}
+        </div>
+      </div>
+    </DialogContent>
+    <DialogActions sx={{ px: 3, pb: 3 }}>
+      <Button onClick={onCancelar} disabled={cargando} sx={{ color: "#0a0a0a", fontWeight: 800, borderRadius: 999 }}>Cancelar</Button>
+      <Button onClick={onConfirmar} disabled={cargando} variant="contained" sx={{ bgcolor: "#7b1c2e", borderRadius: 999, fontWeight: 900, px: 3, "&:hover": { bgcolor: "#5a1420" } }}>
+        {cargando ? <CircularProgress size={20} color="inherit" /> : "Enviar reporte"}
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
+const ReporteEnviadoModal = ({ abierto, onClose }) => (
+  <Dialog open={abierto} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+    <DialogTitle sx={{ fontWeight: 900 }}>Su reporte fue enviado con éxito</DialogTitle>
+    <DialogContent>
+      <div className="space-y-3">
+        <p className="text-sm">Comuniquese con nosotros a traves de los siguientes medios:</p>
+        <p className="text-sm font-bold">Tel: +54 11 5555-0199</p>
+        <p className="text-sm font-bold">Mail: reportes@autospot.com.ar</p>
+      </div>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} variant="contained" sx={{ bgcolor: "#7b1c2e", '&:hover': { bgcolor: '#5a1420' } }}>Cerrar</Button>
+    </DialogActions>
+  </Dialog>
+);
 
 export default AlquilerDetallePage;

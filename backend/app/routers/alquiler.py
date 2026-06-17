@@ -58,6 +58,7 @@ from app.services.alquiler_service import (
     rechazar_reserva,
     registrar_salida,
     verificar_codigo_reserva,
+    registrar_reporte_incidente,
 )
 from app.services.checkout_service import (
     confirmar_checkout,
@@ -66,6 +67,7 @@ from app.services.checkout_service import (
 )
 from app.models.estacion import Estacion
 from app.schemas.estacion import EstacionDetailResponse
+from app.schemas.reporte import ReporteResponseSchema, ReportePayloadSchema
 
 router = APIRouter(
     prefix="/alquiler",
@@ -541,3 +543,31 @@ def rechazar_checkout_endpoint(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
     except CheckoutNoConfirmableError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+
+@router.post(
+    "/reservas/{reserva_id}/reporte",
+    response_model=ReporteResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    summary="Conductor envia un reporte de incidente durante el alquiler",
+)
+def reportar_incidente_endpoint(
+    reserva_id: uuid.UUID,
+    payload: ReportePayloadSchema,
+    usuario_actual: dict = Depends(requerir_rol_cliente),
+    db: Session = Depends(get_db),
+) -> ReporteResponseSchema:
+    conductor_id = uuid.UUID(str(usuario_actual["sub"]))
+    try:
+        reporte = registrar_reporte_incidente(
+            db=db,
+            reserva_id=reserva_id,
+            conductor_id=conductor_id,
+            descripcion=payload.descripcion,
+            url_foto_adjuntada=payload.url_foto_adjuntada,
+        )
+    except ReservaNoEncontradaError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ReservaNoEnCursoError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    return ReporteResponseSchema.model_validate(reporte)

@@ -8,3 +8,4 @@ from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.checkout_vehiculo import CheckoutVehiculo
 from app.models.valoracion import Valoracion
 from app.models.testimonio import Testimonio
+from app.models.reporte import Reporte
