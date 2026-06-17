@@ -10,22 +10,24 @@ import { subirFotoCheckout } from "../api/checkoutService";
 
 const COMBUSTIBLE_OPTIONS = ["1/4", "1/2", "3/4", "Lleno"];
 
-const CheckoutForm = ({ onSubmit, isLoading, reservaResumen }) => {
+const CheckoutForm = ({ onSubmit, isLoading, reservaResumen, initialData }) => {
   const [formData, setFormData] = useState({
-    nivel_combustible: "Lleno",
-    kilometraje_actual: "",
-    esta_limpio: true,
-    tiene_danios: false,
-    descripcion_danios: "",
-    url_foto_frente: null,
-    url_foto_trasera: null,
-    url_foto_lateral_izq: null,
-    url_foto_lateral_der: null,
-    url_foto_panel: null,
-    urls_fotos_danios: [],
-    url_foto_extra: null,
-    notas_adicionales: "",
+    nivel_combustible: initialData?.nivel_combustible || "Lleno",
+    kilometraje_actual: initialData?.kilometraje_actual || "",
+    esta_limpio: initialData?.esta_limpio ?? true,
+    tiene_danios: initialData?.tiene_danios ?? false,
+    descripcion_danios: initialData?.descripcion_danios || "",
+    url_foto_frente: initialData?.url_foto_frente || null,
+    url_foto_trasera: initialData?.url_foto_trasera || null,
+    url_foto_lateral_izq: initialData?.url_foto_lateral_izq || null,
+    url_foto_lateral_der: initialData?.url_foto_lateral_der || null,
+    url_foto_panel: initialData?.url_foto_panel || null,
+    urls_fotos_danios: initialData?.urls_fotos_danios || [],
+    url_foto_extra: initialData?.url_foto_extra || null,
+    notas_adicionales: initialData?.notas_adicionales || "",
   });
+
+
 
   const [uploadingState, setUploadingState] = useState({});
   const [error, setError] = useState(null);

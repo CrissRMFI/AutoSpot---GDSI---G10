@@ -582,6 +582,7 @@ def cambiar_disponibilidad_vehiculo(
 def listar_vehiculos_disponibles(
     db: Session,
     puntuacion_minima: Decimal | float | None = None,
+    usuario_actual: dict | None = None,
 ) -> list[Vehiculo]:
     """
     Lista todos los vehículos que están habilitados y disponibles para alquiler,
@@ -613,6 +614,12 @@ def listar_vehiculos_disponibles(
             Vehiculo.calificacion_promedio.isnot(None),
             Vehiculo.calificacion_promedio >= puntuacion_minima,
         )
+
+    if usuario_actual and usuario_actual.get("sub"):
+        from app.models.usuario import Usuario
+        usuario = db.query(Usuario).filter(Usuario.id == usuario_actual.get("sub")).first()
+        if usuario and (usuario.rol or "").upper() == "PROPIETARIO":
+            query = query.filter(Vehiculo.propietario_id == usuario.id)
 
     return query.all()
 

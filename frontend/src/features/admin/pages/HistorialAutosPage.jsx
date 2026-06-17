@@ -116,8 +116,9 @@ const HistorialAutosPage = () => {
 
   // Cargar al inicio sin filtros
   useEffect(() => {
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarHistorial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleBuscar = (e) => {

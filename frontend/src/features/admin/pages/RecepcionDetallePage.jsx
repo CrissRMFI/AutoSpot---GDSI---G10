@@ -262,9 +262,11 @@ const RecepcionDetallePage = () => {
         <main>
           {puedeCompletarCheckout ? (
             <CheckoutForm
+              key={checkout?.id || "checkout-form"}
               onSubmit={handleSubmitCheckout}
               isLoading={enviando}
               reservaResumen={reserva}
+              initialData={checkout}
             />
           ) : puedeRegistrarEntrada ? (
             <section className="rounded-2xl border border-autospot-border bg-autospot-white p-8">

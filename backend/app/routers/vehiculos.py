@@ -325,6 +325,7 @@ def listar_catalogo_vehiculos(
     vehiculos = listar_vehiculos_disponibles(
         db=db,
         puntuacion_minima=puntuacion_minima,
+        usuario_actual=usuario_actual,
     )
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
