@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-class ReporteCreatePayloadSchema(BaseModel):
+class ReportePayloadSchema(BaseModel):
     """Payload HTTP para registrar un reporte de incidente."""
 
     reserva_id: uuid.UUID = Field(
