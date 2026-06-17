@@ -548,7 +548,7 @@ def rechazar_checkout_endpoint(
 @router.post(
     "/reservas/{reserva_id}/reporte",
     response_model=ReporteResponseSchema,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED,
     summary="Conductor envia un reporte de incidente durante el alquiler",
 )
 def reportar_incidente_endpoint(
@@ -559,7 +559,13 @@ def reportar_incidente_endpoint(
 ) -> ReporteResponseSchema:
     conductor_id = uuid.UUID(str(usuario_actual["sub"]))
     try:
-        reporte = registrar_reporte_incidente(db=db, reserva_id=reserva_id, conductor_id=conductor_id, payload=payload)
+        reporte = registrar_reporte_incidente(
+            db=db,
+            reserva_id=reserva_id,
+            conductor_id=conductor_id,
+            descripcion=payload.descripcion,
+            url_foto_adjuntada=payload.url_foto_adjuntada,
+        )
     except ReservaNoEncontradaError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ReservaNoEnCursoError as exc:

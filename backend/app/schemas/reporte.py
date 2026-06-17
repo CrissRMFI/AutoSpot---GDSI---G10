@@ -7,12 +7,12 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 class ReportePayloadSchema(BaseModel):
-    """Payload HTTP para registrar un reporte de incidente."""
+    """Payload HTTP para registrar un reporte de incidente.
 
-    reserva_id: uuid.UUID = Field(
-        ...,
-        description="ID de la reserva en la que se genero el reporte.",
-    )
+    Nota: `reserva_id` se recibe como path parameter en el endpoint,
+    por lo que no es requerido en el body.
+    """
+
     descripcion: str = Field(
         ...,
         max_length=1000,
