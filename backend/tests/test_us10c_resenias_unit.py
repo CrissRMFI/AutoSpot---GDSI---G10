@@ -17,10 +17,13 @@ def test_obtener_resenias_con_datos():
     Verifica que se devuelva una lista de diccionarios con el formato correcto.
     """
     db_mock = MagicMock()
+    query_vehiculo = MagicMock()
+    query_resenias = MagicMock()
+    db_mock.query.side_effect = [query_vehiculo, query_resenias]
     vehiculo_id = uuid.uuid4()
     
     # Mock para la primera query que verifica el vehículo
-    db_mock.query.return_value.filter.return_value.first.return_value = Vehiculo(id=vehiculo_id)
+    query_vehiculo.filter.return_value.first.return_value = Vehiculo(id=vehiculo_id)
     
     # Preparamos datos simulados para el join
     reserva_id = uuid.uuid4()
@@ -30,8 +33,12 @@ def test_obtener_resenias_con_datos():
     test_mock = Testimonio(reserva_id=reserva_id, descripcion="Excelente auto")
     usr_mock = DatosPersonalesUsuario(nombre="Juan", apellido="Perez")
     
-    # Mock para la segunda query (los outer joins)
-    db_mock.query.return_value.outerjoin.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = [
+    # Mock para la segunda query sin acoplarla al tipo exacto de JOIN usado.
+    query_resenias.join.return_value = query_resenias
+    query_resenias.outerjoin.return_value = query_resenias
+    query_resenias.filter.return_value = query_resenias
+    query_resenias.order_by.return_value = query_resenias
+    query_resenias.all.return_value = [
         (val_mock, test_mock, usr_mock)
     ]
     
@@ -50,13 +57,20 @@ def test_obtener_resenias_vacia():
     Verifica que se devuelva una lista vacía.
     """
     db_mock = MagicMock()
+    query_vehiculo = MagicMock()
+    query_resenias = MagicMock()
+    db_mock.query.side_effect = [query_vehiculo, query_resenias]
     vehiculo_id = uuid.uuid4()
     
     # Mock para la primera query (el auto existe)
-    db_mock.query.return_value.filter.return_value.first.return_value = Vehiculo(id=vehiculo_id)
+    query_vehiculo.filter.return_value.first.return_value = Vehiculo(id=vehiculo_id)
     
-    # Mock para los outer joins (sin resultados)
-    db_mock.query.return_value.outerjoin.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = []
+    # Mock para la segunda query sin resultados.
+    query_resenias.join.return_value = query_resenias
+    query_resenias.outerjoin.return_value = query_resenias
+    query_resenias.filter.return_value = query_resenias
+    query_resenias.order_by.return_value = query_resenias
+    query_resenias.all.return_value = []
     
     resenias = obtener_resenias_vehiculo(db=db_mock, vehiculo_id=vehiculo_id)
     

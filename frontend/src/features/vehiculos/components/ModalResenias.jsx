@@ -127,41 +127,46 @@ const ModalResenias = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {resenias.map((resenia, idx) => (
-                <article
-                  key={`${resenia.conductor}-${resenia.fecha}-${idx}`}
-                  className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
-                >
-                  <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                    <div className="min-w-0 break-words font-semibold text-autospot-black">
-                      {resenia.conductor}
+              {resenias.map((resenia, idx) => {
+                const textoResenia = (
+                  resenia.descripcion ||
+                  resenia.comentario ||
+                  ""
+                ).trim();
+                const esCritica = Number(resenia.puntaje) <= 2;
+
+                return (
+                  <article
+                    key={`${resenia.conductor}-${resenia.fecha}-${idx}`}
+                    className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
+                  >
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0 break-words font-semibold text-autospot-black">
+                        {resenia.conductor}
+                      </div>
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <div className="text-xs text-gray-400">
+                          {new Date(resenia.fecha).toLocaleDateString()}
+                        </div>
+                        <PuntuacionVehiculo
+                          valor={resenia.puntaje}
+                          size="small"
+                          className="max-w-full flex-wrap"
+                        />
+                      </div>
                     </div>
-                    <div className="shrink-0 text-xs text-gray-400">
-                      {new Date(resenia.fecha).toLocaleDateString()}
-                    </div>
-                    <PuntuacionVehiculo valor={resenia.puntaje} size="small" />
                     {textoResenia && (
                       <p
-                        className={`mt-3 text-sm leading-relaxed ${
+                        className={`mt-3 break-words text-sm leading-relaxed [overflow-wrap:anywhere] ${
                           esCritica ? "text-[#b42318]" : "text-gray-600"
                         }`}
                       >
                         {textoResenia}
                       </p>
                     )}
-                  </div>
-                  <PuntuacionVehiculo
-                    valor={resenia.puntaje}
-                    size="small"
-                    className="max-w-full flex-wrap"
-                  />
-                  {resenia.descripcion && (
-                    <p className="mt-3 break-words text-sm leading-relaxed text-gray-600 [overflow-wrap:anywhere]">
-                      {resenia.descripcion}
-                    </p>
-                  )}
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
