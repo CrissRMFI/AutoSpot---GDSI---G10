@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { MessageSquareText, X } from "lucide-react";
 import httpClient from "../../../api/httpClient";
 import PuntuacionVehiculo from "./PuntuacionVehiculo";
 
-const ModalResenias = ({ isOpen, onClose, vehiculoId, esPropietario = false }) => {
+const ModalResenias = ({
+  isOpen,
+  onClose,
+  vehiculoId,
+  esPropietario = false,
+}) => {
   const [resenias, setResenias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -14,10 +21,14 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId, esPropietario = false }) =
         setError("");
         try {
           if (esPropietario) {
-            const response = await httpClient.get(`/vehiculos/${vehiculoId}/reputacion`);
+            const response = await httpClient.get(
+              `/vehiculos/${vehiculoId}/reputacion`,
+            );
             setResenias(response.data.resenias || []);
           } else {
-            const response = await httpClient.get(`/vehiculos/${vehiculoId}/resenias`);
+            const response = await httpClient.get(
+              `/vehiculos/${vehiculoId}/resenias`,
+            );
             setResenias(response.data || []);
           }
         } catch {
@@ -30,33 +41,65 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId, esPropietario = false }) =
     }
   }, [isOpen, vehiculoId, esPropietario]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const cerrarConEscape = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", cerrarConEscape);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", cerrarConEscape);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity">
-      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-autospot-white shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
-          <h2 className="font-display text-xl font-bold text-autospot-black">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm transition-opacity sm:items-center sm:p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-resenias-title"
+        className="relative flex max-h-[88svh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-autospot-white shadow-2xl sm:max-h-[85vh] sm:rounded-lg"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex min-h-[5.75rem] items-center justify-between gap-3 border-b border-gray-100 bg-white px-5 py-4 sm:min-h-0 sm:px-6">
+          <h2
+            id="modal-resenias-title"
+            className="min-w-0 break-words font-display text-xl font-bold leading-tight text-autospot-black sm:text-2xl"
+          >
             Reseñas del vehículo
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-autospot-border bg-white text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
             aria-label="Cerrar modal"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50/50">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50/50 px-4 py-5 sm:px-6 sm:py-6">
           {cargando ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
+                <div
+                  key={i}
+                  className="animate-pulse rounded-lg border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
+                >
                   <div className="h-4 w-1/4 rounded bg-gray-200" />
                   <div className="mt-3 h-3 w-1/5 rounded bg-gray-200" />
                   <div className="mt-4 h-4 w-full rounded bg-gray-200" />
@@ -70,55 +113,66 @@ const ModalResenias = ({ isOpen, onClose, vehiculoId, esPropietario = false }) =
             </div>
           ) : resenias.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <svg className="mb-4 h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <h3 className="text-lg font-bold text-autospot-black">Aún no hay reseñas</h3>
+              <MessageSquareText
+                className="mb-4 h-16 w-16 text-gray-300"
+                aria-hidden="true"
+              />
+              <h3 className="text-lg font-bold text-autospot-black">
+                Aún no hay reseñas
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Este vehículo aún no ha recibido valoraciones de otros conductores.
+                Este vehículo aún no ha recibido valoraciones de otros
+                conductores.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {resenias.map((resenia, idx) => {
-                const esCritica = esPropietario && resenia.puntaje < 3;
-                
-                const nombreConductor = resenia.conductor;
-                const textoResenia = esPropietario ? resenia.comentario : resenia.descripcion;
+                const textoResenia = (
+                  resenia.descripcion ||
+                  resenia.comentario ||
+                  ""
+                ).trim();
+                const esCritica = Number(resenia.puntaje) <= 2;
 
                 return (
-                  <div 
-                    key={idx} 
-                    className={`rounded-2xl p-5 shadow-sm border ${
-                      esCritica 
-                        ? "border-[#fecaca] bg-[#fef2f2]" 
-                        : "border-gray-100 bg-white"
-                    }`}
+                  <article
+                    key={`${resenia.conductor}-${resenia.fecha}-${idx}`}
+                    className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="font-semibold text-autospot-black">
-                        {nombreConductor}
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0 break-words font-semibold text-autospot-black">
+                        {resenia.conductor}
                       </div>
-                      <div className="text-xs text-gray-400">
-                        {new Date(resenia.fecha).toLocaleDateString()}
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <div className="text-xs text-gray-400">
+                          {new Date(resenia.fecha).toLocaleDateString()}
+                        </div>
+                        <PuntuacionVehiculo
+                          valor={resenia.puntaje}
+                          size="small"
+                          className="max-w-full flex-wrap"
+                        />
                       </div>
                     </div>
-                    <PuntuacionVehiculo valor={resenia.puntaje} size="small" />
                     {textoResenia && (
-                      <p className={`mt-3 text-sm leading-relaxed ${
-                        esCritica ? "text-[#b42318]" : "text-gray-600"
-                      }`}>
+                      <p
+                        className={`mt-3 break-words text-sm leading-relaxed [overflow-wrap:anywhere] ${
+                          esCritica ? "text-[#b42318]" : "text-gray-600"
+                        }`}
+                      >
                         {textoResenia}
                       </p>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
