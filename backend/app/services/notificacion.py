@@ -28,9 +28,11 @@ TIPO_VEHICULO_HABILITADO = "VEHICULO_HABILITADO"
 TIPO_VEHICULO_RECHAZADO = "VEHICULO_RECHAZADO"
 TIPO_CONDUCTOR_HABILITADO = "CONDUCTOR_HABILITADO"
 TIPO_CONDUCTOR_RECHAZADO = "CONDUCTOR_RECHAZADO"
+TIPO_REPORTE_FALLA_CRITICA = "REPORTE_FALLA_CRITICA"
 RECURSO_RESERVA = "RESERVA"
 RECURSO_VEHICULO = "VEHICULO"
 RECURSO_CONDUCTOR = "CONDUCTOR"
+RECURSO_REPORTE = "REPORTE"
 ESTADO_VEHICULO_PENDIENTE_DOCUMENTACION = "PENDIENTE_DOCUMENTACION"
 
 
@@ -51,6 +53,8 @@ def _url_notificacion(
         return f"/usuario/reservas?focus={recurso_id}"
     if tipo == TIPO_VEHICULO_DOCUMENTACION_PENDIENTE and recurso_id:
         return f"/vehiculos/{recurso_id}/documentacion"
+    if recurso_tipo == RECURSO_REPORTE and recurso_id:
+        return f"/admin/reportes/{recurso_id}"
     if recurso_tipo == RECURSO_VEHICULO and recurso_id:
         return f"/vehiculos/{recurso_id}/detalle"
     return "/dashboard"
@@ -400,6 +404,63 @@ def crear_notificacion_resolucion_vehiculo(
             recurso_id=vehiculo.id,
         )
     return notificacion
+
+
+def crear_notificacion_reporte_falla_propietario(
+    db: Session,
+    reporte,
+) -> Notificacion:
+    """
+    Notifica al propietario del vehículo por una falla critica reportada.
+
+    No hace commit: la creación del reporte y sus notificaciones se persisten
+    en la misma transacción.
+    """
+    vehiculo = reporte.vehiculo
+    nombre_vehiculo = _nombre_vehiculo(vehiculo)
+    return crear_notificacion_usuario(
+        db=db,
+        usuario_id=vehiculo.propietario_id,
+        tipo=TIPO_REPORTE_FALLA_CRITICA,
+        titulo="Incidencia critica reportada",
+        mensaje=(
+            f"Se registro una falla critica en tu {nombre_vehiculo} durante un "
+            "alquiler. El vehiculo permanecera fuera del catalogo hasta que se "
+            "resuelva el reporte."
+        ),
+        recurso_tipo=RECURSO_VEHICULO,
+        recurso_id=vehiculo.id,
+    )
+
+
+def crear_notificaciones_reporte_falla_admins(
+    db: Session,
+    reporte,
+) -> list[Notificacion]:
+    """
+    Notifica a cada admin activo por una falla critica reportada.
+
+    No hace commit: las notificaciones se persisten junto con el reporte.
+    """
+    admins = (
+        db.query(Usuario)
+        .filter(Usuario.rol == "ADMIN", Usuario.is_active.is_(True))
+        .all()
+    )
+    codigo = reporte.reserva.codigo if reporte.reserva is not None else ""
+    creadas: list[Notificacion] = []
+    for admin in admins:
+        notificacion = crear_notificacion_usuario(
+            db=db,
+            usuario_id=admin.id,
+            tipo=TIPO_REPORTE_FALLA_CRITICA,
+            titulo="Incidencia critica reportada",
+            mensaje=f"Se registro una falla critica en la reserva {codigo}. Revisar el reporte.",
+            recurso_tipo=RECURSO_REPORTE,
+            recurso_id=reporte.id,
+        )
+        creadas.append(notificacion)
+    return creadas
 
 
 def listar_notificaciones_no_vistas(
