@@ -164,7 +164,7 @@ export const useNotificaciones = () => {
       return `/usuario/alquileres?focus=${notificacion.recurso_id}`;
     }
     if (notificacion.tipo === "ALQUILER_INICIADO" && notificacion.recurso_id) {
-      return `/propietario/vehiculos`;
+      return `/vehiculos`;
     }
     if (notificacion.tipo === "AUTO_DEVUELTO" && notificacion.recurso_id) {
       return `/admin/recepcion?focus=${notificacion.recurso_id}`;
@@ -244,7 +244,7 @@ export const useNotificaciones = () => {
       rol === "ADMIN"
         ? "/admin/solicitudes-documentacion"
         : rol === "PROPIETARIO"
-          ? "/propietario/vehiculos"
+          ? "/vehiculos"
           : "/usuario/alquileres",
     textoVerTodas:
       rol === "ADMIN"

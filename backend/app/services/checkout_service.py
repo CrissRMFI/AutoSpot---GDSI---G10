@@ -35,9 +35,8 @@ def crear_checkout(
     Registra el checkout (inspección de devolución) del admin.
 
     Precondición: la reserva debe estar DEVUELTA por recepción administrativa.
-    La fecha real de devolución y la penalización se fijan al registrar entrada
-    (US 7R), no durante el checkout, para que los reenvíos no perjudiquen al
-    cliente.
+    La fecha real de devolución se fija al registrar entrada (US 7R), no
+    durante el checkout.
     Cada llamada crea un registro nuevo (historial de intentos). La reserva
     queda en CHECKOUT_PENDIENTE esperando la confirmación del conductor.
     """

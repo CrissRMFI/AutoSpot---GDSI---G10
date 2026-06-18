@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import {
@@ -97,12 +98,22 @@ const MisVehiculosPage = () => {
           </p>
         </div>
 
-        <Link
-          to="/propietario/publicar"
-          className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-        >
-          Publicar vehículo
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link
+            to="/vehiculos"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
+          >
+            <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+            Resumen vehículos
+          </Link>
+          <Link
+            to="/propietario/publicar"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Publicar vehículo
+          </Link>
+        </div>
       </div>
 
       {cargando && (

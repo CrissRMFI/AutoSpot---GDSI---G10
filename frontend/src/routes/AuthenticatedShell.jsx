@@ -7,7 +7,7 @@ const SECCIONES_POR_ROL = {
     {
       titulo: "Principal",
       items: [
-        { to: "/usuario/dashboard", label: "Dashboard", end: true },
+        { to: "/dashboard", label: "Dashboard", end: true },
         { to: "/catalogo", label: "Catálogo" },
         { to: "/usuario/reservas", label: "Mis reservas" },
         { to: "/usuario/alquileres", label: "Mis alquileres" },
@@ -26,8 +26,8 @@ const SECCIONES_POR_ROL = {
     {
       titulo: "Principal",
       items: [
-        { to: "/propietario/dashboard", label: "Dashboard", end: true },
-        { to: "/propietario/vehiculos", label: "Mis vehículos" },
+        { to: "/dashboard", label: "Dashboard", end: true },
+        { to: "/vehiculos", label: "Vehículos" },
         { to: "/propietario/publicar", label: "Publicar vehículo" },
         { to: "/estaciones", label: "Estaciones" },
       ],
@@ -41,7 +41,7 @@ const SECCIONES_POR_ROL = {
     {
       titulo: "Principal",
       items: [
-        { to: "/admin/dashboard", label: "Dashboard", end: true },
+        { to: "/dashboard", label: "Dashboard", end: true },
         {
           to: "/admin/solicitudes-documentacion",
           label: "Solicitudes de documentación",
@@ -61,6 +61,14 @@ const SECCIONES_POR_ROL = {
         {
           to: "/admin/recepcion",
           label: "Recepción de autos",
+        },
+        {
+          to: "/admin/historial-conductores",
+          label: "Historial conductores",
+        },
+        {
+          to: "/admin/historial-autos",
+          label: "Historial de Autos",
         },
         { to: "/estaciones", label: "Estaciones" },
       ],

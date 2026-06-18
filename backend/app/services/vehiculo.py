@@ -582,6 +582,7 @@ def cambiar_disponibilidad_vehiculo(
 def listar_vehiculos_disponibles(
     db: Session,
     puntuacion_minima: Decimal | float | None = None,
+    usuario_actual: dict | None = None,
 ) -> list[Vehiculo]:
     """
     Lista todos los vehículos que están habilitados y disponibles para alquiler,
@@ -613,6 +614,12 @@ def listar_vehiculos_disponibles(
             Vehiculo.calificacion_promedio.isnot(None),
             Vehiculo.calificacion_promedio >= puntuacion_minima,
         )
+
+    if usuario_actual and usuario_actual.get("sub"):
+        from app.models.usuario import Usuario
+        usuario = db.query(Usuario).filter(Usuario.id == usuario_actual.get("sub")).first()
+        if usuario and (usuario.rol or "").upper() == "PROPIETARIO":
+            query = query.filter(Vehiculo.propietario_id == usuario.id)
 
     return query.all()
 
@@ -657,7 +664,6 @@ def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]
     Obtiene el listado de reseñas (Valoración + Testimonio) para un vehículo (US 10C).
     Realiza un JOIN entre Valoracion, Testimonio y Usuario.
     """
-    from sqlalchemy.orm import aliased
     from sqlalchemy import desc
 
     # Verificamos si existe el vehículo
@@ -665,10 +671,10 @@ def obtener_resenias_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[dict]
     if not vehiculo:
         raise VehiculoNoEncontradoError()
 
-    # Query que junta Valoracion con Usuario (conductor) y hace left join con Testimonio
+    # Query que junta Valoracion con datos del conductor y hace left join con Testimonio.
     resultados = (
         db.query(Valoracion, Testimonio, DatosPersonalesUsuario)
-        .outerjoin(DatosPersonalesUsuario, Valoracion.conductor_id == DatosPersonalesUsuario.usuario_id)
+        .join(DatosPersonalesUsuario, Valoracion.conductor_id == DatosPersonalesUsuario.usuario_id)
         .outerjoin(Testimonio, Testimonio.reserva_id == Valoracion.reserva_id)
         .filter(Valoracion.vehiculo_id == vehiculo_id)
         .order_by(desc(Valoracion.created_at))
@@ -761,8 +767,8 @@ def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[
 
         historial.append({
             "conductor_nombre": f"{usr.nombre} {usr.apellido}",
-            "fecha_inicio": res.fecha_salida_real or res.fecha_inicio,
-            "fecha_fin": res.fecha_devolucion_real or res.fecha_fin,
+            "fecha_inicio": res.fecha_inicio,
+            "fecha_fin": res.fecha_fin,
             "puntaje": val.puntaje if val else None,
             "resenia": test.descripcion if test else None,
             "fotos_entrega": fotos,
@@ -771,4 +777,3 @@ def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[
         })
 
     return historial
-

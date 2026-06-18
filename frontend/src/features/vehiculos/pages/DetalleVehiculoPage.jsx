@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, BarChart3, Sparkles } from "lucide-react";
 import { useAuth } from "../../auth/hooks/useAuth";
+import httpClient from "../../../api/httpClient";
+import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
+import ModalResenias from "../components/ModalResenias";
 import {
   agregarFotoAVehiculo,
   reemplazarFotoVehiculo,
@@ -13,6 +17,7 @@ import {
 } from "../api/vehiculoService";
 import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
 import LightboxGaleria from "../components/LightboxGaleria";
+import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -32,9 +37,11 @@ const DetalleVehiculoPage = () => {
   const fileInputReemplazoRef = useRef(null);
 
   const [vehiculo, setVehiculo] = useState(null);
+  const [reputacion, setReputacion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [indiceActivo, setIndiceActivo] = useState(0);
+  const [modalReseniasAbierto, setModalReseniasAbierto] = useState(false);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [reemplazandoFotoId, setReemplazandoFotoId] = useState(null);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
@@ -43,6 +50,7 @@ const DetalleVehiculoPage = () => {
   const [editandoPrecio, setEditandoPrecio] = useState(false);
   const [inputPrecio, setInputPrecio] = useState("");
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [isModalIAOpen, setIsModalIAOpen] = useState(false);
   const [togglingDisponible, setTogglingDisponible] = useState(false);
 
   const isDisponibilidadInactiva =
@@ -109,9 +117,13 @@ const DetalleVehiculoPage = () => {
       setError("");
 
       try {
-        const data = await getDetalleVehiculo(vehiculoId);
+        const [data, reputacionData] = await Promise.all([
+          getDetalleVehiculo(vehiculoId),
+          httpClient.get(`/vehiculos/${vehiculoId}/reputacion`).then(r => r.data).catch(() => null),
+        ]);
         setVehiculo(data);
         setIndiceActivo(0);
+        if (reputacionData) setReputacion(reputacionData);
       } catch (err) {
         if (err.response?.status === 403) {
           setError("No tenés permiso para ver este vehículo.");
@@ -234,33 +246,36 @@ const DetalleVehiculoPage = () => {
 
   if (cargando) {
     return (
-      <main className="min-h-screen bg-autospot-cream text-autospot-black">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 lg:px-10">
-          <div className="animate-pulse rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
+      <section className="w-full min-w-0 text-autospot-black">
+        <div className="w-full py-2">
+          <div className="animate-pulse rounded-lg border border-autospot-border bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.07)] sm:p-8">
             <div className="h-8 w-1/2 rounded bg-gray-200" />
             <div className="mt-4 h-4 w-1/3 rounded bg-gray-200" />
-            <div className="mt-8 h-72 w-full rounded-2xl bg-gray-200" />
+            <div className="mt-8 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.65fr)]">
+              <div className="h-72 w-full rounded-lg bg-gray-200 sm:h-[420px]" />
+              <div className="h-72 w-full rounded-lg bg-gray-200" />
+            </div>
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-autospot-cream text-autospot-black">
-        <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8">
+      <section className="w-full min-w-0 text-autospot-black">
+        <div className="mx-auto max-w-3xl py-16 text-center">
           <h1 className="font-display text-2xl font-bold text-autospot-black sm:text-3xl">
             {error}
           </h1>
           <Link
-            to="/dashboard"
+            to="/vehiculos"
             className="mt-6 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
           >
-            Volver al panel
+            Volver a vehículos
           </Link>
         </div>
-      </main>
+      </section>
     );
   }
 
@@ -269,9 +284,7 @@ const DetalleVehiculoPage = () => {
   const fotoActiva = fotos[indiceActivo];
 
   return (
-    <main className="min-h-screen bg-autospot-cream text-autospot-black">
-
-
+    <section className="w-full min-w-0 text-autospot-black">
       <div
         className={`fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-full px-5 py-3 text-sm font-bold shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-all duration-500 ${
           feedback.message
@@ -286,26 +299,43 @@ const DetalleVehiculoPage = () => {
         {feedback.message}
       </div>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-12">
-        <article className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
-            Galería
-          </p>
-
-          <h1 className="font-display text-2xl font-black tracking-[-0.05em] text-autospot-black sm:text-3xl">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <Link
+            to="/vehiculos"
+            className="mb-3 inline-flex items-center gap-2 text-sm font-bold !text-autospot-accent transition hover:!text-[#5a1420]"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Volver a vehículos
+          </Link>
+          <h1 className="text-3xl font-black leading-tight text-autospot-black sm:text-4xl">
             {vehiculo.marca} {vehiculo.modelo}
           </h1>
-
-          <p className="mt-1 text-sm text-autospot-muted">
+          <p className="mt-1 text-sm font-semibold text-autospot-muted">
             {vehiculo.anio} · {vehiculo.categoria}
+            {vehiculo.patente ? ` · ${vehiculo.patente}` : ""}
           </p>
+        </div>
 
-          <div className="relative mt-6 overflow-hidden rounded-2xl bg-[#0f0f0f]">
+        {esPropietario && (
+          <Link
+            to={`/vehiculos/${vehiculo.id}/ganancias`}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+          >
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            Dashboard ganancias
+          </Link>
+        )}
+      </div>
+
+      <div className="grid w-full gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.7fr)] 2xl:grid-cols-[minmax(0,1.65fr)_minmax(420px,0.7fr)]">
+        <article className="min-w-0 rounded-lg border border-autospot-border bg-autospot-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="relative overflow-hidden rounded-lg bg-[#0f0f0f]">
             {fotoActiva ? (
               <img
                 src={fotoActiva.url}
                 alt={`Vehículo ${LADO_LABEL[fotoActiva.lado] || fotoActiva.lado}`}
-                className="block aspect-video w-full cursor-pointer object-cover sm:aspect-[16/10]"
+                className="block aspect-video w-full cursor-pointer object-cover xl:aspect-[16/9]"
                 onClick={() => setLightboxAbierto(true)}
               />
             ) : (
@@ -385,12 +415,12 @@ const DetalleVehiculoPage = () => {
                 className="hidden"
               />
 
-              <div className="mt-6 flex flex-col gap-2">
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={handleSeleccionarFoto}
                   disabled={subiendoFoto || reemplazandoFotoId !== null}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420] disabled:cursor-not-allowed disabled:opacity-65"
                 >
                   {subiendoFoto ? "Subiendo foto..." : "Agregar foto"}
                 </button>
@@ -401,7 +431,7 @@ const DetalleVehiculoPage = () => {
                   disabled={
                     !fotoActiva || subiendoFoto || reemplazandoFotoId !== null
                   }
-                  className="inline-flex flex-1 items-center justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65 sm:flex-none"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-autospot-border bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:border-autospot-accent hover:text-autospot-accent disabled:cursor-not-allowed disabled:opacity-65"
                 >
                   {reemplazandoFotoId
                     ? "Reemplazando foto..."
@@ -414,15 +444,8 @@ const DetalleVehiculoPage = () => {
           )}
         </article>
 
-        <div className="flex flex-col gap-4">
-          <Link
-            to="/dashboard"
-            className="inline-flex w-fit items-center justify-center rounded-full border border-autospot-border bg-autospot-white px-4 py-2 text-sm font-bold !text-autospot-black transition hover:border-autospot-accent hover:!text-autospot-accent"
-          >
-            ← Volver al panel
-          </Link>
-
-          <aside className="rounded-[28px] bg-autospot-black p-6 text-autospot-white shadow-autospot-large sm:p-8">
+        <aside className="min-w-0 xl:sticky xl:top-28 xl:self-start">
+          <div className="rounded-lg bg-autospot-black p-5 text-autospot-white shadow-autospot-large sm:p-6">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
             Ficha técnica
           </p>
@@ -431,7 +454,7 @@ const DetalleVehiculoPage = () => {
             Datos del vehículo
           </h2>
 
-          <dl className="mt-6 space-y-4 text-sm">
+          <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <DatoFicha label="Marca" valor={vehiculo.marca} />
             <DatoFicha label="Modelo" valor={vehiculo.modelo} />
             <DatoFicha label="Año" valor={vehiculo.anio} />
@@ -462,6 +485,19 @@ const DetalleVehiculoPage = () => {
               valor={vehiculo.disponible ? "Sí" : "No"}
             />
           </dl>
+
+          {reputacion && (
+            <div className="mt-5 flex items-center gap-4">
+              <PuntuacionVehiculo valor={reputacion.promedio_estrellas} size="medium" variante="dark" />
+              <button
+                type="button"
+                onClick={() => setModalReseniasAbierto(true)}
+                className="text-sm font-semibold !text-autospot-accent-2 hover:underline transition"
+              >
+                Ver reseñas ({reputacion.cantidad_total})
+              </button>
+            </div>
+          )}
 
           {esPropietario && vehiculo.estado_registro === "RECHAZADO" &&
             vehiculo.motivo_rechazo && (
@@ -556,21 +592,30 @@ const DetalleVehiculoPage = () => {
                       }}
                       className="w-full min-w-0 rounded-lg bg-white px-2 py-1.5 text-sm font-bold text-autospot-black focus:outline-none focus:ring-2 focus:ring-autospot-accent"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleActualizarPrecio}
+                          disabled={guardandoPrecio}
+                          className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        >
+                          {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoPrecio(false)}
+                          className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
+                        >
+                          ✕ Cancelar
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={handleActualizarPrecio}
-                        disabled={guardandoPrecio}
-                        className="flex-1 rounded-lg bg-autospot-accent px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-[#5a1420] disabled:opacity-50"
+                        onClick={() => setIsModalIAOpen(true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#fce7f3] bg-[#fce7f3] px-2 py-1.5 text-xs font-bold text-autospot-accent transition hover:bg-autospot-accent hover:text-white"
                       >
-                        {guardandoPrecio ? "Guardando..." : "✓ Guardar"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditandoPrecio(false)}
-                        className="flex-1 rounded-lg border border-white/20 bg-white/[0.04] px-2 py-1.5 text-xs font-bold !text-white transition hover:bg-white/[0.1]"
-                      >
-                        ✕ Cancelar
+                        <Sparkles className="h-3.5 w-3.5" /> Generar precio con IA
                       </button>
                     </div>
                   </div>
@@ -595,22 +640,22 @@ const DetalleVehiculoPage = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                 <Link
                   to={`/modificar-datos/${vehiculo.id}`}
-                  className="inline-flex w-full justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-center text-sm font-bold !text-white transition hover:bg-white/[0.12]"
                 >
                   Modificar datos
                 </Link>
                 {vehiculo?.estado_registro === "HABILITADO" ? (
                   vehiculo.disponible ? (
-                    <span className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55" title="No se puede actualizar mientras el vehículo está disponible o tiene alquileres activos">
+                    <span className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55" title="No se puede actualizar mientras el vehículo está disponible o tiene alquileres activos">
                       Actualizar documentación
                     </span>
                   ) : (
                     <Link
                       to={`/vehiculos/${vehiculo.id}/documentacion/actualizar`}
-                      className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-center text-sm font-bold !text-white transition hover:bg-[#5a1420]"
                     >
                       Actualizar documentación
                     </Link>
@@ -618,27 +663,33 @@ const DetalleVehiculoPage = () => {
                 ) : puedeCargarDocumentacion ? (
                   <Link
                     to={`/vehiculos/${vehiculo.id}/documentacion`}
-                    className="inline-flex w-full justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-center text-sm font-bold !text-white transition hover:bg-[#5a1420]"
                   >
                     Documentación
                   </Link>
                 ) : (
-                  <span className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55">
+                  <span className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-2.5 text-center text-sm font-bold !text-white/55">
                     Documentación no editable
                   </span>
                 )}
                 <Link
                   to={`/vehiculos/${vehiculo.id}/historial`}
-                  className="inline-flex w-full justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-white/[0.12]"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/30 bg-white/[0.06] px-4 py-2.5 text-center text-sm font-bold !text-white transition hover:bg-white/[0.12]"
                 >
                   Historial de uso
+                </Link>
+                <Link
+                  to={`/vehiculos/${vehiculo.id}/ganancias`}
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-autospot-accent px-4 py-2.5 text-center text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+                >
+                  Dashboard ganancias
                 </Link>
               </div>
             </div>
           )}
+          </div>
         </aside>
-        </div>
-      </section>
+      </div>
 
       <LightboxGaleria 
         isOpen={lightboxAbierto} 
@@ -647,14 +698,33 @@ const DetalleVehiculoPage = () => {
         indiceActivo={indiceActivo}
         setIndiceActivo={setIndiceActivo}
       />
-    </main>
+
+      <ModalResenias
+        isOpen={modalReseniasAbierto}
+        onClose={() => setModalReseniasAbierto(false)}
+        vehiculoId={vehiculoId}
+        esPropietario={true}
+      />
+
+      <ModalGenerarPrecioAI
+        isOpen={isModalIAOpen}
+        onClose={() => setIsModalIAOpen(false)}
+        datosVehiculo={vehiculo}
+        onAccept={(precio) => {
+          setInputPrecio(precio);
+          // Opcional: auto-guardar o dejar que el usuario haga clic en guardar
+        }}
+      />
+    </section>
   );
 };
 
 const DatoFicha = ({ label, valor }) => (
-  <div className="flex items-center justify-between gap-3">
-    <dt className="!text-white/65">{label}</dt>
-    <dd className="text-right font-bold !text-autospot-white">
+  <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+    <dt className="text-[11px] font-bold uppercase tracking-[0.08em] !text-white/55">
+      {label}
+    </dt>
+    <dd className="mt-1 break-words text-sm font-bold !text-autospot-white">
       {valor || "—"}
     </dd>
   </div>

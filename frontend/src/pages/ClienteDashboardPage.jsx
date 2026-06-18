@@ -24,8 +24,6 @@ const PAGE_SIZE = 10;
 const ESTADOS_ACTIVOS = new Set([
   "EN_CURSO",
   "ENTREGA_SOLICITADA",
-  "DEVUELTO",
-  "CHECKOUT_PENDIENTE",
 ]);
 
 const ESTADO_ALQUILER_UI = {
@@ -295,11 +293,11 @@ const ClienteDashboardPage = () => {
 
                     <dl className="mt-5 grid gap-4 sm:grid-cols-2">
                       <DatoOscuro
-                        label="Inicio"
+                        label="Inicio registrado"
                         valor={formatearFechaHora(alquilerActivo.fecha_inicio)}
                       />
                       <DatoOscuro
-                        label="Devolución"
+                        label="Devolución estimada"
                         valor={formatearFechaHora(alquilerActivo.fecha_fin)}
                       />
                     </dl>
@@ -523,7 +521,7 @@ const AlquilerRow = ({ alquiler }) => {
             {vehiculo?.marca} {vehiculo?.modelo} {vehiculo?.anio || ""}
           </h3>
           <p className="mt-1 truncate text-xs text-autospot-muted">
-            {formatearFechaHora(alquiler.fecha_inicio)} -{" "}
+            {formatearFechaHora(alquiler.fecha_inicio)} ·{" "}
             {alquiler.estacion_retiro}
           </p>
         </div>

@@ -28,8 +28,12 @@ from app.routers import estaciones as router_estaciones
 from app.routers import alquiler as router_alquiler
 from app.routers import checkins as router_checkins
 from app.routers import checkouts as router_checkouts
+from app.routers import ganancias as router_ganancias
 from app.routers import valoraciones as router_valoraciones
 from app.routers import testimonios as router_testimonios
+from app.routers import ia as router_ia
+from app.routers import historial_conductores as router_historial_conductores
+from app.routers import historial_autos as router_historial_autos
 
 def obtener_origenes_cors() -> list[str]:
     """
@@ -81,5 +85,9 @@ app.include_router(router_marcas.router)
 app.include_router(router_alquiler.router)
 app.include_router(router_checkins.router)
 app.include_router(router_checkouts.router)
+app.include_router(router_ganancias.router)
 app.include_router(router_valoraciones.router)
 app.include_router(router_testimonios.router)
+app.include_router(router_ia.router)
+app.include_router(router_historial_conductores.router)
+app.include_router(router_historial_autos.router)

@@ -2,12 +2,10 @@ import httpClient from "../../../api/httpClient";
 
 export const crearReservaConCodigo = async ({
   vehiculoId,
-  fechaInicio,
   fechaFin,
 }) => {
   const response = await httpClient.post("/alquiler/reservas", {
     vehiculo_id: vehiculoId,
-    fecha_inicio: fechaInicio,
     fecha_fin: fechaFin,
   });
 
@@ -144,4 +142,3 @@ export const enviarTestimonio = async (reservaId, descripcion) => {
 
   return response.data;
 };
-

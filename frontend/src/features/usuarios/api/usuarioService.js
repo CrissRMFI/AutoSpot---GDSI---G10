@@ -5,6 +5,17 @@ export const obtenerDatosPersonales = async (usuarioId) => {
   return response.data;
 };
 
+export const obtenerDatosPersonalesSiExisten = async (usuarioId) => {
+  try {
+    return await obtenerDatosPersonales(usuarioId);
+  } catch (err) {
+    if (err?.response?.status === 404 || err?.status === 404) {
+      return null;
+    }
+    throw err;
+  }
+};
+
 export const registrarDatosPersonales = async (usuarioId, datosPersonales) => {
   const response = await httpClient.put(
     `/usuarios/${usuarioId}/datos-personales`,
