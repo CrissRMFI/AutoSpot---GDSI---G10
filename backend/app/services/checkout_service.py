@@ -15,6 +15,7 @@ from app.models.checkout_vehiculo import CheckoutVehiculo
 from app.models.reserva import Reserva
 from app.schemas.checkout_vehiculo import CheckoutCreatePayloadSchema
 from app.services.alquiler_service import _notificar_admins
+from app.services.reporte_service import obtener_reporte_activo_por_vehiculo
 from app.services.notificacion import (
     RECURSO_RESERVA,
     TIPO_AUTO_DEVUELTO,
@@ -140,7 +141,14 @@ def confirmar_checkout(
     reserva = checkout.reserva
     reserva.estado = "FINALIZADA"
     if reserva.vehiculo is not None:
-        reserva.vehiculo.disponible = True
+        # El auto solo vuelve al catalogo si no tiene un reporte critico activo.
+        tiene_reporte_activo = (
+            obtener_reporte_activo_por_vehiculo(
+                db=db, vehiculo_id=reserva.vehiculo.id
+            )
+            is not None
+        )
+        reserva.vehiculo.disponible = not tiene_reporte_activo
     cerrar_notificaciones_de_reserva_por_tipo(
         db=db,
         reserva_id=reserva.id,

@@ -13,6 +13,7 @@ from app.exceptions import (
     CheckoutNoDisponibleError,
     CheckoutNoEncontradoError,
     MotivoRechazoRequeridoError,
+    ReporteDuplicadoError,
     ReservaActivaExistenteError,
     ReservaCodigoYaVerificadoError,
     ReservaNoEnCursoError,
@@ -58,7 +59,10 @@ from app.services.alquiler_service import (
     rechazar_reserva,
     registrar_salida,
     verificar_codigo_reserva,
-    registrar_reporte_incidente,
+)
+from app.services.reporte_service import (
+    crear_reporte_falla_critica,
+    obtener_reporte_por_reserva,
 )
 from app.services.checkout_service import (
     confirmar_checkout,
@@ -559,15 +563,36 @@ def reportar_incidente_endpoint(
 ) -> ReporteResponseSchema:
     conductor_id = uuid.UUID(str(usuario_actual["sub"]))
     try:
-        reporte = registrar_reporte_incidente(
+        reporte = crear_reporte_falla_critica(
             db=db,
             reserva_id=reserva_id,
             conductor_id=conductor_id,
-            descripcion=payload.descripcion,
-            url_foto_adjuntada=payload.url_foto_adjuntada,
+            schema=payload,
         )
     except ReservaNoEncontradaError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ReporteDuplicadoError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except ReservaNoEnCursoError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    return ReporteResponseSchema.model_validate(reporte)
+
+
+@router.get(
+    "/reservas/{reserva_id}/reporte",
+    response_model=ReporteResponseSchema,
+    summary="Consulta el reporte de incidencia de una reserva (si existe)",
+)
+def obtener_reporte_de_reserva_endpoint(
+    reserva_id: uuid.UUID,
+    usuario_actual: dict = Depends(requerir_rol_cliente),
+    db: Session = Depends(get_db),
+) -> ReporteResponseSchema:
+    conductor_id = uuid.UUID(str(usuario_actual["sub"]))
+    reporte = obtener_reporte_por_reserva(db=db, reserva_id=reserva_id)
+    if reporte is None or reporte.conductor_id != conductor_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No existe un reporte para esta reserva.",
+        )
     return ReporteResponseSchema.model_validate(reporte)
