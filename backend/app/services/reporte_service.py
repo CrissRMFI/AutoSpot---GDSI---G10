@@ -86,6 +86,42 @@ def obtener_reporte_activo_por_vehiculo(
     )
 
 
+def listar_reportes(db: Session, estado: str | None = None) -> list[Reporte]:
+    """Lista reportes (opcionalmente filtrados por estado) para la vista admin."""
+    query = db.query(Reporte).options(
+        joinedload(Reporte.fotos),
+        joinedload(Reporte.vehiculo),
+        joinedload(Reporte.reserva),
+    )
+    if estado:
+        query = query.filter(Reporte.estado == estado.upper())
+    return query.order_by(Reporte.created_at.desc()).all()
+
+
+def usuario_puede_ver_reporte(
+    db: Session,
+    reporte: Reporte,
+    usuario_actual: dict,
+) -> bool:
+    """
+    Indica si el usuario puede ver el reporte.
+
+    Pueden verlo el conductor de la reserva, el propietario del vehiculo y
+    cualquier admin.
+    """
+    usuario_id = usuario_actual.get("sub")
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario is None:
+        return False
+
+    if (usuario.rol or "").upper() == "ADMIN":
+        return True
+    if reporte.conductor_id == usuario.id:
+        return True
+    vehiculo = reporte.vehiculo
+    return vehiculo is not None and vehiculo.propietario_id == usuario.id
+
+
 def crear_reporte_falla_critica(
     db: Session,
     reserva_id: uuid.UUID,
