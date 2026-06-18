@@ -30,8 +30,8 @@ def test_obtener_resenias_con_datos():
     test_mock = Testimonio(reserva_id=reserva_id, descripcion="Excelente auto")
     usr_mock = DatosPersonalesUsuario(nombre="Juan", apellido="Perez")
     
-    # Mock para la segunda query (el outer join)
-    db_mock.query.return_value.join.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = [
+    # Mock para la segunda query (los outer joins)
+    db_mock.query.return_value.outerjoin.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = [
         (val_mock, test_mock, usr_mock)
     ]
     
@@ -55,8 +55,8 @@ def test_obtener_resenias_vacia():
     # Mock para la primera query (el auto existe)
     db_mock.query.return_value.filter.return_value.first.return_value = Vehiculo(id=vehiculo_id)
     
-    # Mock para el outer join (sin resultados)
-    db_mock.query.return_value.join.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = []
+    # Mock para los outer joins (sin resultados)
+    db_mock.query.return_value.outerjoin.return_value.outerjoin.return_value.filter.return_value.order_by.return_value.all.return_value = []
     
     resenias = obtener_resenias_vehiculo(db=db_mock, vehiculo_id=vehiculo_id)
     
