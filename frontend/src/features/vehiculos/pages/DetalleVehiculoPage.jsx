@@ -18,6 +18,7 @@ import {
 import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
 import LightboxGaleria from "../components/LightboxGaleria";
 import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
+import ImagenModal from "../../../components/ImagenModal";
 import {
   obtenerReporteActivoDeVehiculo,
   resolverReporte,
@@ -58,6 +59,7 @@ const DetalleVehiculoPage = () => {
   const [togglingDisponible, setTogglingDisponible] = useState(false);
   const [reporteActivo, setReporteActivo] = useState(null);
   const [reporteResuelto, setReporteResuelto] = useState(false);
+  const [fotoReporteAbierta, setFotoReporteAbierta] = useState(null);
   const [mostrarFormResolucion, setMostrarFormResolucion] = useState(false);
   const [resolucionTexto, setResolucionTexto] = useState("");
   const [resolviendo, setResolviendo] = useState(false);
@@ -553,6 +555,30 @@ const DetalleVehiculoPage = () => {
               <p className="mt-1 text-sm">
                 {reporteActivo.descripcion}
               </p>
+
+              {reporteActivo.fotos?.length > 0 && (
+                <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+                  {reporteActivo.fotos.map((foto) => (
+                    <button
+                      key={foto.id}
+                      type="button"
+                      onClick={() => setFotoReporteAbierta(foto)}
+                      className="group block w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-[#fecaca] bg-white text-left"
+                      title={foto.descripcion}
+                    >
+                      <img
+                        src={foto.url}
+                        alt={foto.descripcion}
+                        className="h-24 w-full object-cover transition group-hover:opacity-90"
+                      />
+                      <p className="truncate px-2 py-1 text-[11px] text-[#7f1d1d]">
+                        {foto.descripcion}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <p className="mt-2 text-xs">
                 El vehículo permanece fuera del catálogo hasta que registres la resolución y lo
                 vuelvas a publicar manualmente.
@@ -814,6 +840,14 @@ const DetalleVehiculoPage = () => {
           // Opcional: auto-guardar o dejar que el usuario haga clic en guardar
         }}
       />
+
+      {fotoReporteAbierta && (
+        <ImagenModal
+          url={fotoReporteAbierta.url}
+          alt={fotoReporteAbierta.descripcion}
+          onClose={() => setFotoReporteAbierta(null)}
+        />
+      )}
     </section>
   );
 };

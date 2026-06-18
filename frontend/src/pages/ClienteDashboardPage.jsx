@@ -321,14 +321,16 @@ const ClienteDashboardPage = () => {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setModalProximamente("Reportar problema")}
-              className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:bg-autospot-cream"
-            >
-              <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-              Reportar problema
-            </button>
+            {alquilerActivo &&
+              (alquilerActivo.estado || "").toUpperCase() === "EN_CURSO" && (
+                <Link
+                  to={`/usuario/alquileres/${alquilerActivo.id}/reporte`}
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-autospot-black transition hover:bg-autospot-cream"
+                >
+                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  Reportar incidencia critica
+                </Link>
+              )}
           </section>
 
           <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">

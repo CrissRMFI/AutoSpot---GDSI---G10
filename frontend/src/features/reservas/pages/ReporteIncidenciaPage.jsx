@@ -183,7 +183,7 @@ const ReporteIncidenciaPage = () => {
   const fotoPrincipal = (vehiculo.fotos || [])[0];
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+    <div className="w-full px-4 py-6 sm:px-6 sm:py-8">
       <Link
         to={`/usuario/alquileres/${reservaId}`}
         className="inline-flex items-center gap-2 text-sm font-semibold text-autospot-primary hover:underline"
@@ -282,7 +282,7 @@ const ReporteIncidenciaPage = () => {
           Adjuntá entre 1 y 10 fotos. Cada foto requiere una descripción.
         </p>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {fotos.map((foto) => (
             <ReporteFotoItem
               key={foto.id}
