@@ -25,6 +25,7 @@ import MisAlquileresPage from "../features/reservas/pages/MisAlquileresPage";
 import AlquilerDetallePage from "../features/reservas/pages/AlquilerDetallePage";
 import AlquilerStepperPage from "../features/reservas/pages/AlquilerStepperPage";
 import CheckInReservaPage from "../features/reservas/pages/CheckInReservaPage";
+import ReporteIncidenciaPage from "../features/reservas/pages/ReporteIncidenciaPage";
 import EstacionesPage from "../features/estaciones/pages/EstacionesPage";
 import DetalleEstacionPublicoPage from "../features/estaciones/pages/DetalleEstacionPublicoPage";
 import DetalleSolicitudDocumentacionPage from "../features/admin/pages/DetalleSolicitudDocumentacionPage";
@@ -171,6 +172,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
               <AlquilerDetallePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/usuario/alquileres/:reservaId/reporte"
+          element={
+            <ProtectedRoute rolesPermitidos={["CLIENTE"]}>
+              <ReporteIncidenciaPage />
             </ProtectedRoute>
           }
         />
