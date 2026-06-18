@@ -210,8 +210,8 @@ class ReservaNoEntregableError(AutoSpotError):
 
 class ReservaNoEnCursoError(AutoSpotError):
     """Se lanza al registrar la entrada sin un alquiler en curso."""
-    def __init__(self) -> None:
-        super().__init__("No hay un alquiler en curso para ese auto")
+    def __init__(self, mensaje: str = "No hay un alquiler en curso para ese auto") -> None:
+        super().__init__(mensaje)
 
 
 class CheckoutNoDisponibleError(AutoSpotError):
