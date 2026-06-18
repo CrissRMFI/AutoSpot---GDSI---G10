@@ -210,8 +210,8 @@ class ReservaNoEntregableError(AutoSpotError):
 
 class ReservaNoEnCursoError(AutoSpotError):
     """Se lanza al registrar la entrada sin un alquiler en curso."""
-    def __init__(self) -> None:
-        super().__init__("No hay un alquiler en curso para ese auto")
+    def __init__(self, mensaje: str = "No hay un alquiler en curso para ese auto") -> None:
+        super().__init__(mensaje)
 
 
 class CheckoutNoDisponibleError(AutoSpotError):
@@ -359,4 +359,51 @@ class ReservaNoFinalizadaParaTestimonioError(AutoSpotError):
     def __init__(self) -> None:
         super().__init__(
             "Solo se puede dejar un testimonio sobre una contratación cerrada administrativamente"
+        )
+
+
+# ── Reportes de falla critica ────────────────────────────────────────────────
+
+class ReporteDuplicadoError(AutoSpotError):
+    """Se lanza cuando ya existe un reporte para la reserva indicada."""
+    def __init__(self) -> None:
+        super().__init__("Ya existe un reporte de incidencia para esta reserva")
+
+
+class ReporteNoEncontradoError(AutoSpotError):
+    """Se lanza cuando un reporte no existe."""
+    def __init__(self) -> None:
+        super().__init__("Reporte no encontrado")
+
+
+class ReporteNoResolubleError(AutoSpotError):
+    """Se lanza al intentar resolver un reporte que no está ACTIVO."""
+    def __init__(self) -> None:
+        super().__init__("El reporte no puede resolverse en su estado actual")
+
+
+class ReporteFotosRequeridasError(AutoSpotError):
+    """Se lanza cuando un reporte se intenta crear sin fotos válidas."""
+    def __init__(self) -> None:
+        super().__init__("El reporte requiere al menos una foto")
+
+
+class ReporteFotoDescripcionRequeridaError(AutoSpotError):
+    """Se lanza cuando una foto del reporte no tiene descripción."""
+    def __init__(self) -> None:
+        super().__init__("Cada foto del reporte requiere una descripción")
+
+
+class ReporteNoPerteneceAPropietarioError(AutoSpotError):
+    """Se lanza cuando un usuario sin permiso intenta resolver un reporte."""
+    def __init__(self) -> None:
+        super().__init__("No tenés permiso para resolver este reporte")
+
+
+class VehiculoConReporteActivoError(AutoSpotError):
+    """Se lanza al intentar habilitar la disponibilidad de un vehículo con reporte activo."""
+    def __init__(self) -> None:
+        super().__init__(
+            "No es posible marcar el vehiculo como disponible mientras tenga un "
+            "reporte critico activo"
         )

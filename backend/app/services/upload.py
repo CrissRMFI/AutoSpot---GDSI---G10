@@ -113,3 +113,20 @@ def subir_foto_dni(
         folder="autospot/dni",
         tags=[lado.lower()],
     )
+
+
+def subir_foto_reporte(
+    contenido: bytes,
+    nombre_archivo: str,
+) -> dict:
+    """
+    Sube una foto de reporte de incidencia a la carpeta autospot/reportes.
+    Etiqueta el asset como reporte/incidencia/falla para ordenarlo aparte de
+    las fotos de vehiculo, check-in y checkout.
+    """
+    return subir_imagen(
+        contenido=contenido,
+        nombre_archivo=nombre_archivo,
+        folder="autospot/reportes",
+        tags=["reporte", "incidencia", "falla"],
+    )

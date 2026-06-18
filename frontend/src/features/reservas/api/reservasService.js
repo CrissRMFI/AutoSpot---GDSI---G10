@@ -120,6 +120,28 @@ export const listarRecepcionAutos = async ({ page = 1, size = 10 } = {}) => {
   return response.data;
 };
 
+/**
+ * Reportes criticos — Registra un reporte de falla critica para la reserva.
+ * `payload` = { descripcion, fotos: [{ url, descripcion, formato, tamanio_bytes, orden }] }
+ */
+export const crearReporteIncidencia = async (reservaId, payload) => {
+  const response = await httpClient.post(
+    `/alquiler/reservas/${reservaId}/reporte`,
+    payload,
+  );
+
+  return response.data;
+};
+
+/** Devuelve el reporte de la reserva si existe (404 si no hay). */
+export const obtenerReporteDeReserva = async (reservaId) => {
+  const response = await httpClient.get(
+    `/alquiler/reservas/${reservaId}/reporte`,
+  );
+
+  return response.data;
+};
+
 export const enviarValoracion = async (reservaId, puntaje) => {
   const response = await httpClient.post("/valoraciones", {
     reserva_id: reservaId,

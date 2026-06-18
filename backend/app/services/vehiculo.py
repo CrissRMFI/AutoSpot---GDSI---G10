@@ -23,6 +23,7 @@ from app.exceptions import (
     FotoVehiculoNoEncontradaError,
     MarcaModeloInexistenteError,
     UsuarioNoEncontradoError,
+    VehiculoConReporteActivoError,
     VehiculoNoEncontradoError,
     VehiculoNoHabilitadoError,
     VehiculoConReservaActivaError,
@@ -42,6 +43,7 @@ from app.schemas.vehiculo import (
     ActualizarVehiculoPayloadSchema,
 )
 from app.services.marca_service import validar_combo_marca_modelo
+from app.services.reporte_service import obtener_reporte_activo_por_vehiculo
 from app.services.notificacion import (
     cerrar_notificacion_documentacion_pendiente,
     crear_notificacion_documentacion_pendiente,
@@ -570,6 +572,10 @@ def cambiar_disponibilidad_vehiculo(
     # está alquilado, ni "deshabilitarlo" porque ya está comprometido.
     if verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id):
         raise VehiculoConReservaActivaError()
+
+    # No se puede reactivar la disponibilidad mientras exista un reporte critico activo.
+    if disponible and obtener_reporte_activo_por_vehiculo(db=db, vehiculo_id=vehiculo_id):
+        raise VehiculoConReporteActivoError()
 
     vehiculo.disponible = disponible
 

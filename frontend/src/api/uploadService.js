@@ -22,6 +22,17 @@ export const subirFotoLicencia = (archivo, lado) =>
 export const subirFotoVehiculo = (archivo, lado) =>
   subirArchivo("/upload/foto-vehiculo", archivo, lado);
 
+export const subirFotoReporte = async (archivo) => {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+
+  const response = await httpClient.post("/upload/foto-reporte", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return response.data;
+};
+
 export const subirFotoDocumentoVehiculo = async (archivo, tipo) => {
   const formData = new FormData();
   formData.append("archivo", archivo);

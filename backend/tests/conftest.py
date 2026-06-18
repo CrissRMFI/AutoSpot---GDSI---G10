@@ -50,6 +50,8 @@ from app.models.vehiculo import Vehiculo  # noqa: F401
 from app.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.models.valoracion import Valoracion  # noqa: F401
 from app.models.testimonio import Testimonio  # noqa: F401
+from app.models.reporte import Reporte  # noqa: F401
+from app.models.reporte_foto import ReporteFoto  # noqa: F401
 
 
 # ── Catálogo inicial sembrado en cada test ───────────────────────────────────
