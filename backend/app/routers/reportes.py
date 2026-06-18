@@ -28,6 +28,7 @@ from app.schemas.reporte import (
 from app.services.reporte_service import (
     listar_reportes,
     obtener_reporte,
+    obtener_reporte_activo_por_vehiculo,
     resolver_reporte,
     usuario_puede_ver_reporte,
 )
@@ -63,6 +64,31 @@ def obtener_reporte_endpoint(
     except ReporteNoEncontradoError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
+    if not usuario_puede_ver_reporte(db=db, reporte=reporte, usuario_actual=usuario_actual):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para ver este reporte",
+        )
+    return _a_detalle(reporte)
+
+
+@router.get(
+    "/vehiculos/{vehiculo_id}/reporte-activo",
+    response_model=ReporteDetalleSchema,
+    summary="Reporte critico activo de un vehiculo (si existe)",
+)
+def obtener_reporte_activo_vehiculo_endpoint(
+    vehiculo_id: uuid.UUID,
+    usuario_actual: dict = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+) -> ReporteDetalleSchema:
+    activo = obtener_reporte_activo_por_vehiculo(db=db, vehiculo_id=vehiculo_id)
+    if activo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El vehiculo no tiene un reporte critico activo",
+        )
+    reporte = obtener_reporte(db=db, reporte_id=activo.id)
     if not usuario_puede_ver_reporte(db=db, reporte=reporte, usuario_actual=usuario_actual):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

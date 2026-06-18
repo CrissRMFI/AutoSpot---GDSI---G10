@@ -16,6 +16,15 @@ export const resolverReporte = async (reporteId, resolucionDescripcion) => {
   return response.data;
 };
 
+/** Reporte critico activo de un vehiculo (404 si no hay). */
+export const obtenerReporteActivoDeVehiculo = async (vehiculoId) => {
+  const response = await httpClient.get(
+    `/vehiculos/${vehiculoId}/reporte-activo`,
+  );
+
+  return response.data;
+};
+
 /** Lista de reportes para administracion, opcionalmente filtrada por estado. */
 export const listarReportesAdmin = async (params = {}) => {
   const response = await httpClient.get("/admin/reportes", { params });

@@ -18,6 +18,10 @@ import {
 import MapaEstacionVehiculo from "../components/MapaEstacionVehiculo";
 import LightboxGaleria from "../components/LightboxGaleria";
 import ModalGenerarPrecioAI from "../components/ModalGenerarPrecioAI";
+import {
+  obtenerReporteActivoDeVehiculo,
+  resolverReporte,
+} from "../../reportes/api/reportesService";
 
 const LADO_LABEL = {
   FRENTE: "Frente",
@@ -52,6 +56,11 @@ const DetalleVehiculoPage = () => {
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
   const [isModalIAOpen, setIsModalIAOpen] = useState(false);
   const [togglingDisponible, setTogglingDisponible] = useState(false);
+  const [reporteActivo, setReporteActivo] = useState(null);
+  const [reporteResuelto, setReporteResuelto] = useState(false);
+  const [mostrarFormResolucion, setMostrarFormResolucion] = useState(false);
+  const [resolucionTexto, setResolucionTexto] = useState("");
+  const [resolviendo, setResolviendo] = useState(false);
 
   const isDisponibilidadInactiva =
     vehiculo?.estado_registro === "EN_REVISION" ||
@@ -82,6 +91,26 @@ const DetalleVehiculoPage = () => {
       );
     } finally {
       setTogglingDisponible(false);
+    }
+  };
+
+  const handleResolverReporte = async () => {
+    if (!reporteActivo || resolucionTexto.trim().length === 0) return;
+    setResolviendo(true);
+    try {
+      await resolverReporte(reporteActivo.id, resolucionTexto.trim());
+      setReporteActivo(null);
+      setReporteResuelto(true);
+      setMostrarFormResolucion(false);
+      setResolucionTexto("");
+      mostrarFeedback("Incidencia resuelta.", "success");
+    } catch (err) {
+      mostrarFeedback(
+        err.response?.data?.detail || "No se pudo registrar la resolución.",
+        "error",
+      );
+    } finally {
+      setResolviendo(false);
     }
   };
 
@@ -124,6 +153,15 @@ const DetalleVehiculoPage = () => {
         setVehiculo(data);
         setIndiceActivo(0);
         if (reputacionData) setReputacion(reputacionData);
+
+        try {
+          const reporte = await obtenerReporteActivoDeVehiculo(vehiculoId);
+          setReporteActivo(reporte);
+        } catch (reporteErr) {
+          if (reporteErr.response?.status === 404) {
+            setReporteActivo(null);
+          }
+        }
       } catch (err) {
         if (err.response?.status === 403) {
           setError("No tenés permiso para ver este vehículo.");
@@ -506,6 +544,67 @@ const DetalleVehiculoPage = () => {
                 <p className="mt-1 leading-5">{vehiculo.motivo_rechazo}</p>
               </div>
             )}
+
+          {esPropietario && reporteActivo && (
+            <div className="mt-6 rounded-2xl border border-[#fecaca] bg-[#fee2e2] p-4 text-[#7f1d1d]">
+              <p className="text-sm font-black text-[#b42318]">
+                No disponible por incidencia critica
+              </p>
+              <p className="mt-1 text-sm">
+                {reporteActivo.descripcion}
+              </p>
+              <p className="mt-2 text-xs">
+                El vehículo permanece fuera del catálogo hasta que registres la resolución y lo
+                vuelvas a publicar manualmente.
+              </p>
+
+              {mostrarFormResolucion ? (
+                <div className="mt-3 space-y-2">
+                  <textarea
+                    value={resolucionTexto}
+                    onChange={(e) => setResolucionTexto(e.target.value.slice(0, 1000))}
+                    rows={3}
+                    placeholder="Describí cómo se resolvió la incidencia."
+                    className="w-full rounded-lg border border-[#fecaca] bg-white px-3 py-2 text-sm text-autospot-black outline-none focus:border-[#b42318]"
+                  />
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setMostrarFormResolucion(false)}
+                      className="rounded-full border border-[#fecaca] bg-white px-4 py-2 text-sm font-bold text-[#b42318]"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResolverReporte}
+                      disabled={resolviendo || resolucionTexto.trim().length === 0}
+                      className="rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {resolviendo ? "Registrando..." : "Confirmar resolución"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormResolucion(true)}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d]"
+                >
+                  Registrar resolución
+                </button>
+              )}
+            </div>
+          )}
+
+          {esPropietario && reporteResuelto && !reporteActivo && (
+            <div className="mt-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] p-4 text-[#166534]">
+              <p className="text-sm font-black">Incidencia resuelta</p>
+              <p className="mt-1 text-sm">
+                El vehículo sigue fuera del catálogo hasta que lo marques como disponible.
+              </p>
+            </div>
+          )}
 
           {esPropietario && (
             <div className="mt-6 space-y-4">
