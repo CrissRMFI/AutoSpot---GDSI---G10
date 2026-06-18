@@ -24,6 +24,7 @@ from app.models.documentacion_habilitante_conductor import DocumentacionHabilita
 from app.models.notificacion import Notificacion
 from app.models.reserva import Reserva
 from app.models.reporte import Reporte
+from app.models.reporte_foto import ReporteFoto
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

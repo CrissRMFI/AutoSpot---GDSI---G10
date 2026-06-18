@@ -9,3 +9,4 @@ from app.models.checkout_vehiculo import CheckoutVehiculo
 from app.models.valoracion import Valoracion
 from app.models.testimonio import Testimonio
 from app.models.reporte import Reporte
+from app.models.reporte_foto import ReporteFoto
