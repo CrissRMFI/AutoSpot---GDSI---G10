@@ -47,6 +47,9 @@ class GananciasGeneralesResponseSchema(BaseModel):
     porcentaje_comision_plataforma: Decimal
     porcentaje_ganancia_propietario: Decimal
     evolucion_periodo: list[PuntoEvolucionGananciasSchema] = Field(default_factory=list)
+    evolucion_comparacion: list[PuntoEvolucionGananciasSchema] = Field(
+        default_factory=list
+    )
 
 
 class GananciasVehiculoResponseSchema(BaseModel):
@@ -76,3 +79,6 @@ class GananciasVehiculoResponseSchema(BaseModel):
     porcentaje_comision_plataforma: Decimal
     porcentaje_ganancia_propietario: Decimal
     evolucion_periodo: list[PuntoEvolucionGananciasSchema] = Field(default_factory=list)
+    evolucion_comparacion: list[PuntoEvolucionGananciasSchema] = Field(
+        default_factory=list
+    )

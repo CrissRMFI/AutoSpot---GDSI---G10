@@ -390,6 +390,13 @@ def obtener_ganancias_generales_propietario(
             desde=desde,
             hasta=hasta,
         ),
+        evolucion_comparacion=_evolucion_periodo_general(
+            db=db,
+            propietario_id=propietario_id,
+            periodo=periodo,
+            desde=desde_comparacion,
+            hasta=hasta_comparacion,
+        ),
     )
 
 
@@ -478,5 +485,12 @@ def obtener_ganancias_vehiculo_propietario(
             periodo=periodo,
             desde=desde,
             hasta=hasta,
+        ),
+        evolucion_comparacion=_evolucion_periodo_vehiculo(
+            db=db,
+            vehiculo_id=vehiculo_id,
+            periodo=periodo,
+            desde=desde_comparacion,
+            hasta=hasta_comparacion,
         ),
     )
