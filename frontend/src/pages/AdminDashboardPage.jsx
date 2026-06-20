@@ -5,11 +5,9 @@ import {
   ArrowRight,
   Car,
   ClipboardCheck,
-  Clock,
   FileText,
   Inbox,
   KeyRound,
-  ListChecks,
 } from "lucide-react";
 import { getSolicitudesDocumentacion } from "../features/admin/api/solicitudesApi";
 import { listarCheckins } from "../features/reservas/api/checkinService";
@@ -265,31 +263,6 @@ const TaskRow = ({ icono: Icono, titulo, detalle, to }) => (
       Abrir
       <ArrowRight className="h-4 w-4" aria-hidden="true" />
     </span>
-  </Link>
-);
-
-const SummaryRow = ({ icono: Icono, titulo, detalle }) => (
-  <div className="flex items-center gap-3 px-5 py-4">
-    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
-      <Icono className="h-5 w-5" aria-hidden="true" />
-    </span>
-    <div className="min-w-0">
-      <h3 className="text-sm font-black text-autospot-black">{titulo}</h3>
-      <p className="mt-1 text-sm text-autospot-muted">{detalle}</p>
-    </div>
-  </div>
-);
-
-const QuickLink = ({ to, label, principal = false }) => (
-  <Link
-    to={to}
-    className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
-      principal
-        ? "bg-autospot-accent !text-white hover:bg-[#5a1420]"
-        : "border border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent"
-    }`}
-  >
-    {label}
   </Link>
 );
 
