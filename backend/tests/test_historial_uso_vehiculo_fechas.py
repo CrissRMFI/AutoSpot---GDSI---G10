@@ -4,6 +4,7 @@ from decimal import Decimal
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
+from app.models.reporte import Reporte
 from app.schemas.datos_personales_usuario import DatosPersonalesUsuarioSchema
 from app.services.datos_personales_usuario import registrar_datos_personales
 from app.services.vehiculo import obtener_historial_uso_vehiculo
@@ -89,3 +90,71 @@ def test_historial_muestra_fechas_pactadas_no_fechas_reales(db_session):
     assert len(historial) == 1
     assert historial[0]["fecha_inicio"] == fecha_inicio_pactada
     assert historial[0]["fecha_fin"] == fecha_fin_pactada
+
+
+def test_historial_muestra_fecha_devolucion_real_de_reporte(db_session):
+    propietario = _crear_usuario(
+        db_session,
+        "prop.historial.reporte@autospot.com",
+        "PROPIETARIO",
+    )
+    conductor = _crear_usuario(db_session, "cliente.historial.reporte@autospot.com")
+    _registrar_datos_personales(db_session, conductor.id)
+
+    vehiculo = Vehiculo(
+        propietario_id=propietario.id,
+        marca="Ford",
+        modelo="Fiesta",
+        anio=2018,
+        tipo_transmision="MANUAL",
+        capacidad=5,
+        categoria="HATCHBACK",
+        tipo_combustible="NAFTA",
+        pets_friendly=False,
+        patente="AA123AA",
+        estacion="Estación Central",
+        precio_por_dia=Decimal("35000.00"),
+        estado_registro="HABILITADO",
+        disponible=True,
+    )
+    db_session.add(vehiculo)
+    db_session.commit()
+    db_session.refresh(vehiculo)
+
+    fecha_inicio_pactada = datetime(2026, 8, 10, 10, tzinfo=timezone.utc)
+    fecha_fin_pactada = datetime(2026, 8, 12, 10, tzinfo=timezone.utc)
+    fecha_salida_real = datetime.now(timezone.utc)
+    
+    # La reserva no tiene fecha_devolucion_real
+    reserva = Reserva(
+        vehiculo_id=vehiculo.id,
+        conductor_id=conductor.id,
+        codigo="AS-REPORTE",
+        estado="FINALIZADA",
+        monto_total=Decimal("70000.00"),
+        fecha_inicio=fecha_inicio_pactada,
+        fecha_fin=fecha_fin_pactada,
+        fecha_salida_real=fecha_salida_real,
+        fecha_devolucion_real=None,
+        estacion_retiro=vehiculo.estacion,
+    )
+    db_session.add(reserva)
+    db_session.commit()
+    db_session.refresh(reserva)
+
+    fecha_reporte = datetime.now(timezone.utc) + timedelta(hours=5)
+    
+    reporte = Reporte(
+        reserva_id=reserva.id,
+        conductor_id=conductor.id,
+        vehiculo_id=vehiculo.id,
+        descripcion="El auto dejó de funcionar en medio de la ruta.",
+        created_at=fecha_reporte,
+    )
+    db_session.add(reporte)
+    db_session.commit()
+
+    historial = obtener_historial_uso_vehiculo(db=db_session, vehiculo_id=vehiculo.id)
+
+    assert len(historial) == 1
+    assert historial[0]["fecha_devolucion_real"] == fecha_reporte
