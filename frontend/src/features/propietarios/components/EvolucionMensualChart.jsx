@@ -47,6 +47,9 @@ const crearCurvaSuave = (puntos, { limiteSuperior, limiteInferior }) => {
 
 const EvolucionMensualChart = ({
   datos = [],
+  datosComparacion = [],
+  etiquetaActual = "Actual",
+  etiquetaComparacion = "Período anterior",
   cargando = false,
   mostrarOcupacion = false,
   emptyMessage = "Sin ingresos registrados en este período.",
@@ -60,9 +63,20 @@ const EvolucionMensualChart = ({
           tasa_ocupacion: 0,
           reservas_finalizadas: 0,
         }));
+  // La serie de comparación (período anterior) se dibuja como 2da línea.
+  const hayComparacion = Array.isArray(datosComparacion) && datosComparacion.length > 0;
+  const comparacionBase = hayComparacion
+    ? datosComparacion.slice(0, puntosBase.length)
+    : [];
+
   const valores = puntosBase.map((item) => Number(item.ingreso_bruto ?? 0));
-  const maximo = Math.max(...valores, 1);
-  const hayIngresos = valores.some((valor) => valor > 0);
+  const valoresComparacion = comparacionBase.map((item) =>
+    Number(item.ingreso_bruto ?? 0),
+  );
+  // Escala compartida: el máximo del eje Y considera AMBAS series para que las
+  // dos líneas sean visualmente comparables.
+  const maximo = Math.max(...valores, ...valoresComparacion, 1);
+  const hayIngresos = [...valores, ...valoresComparacion].some((valor) => valor > 0);
 
   const ancho = 1000;
   const alto = 390;
@@ -73,7 +87,7 @@ const EvolucionMensualChart = ({
   const altoGrafico = base - arriba;
   const paso = (ancho - izquierda - derecha) / Math.max(puntosBase.length - 1, 1);
 
-  const puntos = puntosBase.map((item, index) => {
+  const calcularPunto = (item, index) => {
     const valor = Number(item.ingreso_bruto ?? 0);
     return {
       x: izquierda + index * paso,
@@ -81,9 +95,16 @@ const EvolucionMensualChart = ({
       valor,
       item,
     };
-  });
+  };
+
+  const puntos = puntosBase.map(calcularPunto);
+  const puntosComparacion = comparacionBase.map(calcularPunto);
 
   const linea = crearCurvaSuave(puntos, {
+    limiteSuperior: arriba,
+    limiteInferior: base,
+  });
+  const lineaComparacion = crearCurvaSuave(puntosComparacion, {
     limiteSuperior: arriba,
     limiteInferior: base,
   });
@@ -94,6 +115,22 @@ const EvolucionMensualChart = ({
 
   return (
     <div className="mt-5 overflow-hidden rounded-lg border border-autospot-border bg-white">
+      {hayComparacion && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-autospot-border bg-[#fbfaf8] px-4 py-2.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold text-autospot-black">
+            <svg width="22" height="8" aria-hidden="true">
+              <line x1="1" y1="4" x2="21" y2="4" stroke="#8f1d34" strokeWidth="3.25" strokeLinecap="round" />
+            </svg>
+            {etiquetaActual}
+          </span>
+          <span className="inline-flex items-center gap-2 text-xs font-bold text-autospot-black">
+            <svg width="22" height="8" aria-hidden="true">
+              <line x1="1" y1="4" x2="21" y2="4" stroke="#0a0a0a" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+            {etiquetaComparacion}
+          </span>
+        </div>
+      )}
       <svg
         viewBox={`0 0 ${ancho} ${alto}`}
         role="img"
@@ -141,6 +178,31 @@ const EvolucionMensualChart = ({
         })}
 
         {area && <path d={area} fill="url(#ingresos-area)" aria-hidden="true" />}
+
+        {/* Línea del período de comparación (2da serie) — negra continua */}
+        {hayComparacion && lineaComparacion && (
+          <path
+            d={lineaComparacion}
+            fill="none"
+            stroke="#0a0a0a"
+            strokeWidth="2.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {hayComparacion &&
+          puntosComparacion.map((punto) => (
+            <circle
+              key={`comp-${punto.item.etiqueta}`}
+              cx={punto.x}
+              cy={punto.y}
+              r="3.5"
+              fill="#fff"
+              stroke="#0a0a0a"
+              strokeWidth="2.5"
+            />
+          ))}
+
         <path
           d={linea}
           fill="none"
