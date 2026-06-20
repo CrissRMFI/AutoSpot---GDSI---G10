@@ -38,6 +38,7 @@ import RecepcionAutosPage from "../features/admin/pages/RecepcionAutosPage";
 import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
 import HistorialConductoresPage from "../features/admin/pages/HistorialConductoresPage";
 import HistorialAutosPage from "../features/admin/pages/HistorialAutosPage";
+import AdminAlquileresAutoPage from "../features/admin/pages/AdminAlquileresAutoPage";
 
 const DashboardHome = () => {
   const { estaAutenticado, usuario } = useAuth();
@@ -376,6 +377,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <HistorialAutosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/autos/:vehiculoId/alquileres"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <AdminAlquileresAutoPage />
             </ProtectedRoute>
           }
         />

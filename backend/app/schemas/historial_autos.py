@@ -33,3 +33,22 @@ class AutoHistorialSchema(BaseModel):
     modelo: str
     patente: str | None = None
     movimientos: list[MovimientoAutoSchema] = Field(default_factory=list)
+
+
+class AutoAlquileresDetalleSchema(BaseModel):
+    """
+    Detalle de un vehículo con sus alquileres (movimientos) para el panel admin.
+
+    A diferencia de AutoHistorialSchema, devuelve siempre los datos del auto
+    aunque no tenga movimientos, e incluye datos de presentación (año, estación,
+    foto) para el encabezado de la vista.
+    """
+
+    id: uuid.UUID
+    marca: str
+    modelo: str
+    anio: int | None = None
+    patente: str | None = None
+    estacion: str | None = None
+    foto_url: str | None = None
+    movimientos: list[MovimientoAutoSchema] = Field(default_factory=list)
