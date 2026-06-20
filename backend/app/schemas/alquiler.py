@@ -123,6 +123,17 @@ class ReservaVerificacionResponseSchema(ReservaCodigoResponseSchema):
     motivo_bloqueo: str | None = None
 
 
+class ReservaEntregaResponseSchema(ReservaCodigoResponseSchema):
+    """
+    Reserva lista para entregar, enriquecida con los datos del conductor.
+
+    Permite mostrar y filtrar por el nombre del conductor en la pantalla
+    de Entrega de autos (US 6R).
+    """
+
+    conductor: ConductorReservaResumenSchema | None = None
+
+
 class RegistrarEntradaResponseSchema(ReservaCodigoResponseSchema):
     """Respuesta de registrar la entrada/devolución del auto."""
 

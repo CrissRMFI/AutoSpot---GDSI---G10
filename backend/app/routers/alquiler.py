@@ -32,6 +32,7 @@ from app.schemas.alquiler import (
     PaginaReservasSchema,
     RechazarReservaPayloadSchema,
     ReservaCodigoResponseSchema,
+    ReservaEntregaResponseSchema,
     ReservaVerificacionResponseSchema,
     SimularTiempoAlquilerRequest,
     SimularTiempoAlquilerResponse,
@@ -51,6 +52,7 @@ from app.services.alquiler_service import (
     listar_recepcion,
     listar_reservas_de_conductor,
     listar_reservas_para_entregar,
+    listar_reservas_panel_entrega,
     motivo_bloqueo_entrega,
     obtener_alquiler_conductor,
     obtener_datos_personales_de_conductor,
@@ -140,25 +142,30 @@ def _reserva_codigo_response(db: Session, reserva) -> ReservaCodigoResponseSchem
     )
 
 
-def _reserva_verificacion_response(
-    db: Session,
-    reserva,
-) -> ReservaVerificacionResponseSchema:
+def _conductor_resumen(db: Session, reserva) -> ConductorReservaResumenSchema:
+    """Resumen del conductor (nombre, apellido, dni) para vistas admin."""
     datos_personales = obtener_datos_personales_de_conductor(
         db=db,
         conductor_id=reserva.conductor_id,
     )
+    return ConductorReservaResumenSchema(
+        id=reserva.conductor.id,
+        email=reserva.conductor.email,
+        nombre=datos_personales.nombre if datos_personales else None,
+        apellido=datos_personales.apellido if datos_personales else None,
+        dni=datos_personales.dni if datos_personales else None,
+    )
+
+
+def _reserva_verificacion_response(
+    db: Session,
+    reserva,
+) -> ReservaVerificacionResponseSchema:
     motivo_bloqueo = motivo_bloqueo_entrega(reserva)
 
     return ReservaVerificacionResponseSchema(
         **_reserva_codigo_response(db, reserva).model_dump(),
-        conductor=ConductorReservaResumenSchema(
-            id=reserva.conductor.id,
-            email=reserva.conductor.email,
-            nombre=datos_personales.nombre if datos_personales else None,
-            apellido=datos_personales.apellido if datos_personales else None,
-            dni=datos_personales.dni if datos_personales else None,
-        ),
+        conductor=_conductor_resumen(db, reserva),
         puede_entregar=reserva.codigo_verificado_at is not None and motivo_bloqueo is None,
         motivo_bloqueo=motivo_bloqueo,
     )
@@ -282,18 +289,45 @@ def listar_mis_alquileres_endpoint(
 # ── Admin: listados (literales antes de /reservas/admin/{reserva_id}) ─────────
 @router.get(
     "/reservas/admin/para-entregar",
-    response_model=list[ReservaCodigoResponseSchema],
+    response_model=list[ReservaEntregaResponseSchema],
     status_code=status.HTTP_200_OK,
     summary="Listar reservas listas para entregar (US 6R)",
 )
 def listar_para_entregar_endpoint(
     _usuario_actual: dict = Depends(requerir_rol_admin),
     db: Session = Depends(get_db),
-) -> list[ReservaCodigoResponseSchema]:
+) -> list[ReservaEntregaResponseSchema]:
     """Reservas VERIFICADA con check-in aprobado, listas para la salida."""
     return [
-        _reserva_codigo_response(db, reserva)
+        ReservaEntregaResponseSchema(
+            **_reserva_codigo_response(db, reserva).model_dump(),
+            conductor=_conductor_resumen(db, reserva),
+        )
         for reserva in listar_reservas_para_entregar(db=db)
+    ]
+
+
+@router.get(
+    "/reservas/admin/entregas",
+    response_model=list[ReservaEntregaResponseSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Panel de entregas: por entregar + ya entregadas (US 6R)",
+)
+def listar_panel_entregas_endpoint(
+    _usuario_actual: dict = Depends(requerir_rol_admin),
+    db: Session = Depends(get_db),
+) -> list[ReservaEntregaResponseSchema]:
+    """
+    Reservas por entregar (VERIFICADA + check-in aprobado) junto con las que ya
+    fueron entregadas (con fecha de salida), ordenadas de más reciente a más
+    antigua.
+    """
+    return [
+        ReservaEntregaResponseSchema(
+            **_reserva_codigo_response(db, reserva).model_dump(),
+            conductor=_conductor_resumen(db, reserva),
+        )
+        for reserva in listar_reservas_panel_entrega(db=db)
     ]
 
 

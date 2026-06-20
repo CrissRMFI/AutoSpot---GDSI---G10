@@ -1,12 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Typography, Box, Card, CardActionArea, CardContent,
-  CircularProgress, Alert, Chip,
+  CircularProgress, Alert, Chip, TextField, MenuItem, Button,
 } from "@mui/material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { listarCheckins } from "../../reservas/api/checkinService";
+
+const ACCENT = "#7b1c2e";
+
+// Estilo MUI con los colores de marca (acento vino en foco/labels).
+const campoSx = {
+  minWidth: { xs: "100%", sm: 180 },
+  "& label.Mui-focused": { color: ACCENT },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: ACCENT,
+  },
+};
+
+const ESTADOS = [
+  { value: "TODOS", label: "Todos" },
+  { value: "PENDIENTE", label: "Por aprobar" },
+  { value: "APROBADO", label: "Aprobados" },
+  { value: "RECHAZADO", label: "Rechazados" },
+];
 
 /** Mapea el estado del check-in al color del Chip de MUI */
 const colorChip = (estado) => {
@@ -17,11 +35,20 @@ const colorChip = (estado) => {
   }
 };
 
+const FILTROS_INICIALES = {
+  conductor: "",
+  reserva: "",
+  patente: "",
+  fecha: "",
+  estado: "TODOS",
+};
+
 const RevisionCheckinPage = () => {
   const navigate = useNavigate();
   const [checkins, setCheckins] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
 
   useEffect(() => {
     let cancelado = false;
@@ -42,24 +69,52 @@ const RevisionCheckinPage = () => {
     navigate(`/admin/checkins/${checkin.id}`, { state: { checkin } });
   };
 
+  const setFiltro = (campo) => (e) =>
+    setFiltros((prev) => ({ ...prev, [campo]: e.target.value }));
+
+  const limpiarFiltros = () => setFiltros(FILTROS_INICIALES);
+
+  // Filtrado client-side sobre los datos enriquecidos por el backend.
+  const checkinsFiltrados = useMemo(() => {
+    const norm = (s) => (s || "").toString().toLowerCase().trim();
+    const fConductor = norm(filtros.conductor);
+    const fReserva = norm(filtros.reserva);
+    const fPatente = norm(filtros.patente);
+
+    return checkins.filter((c) => {
+      const r = c.reserva || {};
+      if (fConductor && !norm(r.conductor_nombre).includes(fConductor)) return false;
+      if (fReserva && !norm(r.codigo).includes(fReserva)) return false;
+      if (fPatente && !norm(r.vehiculo?.patente).includes(fPatente)) return false;
+      if (filtros.estado !== "TODOS" && c.estado !== filtros.estado) return false;
+      if (filtros.fecha) {
+        const dia = new Date(c.created_at).toLocaleDateString("en-CA"); // YYYY-MM-DD
+        if (dia !== filtros.fecha) return false;
+      }
+      return true;
+    });
+  }, [checkins, filtros]);
+
   if (isLoading)
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: ACCENT }} />
       </Box>
     );
 
-  const pendientes = checkins.filter((c) => c.estado === "PENDIENTE");
-  const resto = checkins.filter((c) => c.estado !== "PENDIENTE");
+  const pendientes = checkinsFiltrados.filter((c) => c.estado === "PENDIENTE");
+  const resto = checkinsFiltrados.filter((c) => c.estado !== "PENDIENTE");
+  const hayFiltrosActivos =
+    JSON.stringify(filtros) !== JSON.stringify(FILTROS_INICIALES);
 
   const renderCheckin = (checkin, idx) => {
-    /* Intentamos mostrar datos del vehículo si el backend los incluye.
-       Si no, mostramos el código de reserva como fallback. */
-    const vehiculoLabel = checkin.reserva?.vehiculo
-      ? `${checkin.reserva.vehiculo.marca} ${checkin.reserva.vehiculo.modelo}`
+    const r = checkin.reserva || {};
+    const vehiculoLabel = r.vehiculo
+      ? `${r.vehiculo.marca} ${r.vehiculo.modelo}`
       : null;
-    const conductorLabel = checkin.reserva?.conductor_nombre || null;
-    const codigoReserva = checkin.reserva?.codigo || checkin.reserva_id;
+    const conductorLabel = r.conductor_nombre || null;
+    const codigoReserva = r.codigo || null;
+    const patente = r.vehiculo?.patente || null;
 
     return (
       <Card
@@ -80,16 +135,21 @@ const RevisionCheckinPage = () => {
             }}
           >
             {/* Número de orden */}
-            <Chip label={`#${idx + 1}`} size="small" />
+            <Chip label={`#${idx}`} size="small" />
 
             {/* Datos principales */}
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.25 }}>
                 <DirectionsCarIcon fontSize="small" color="action" />
                 <Typography variant="subtitle1" fontWeight="bold" noWrap>
-                  {vehiculoLabel || `Reserva ${codigoReserva}`}
+                  {vehiculoLabel || "Vehículo sin datos"}
                 </Typography>
               </Box>
+              {/* Código de reserva real (AS-…) — siempre visible */}
+              <Typography variant="body2" sx={{ color: ACCENT, fontWeight: 700 }} noWrap>
+                Reserva {codigoReserva || "—"}
+                {patente ? ` · ${patente}` : ""}
+              </Typography>
               {conductorLabel && (
                 <Typography variant="body2" color="textSecondary" noWrap>
                   Conductor: {conductorLabel}
@@ -125,16 +185,85 @@ const RevisionCheckinPage = () => {
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700, color: "var(--text)" }}>
         Revisión de check-ins
       </Typography>
-      <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>
+      <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
         Los pendientes aparecen primero. Hacé click en cualquiera para ver el
-        detalle y aprobarlo o rechazarlo (CA 6: el sistema te pedirá que
-        especifiques el motivo si rechazás).
+        detalle y aprobarlo o rechazarlo.
       </Typography>
+
+      {/* Barra de filtros */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 4,
+          flexWrap: "wrap",
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
+        <TextField
+          label="Conductor"
+          size="small"
+          value={filtros.conductor}
+          onChange={setFiltro("conductor")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Nº de reserva"
+          size="small"
+          placeholder="AS-…"
+          value={filtros.reserva}
+          onChange={setFiltro("reserva")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Patente"
+          size="small"
+          value={filtros.patente}
+          onChange={setFiltro("patente")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Fecha"
+          type="date"
+          size="small"
+          InputLabelProps={{ shrink: true }}
+          value={filtros.fecha}
+          onChange={setFiltro("fecha")}
+          sx={campoSx}
+        />
+        <TextField
+          select
+          label="Estado"
+          size="small"
+          value={filtros.estado}
+          onChange={setFiltro("estado")}
+          sx={campoSx}
+        >
+          {ESTADOS.map((e) => (
+            <MenuItem key={e.value} value={e.value}>
+              {e.label}
+            </MenuItem>
+          ))}
+        </TextField>
+        {hayFiltrosActivos && (
+          <Button
+            onClick={limpiarFiltros}
+            sx={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}
+          >
+            Limpiar filtros
+          </Button>
+        )}
+      </Box>
 
       {error && <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>}
 
       {checkins.length === 0 && !error ? (
         <Alert severity="info">No hay check-ins para mostrar.</Alert>
+      ) : checkinsFiltrados.length === 0 ? (
+        <Alert severity="info">
+          No hay check-ins que coincidan con los filtros aplicados.
+        </Alert>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
           {pendientes.length > 0 && (
@@ -149,7 +278,7 @@ const RevisionCheckinPage = () => {
           {resto.length > 0 && (
             <>
               <Typography variant="overline" color="textSecondary" sx={{ mt: 2 }}>
-                Ya revisados
+                Ya revisados ({resto.length})
               </Typography>
               {resto.map((c, i) => renderCheckin(c, pendientes.length + i + 1))}
             </>

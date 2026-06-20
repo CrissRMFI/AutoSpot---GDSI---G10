@@ -94,3 +94,32 @@ class CheckinResponseSchema(CheckinBaseSchema):
 
     class Config:
         from_attributes = True
+
+
+class VehiculoResumenCheckinSchema(BaseModel):
+    """Datos mínimos del vehículo para la vista admin de check-ins."""
+
+    marca: str | None = None
+    modelo: str | None = None
+    patente: str | None = None
+
+
+class ReservaResumenCheckinSchema(BaseModel):
+    """
+    Resumen de la reserva asociada a un check-in, para la lista admin.
+
+    Permite mostrar el código real (AS-XXXXXX), el conductor y la patente
+    en lugar del UUID, y habilita el filtrado en el frontend.
+    """
+
+    codigo: str | None = None
+    conductor_nombre: str | None = None
+    estacion_retiro: str | None = None
+    fecha_inicio: datetime | None = None
+    vehiculo: VehiculoResumenCheckinSchema | None = None
+
+
+class CheckinAdminItemSchema(CheckinResponseSchema):
+    """Check-in enriquecido con el resumen de su reserva (vista admin)."""
+
+    reserva: ReservaResumenCheckinSchema | None = None

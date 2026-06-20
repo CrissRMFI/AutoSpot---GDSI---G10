@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Typography,
@@ -12,17 +12,60 @@ import {
   Divider,
   Tooltip,
   Stack,
+  TextField,
+  MenuItem,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {
-  listarReservasParaEntregar,
+  listarPanelEntregas,
   registrarSalida,
 } from "../../reservas/api/reservasService";
 import ConfirmacionModal from "../../reservas/components/ConfirmacionModal";
 import MensajeModal from "../../reservas/components/MensajeModal";
+
+const ACCENT = "#7b1c2e";
+
+// Estilo MUI con los colores de marca (acento vino en foco/labels).
+const campoSx = {
+  minWidth: { xs: "100%", sm: 180 },
+  "& label.Mui-focused": { color: ACCENT },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: ACCENT,
+  },
+};
+
+const FILTROS_INICIALES = {
+  conductor: "",
+  reserva: "",
+  patente: "",
+  fecha: "",
+  estado: "TODOS",
+};
+
+const ESTADOS_ENTREGA = [
+  { value: "TODOS", label: "Todos" },
+  { value: "POR_ENTREGAR", label: "Por entregar" },
+  { value: "ENTREGADO", label: "Entregados" },
+];
+
+/** Una reserva ya fue entregada si tiene registrada la salida real. */
+const yaEntregada = (reserva) => Boolean(reserva.fecha_salida_real);
+
+const formatFechaHora = (valor) =>
+  new Date(valor).toLocaleString("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+/** Nombre completo del conductor (o email como fallback). */
+const nombreConductor = (conductor) => {
+  if (!conductor) return null;
+  const full = `${conductor.nombre || ""} ${conductor.apellido || ""}`.trim();
+  return full || conductor.email || null;
+};
 
 /** Traduce el detail del backend a un mensaje amigable para el recepcionista. */
 const interpretarErrorSalida = (detail) => {
@@ -76,6 +119,7 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
 
   const checkinId = reserva.checkin?.id;
   const estadoCheckin = reserva.checkin?.estado;
+  const entregada = yaEntregada(reserva);
 
   const irACheckin = () => {
     if (checkinId) navigate(`/admin/checkins/${checkinId}`);
@@ -108,6 +152,12 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
         {reserva.vehiculo?.patente && (
           <Chip label={reserva.vehiculo.patente} size="small" variant="outlined" />
         )}
+        <Chip
+          label={entregada ? "Entregada" : "Por entregar"}
+          size="small"
+          color={entregada ? "success" : "warning"}
+          sx={{ ml: "auto", fontWeight: 700 }}
+        />
       </Box>
 
       <Divider />
@@ -125,14 +175,19 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
           pt: 2,
         }}
       >
-        {/* Código + estación */}
+        {/* Código + conductor + estación */}
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="body2" color="textSecondary">
             Reserva
           </Typography>
           <Typography variant="h6" fontWeight={700}>
-            {reserva.codigo}
+            {reserva.codigo_reserva}
           </Typography>
+          {nombreConductor(reserva.conductor) && (
+            <Typography variant="body2" color="textSecondary" noWrap>
+              Conductor: {nombreConductor(reserva.conductor)}
+            </Typography>
+          )}
           <Typography variant="body2" color="textSecondary" noWrap>
             Estación: {reserva.estacion_retiro}
           </Typography>
@@ -194,33 +249,46 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
           )}
         </Box>
 
-        {/* Acción — Registrar salida (CA 4) */}
+        {/* Acción — Registrar salida (CA 4) o info de la entrega ya realizada */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: { xs: "stretch", md: "flex-end" },
+            flexDirection: "column",
+            alignItems: { xs: "stretch", md: "flex-end" },
+            gap: 0.5,
           }}
         >
-          <Button
-            variant="contained"
-            disabled={estaProcesando || estadoCheckin !== "APROBADO"}
-            onClick={() => onRegistrarSalida(reserva)}
-            sx={{
-              width: { xs: "100%", md: "auto" },
-              bgcolor:
-                estadoCheckin === "APROBADO" ? "var(--accent)" : undefined,
-              fontWeight: 700,
-              borderRadius: 8,
-              whiteSpace: "nowrap",
-              "&:hover": { bgcolor: "var(--accent-dark)" },
-            }}
-          >
-            {estaProcesando ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              "Registrar salida"
-            )}
-          </Button>
+          {entregada ? (
+            <>
+              <Typography variant="subtitle2" color="textSecondary">
+                Entregado
+              </Typography>
+              <Typography variant="body2" fontWeight={700} sx={{ color: "var(--accent)" }}>
+                {formatFechaHora(reserva.fecha_salida_real)}
+              </Typography>
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              disabled={estaProcesando || estadoCheckin !== "APROBADO"}
+              onClick={() => onRegistrarSalida(reserva)}
+              sx={{
+                width: { xs: "100%", md: "auto" },
+                bgcolor:
+                  estadoCheckin === "APROBADO" ? "var(--accent)" : undefined,
+                fontWeight: 700,
+                borderRadius: 8,
+                whiteSpace: "nowrap",
+                "&:hover": { bgcolor: "var(--accent-dark)" },
+              }}
+            >
+              {estaProcesando ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Registrar salida"
+              )}
+            </Button>
+          )}
         </Box>
       </CardContent>
 
@@ -250,12 +318,43 @@ const EntregaAutosPage = () => {
   const [confirmacion, setConfirmacion] = useState(null); // reserva a confirmar
   const [procesandoId, setProcesandoId] = useState(null);
   const [mensaje, setMensaje] = useState(null);
+  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+
+  const setFiltro = (campo) => (e) =>
+    setFiltros((prev) => ({ ...prev, [campo]: e.target.value }));
+  const limpiarFiltros = () => setFiltros(FILTROS_INICIALES);
+
+  // Filtrado client-side sobre las reservas listas para entregar.
+  const reservasFiltradas = useMemo(() => {
+    const norm = (s) => (s || "").toString().toLowerCase().trim();
+    const fConductor = norm(filtros.conductor);
+    const fReserva = norm(filtros.reserva);
+    const fPatente = norm(filtros.patente);
+
+    return reservas.filter((r) => {
+      if (fConductor && !norm(nombreConductor(r.conductor)).includes(fConductor)) return false;
+      if (fReserva && !norm(r.codigo_reserva).includes(fReserva)) return false;
+      if (fPatente && !norm(r.vehiculo?.patente).includes(fPatente)) return false;
+      if (filtros.estado === "POR_ENTREGAR" && yaEntregada(r)) return false;
+      if (filtros.estado === "ENTREGADO" && !yaEntregada(r)) return false;
+      if (filtros.fecha) {
+        // Fecha relevante: salida real si ya se entregó, inicio si está por entregar.
+        const ref = r.fecha_salida_real || r.fecha_inicio;
+        const dia = new Date(ref).toLocaleDateString("en-CA"); // YYYY-MM-DD
+        if (dia !== filtros.fecha) return false;
+      }
+      return true;
+    });
+  }, [reservas, filtros]);
+
+  const hayFiltrosActivos =
+    JSON.stringify(filtros) !== JSON.stringify(FILTROS_INICIALES);
 
   const recargarReservas = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await listarReservasParaEntregar();
+      const data = await listarPanelEntregas();
       setReservas(data);
     } catch {
       setError("Error al cargar las reservas para entregar.");
@@ -268,7 +367,7 @@ const EntregaAutosPage = () => {
     let cancelado = false;
     const cargar = async () => {
       try {
-        const data = await listarReservasParaEntregar();
+        const data = await listarPanelEntregas();
         if (!cancelado) setReservas(data);
       } catch {
         if (!cancelado) setError("Error al cargar las reservas para entregar.");
@@ -317,10 +416,76 @@ const EntregaAutosPage = () => {
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700, color: "var(--text)" }}>
         Entrega de autos
       </Typography>
-      <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>
+      <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
         Reservas con código verificado y check-in aprobado, listas para entregar al
         conductor.
       </Typography>
+
+      {/* Barra de filtros */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 4,
+          flexWrap: "wrap",
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
+        <TextField
+          label="Conductor"
+          size="small"
+          value={filtros.conductor}
+          onChange={setFiltro("conductor")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Nº de reserva"
+          size="small"
+          placeholder="AS-…"
+          value={filtros.reserva}
+          onChange={setFiltro("reserva")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Patente"
+          size="small"
+          value={filtros.patente}
+          onChange={setFiltro("patente")}
+          sx={campoSx}
+        />
+        <TextField
+          label="Fecha"
+          type="date"
+          size="small"
+          InputLabelProps={{ shrink: true }}
+          value={filtros.fecha}
+          onChange={setFiltro("fecha")}
+          sx={campoSx}
+        />
+        <TextField
+          select
+          label="Estado"
+          size="small"
+          value={filtros.estado}
+          onChange={setFiltro("estado")}
+          sx={campoSx}
+        >
+          {ESTADOS_ENTREGA.map((e) => (
+            <MenuItem key={e.value} value={e.value}>
+              {e.label}
+            </MenuItem>
+          ))}
+        </TextField>
+        {hayFiltrosActivos && (
+          <Button
+            onClick={limpiarFiltros}
+            sx={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}
+          >
+            Limpiar filtros
+          </Button>
+        )}
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 4 }}>
@@ -330,9 +495,13 @@ const EntregaAutosPage = () => {
 
       {reservas.length === 0 && !error ? (
         <Alert severity="info">No hay autos listos para entregar.</Alert>
+      ) : reservasFiltradas.length === 0 ? (
+        <Alert severity="info">
+          No hay reservas que coincidan con los filtros aplicados.
+        </Alert>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-          {reservas.map((reserva) => (
+          {reservasFiltradas.map((reserva) => (
             <ReservaEntregaCard
               key={reserva.id}
               reserva={reserva}
@@ -350,7 +519,7 @@ const EntregaAutosPage = () => {
         mensaje={
           confirmacion
             ? `¿Confirmás la entrega del ${confirmacion.vehiculo?.marca} ${confirmacion.vehiculo?.modelo} ` +
-            `(reserva ${confirmacion.codigo})? ` +
+            `(reserva ${confirmacion.codigo_reserva})? ` +
             "El alquiler pasará a EN CURSO y se notificará al dueño."
             : ""
         }
