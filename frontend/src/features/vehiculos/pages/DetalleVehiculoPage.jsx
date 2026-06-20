@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, BarChart3, Sparkles } from "lucide-react";
+import { formatearEstado } from "../../../utils/formatStatus";
 import { useAuth } from "../../auth/hooks/useAuth";
 import httpClient from "../../../api/httpClient";
 import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
@@ -509,7 +510,7 @@ const DetalleVehiculoPage = () => {
             {esPropietario && (
               <DatoFicha
                 label="Estado registro"
-                valor={vehiculo.estado_registro}
+                valor={formatearEstado(vehiculo.estado_registro)}
               />
             )}
             <DatoFicha

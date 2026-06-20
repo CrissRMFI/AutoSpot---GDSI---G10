@@ -22,6 +22,7 @@ import {
 import ConfirmacionModal from "../components/ConfirmacionModal";
 import MensajeModal from "../components/MensajeModal";
 import RechazoModal from "../components/RechazoModal";
+import { formatearEstado } from "../../../utils/formatStatus";
 import ValoracionModal from "../components/ValoracionModal";
 import ImagenModal from "../../../components/ImagenModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
@@ -70,13 +71,13 @@ const CHECKOUT_ESTADO_UI = {
 
 const estadoReservaUi = (estado) =>
   ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     className: "bg-autospot-cream text-autospot-muted border border-autospot-border",
   };
 
 const estadoCheckoutUi = (estado) =>
   CHECKOUT_ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     className: "bg-autospot-cream text-autospot-muted border border-autospot-border",
   };
 

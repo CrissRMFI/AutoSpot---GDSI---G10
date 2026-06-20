@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getAlquileresDeAuto } from "../api/historialAutosApi";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const PLACEHOLDER_AUTO =
   "data:image/svg+xml;charset=UTF-8," +
@@ -170,7 +171,7 @@ const AdminAlquileresAutoPage = () => {
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${estadoEstilo(mov.estado)}`}
                           >
-                            {mov.estado}
+                            {formatearEstado(mov.estado)}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-autospot-black">{mov.estacion_retiro}</td>
@@ -201,7 +202,7 @@ const AdminAlquileresAutoPage = () => {
                       <span
                         className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${estadoEstilo(mov.estado)}`}
                       >
-                        {mov.estado}
+                        {formatearEstado(mov.estado)}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 border-t border-autospot-border/60 pt-3 text-xs">

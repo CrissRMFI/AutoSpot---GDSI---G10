@@ -7,6 +7,7 @@ import {
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { listarCheckins } from "../../reservas/api/checkinService";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const ACCENT = "#7b1c2e";
 
@@ -169,7 +170,7 @@ const RevisionCheckinPage = () => {
 
             {/* Estado */}
             <Chip
-              label={checkin.estado}
+              label={formatearEstado(checkin.estado)}
               size="small"
               color={colorChip(checkin.estado)}
             />

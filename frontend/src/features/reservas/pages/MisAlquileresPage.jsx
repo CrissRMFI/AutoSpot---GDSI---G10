@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { listarMisAlquileres } from "../api/reservasService";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const PAGE_SIZE = 10;
 
@@ -36,7 +37,7 @@ const ESTADO_UI = {
 
 const obtenerEstadoUi = (estado) =>
   ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     action: "Ver detalle",
     className: "bg-autospot-cream text-autospot-muted border border-autospot-border",
   };

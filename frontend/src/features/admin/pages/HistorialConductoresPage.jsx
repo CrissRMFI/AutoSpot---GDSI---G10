@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Search, Car, Calendar, MapPin, DollarSign, Inbox } from "lucide-react";
 import { getHistorialConductores } from "../api/historialConductoresApi";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const HistorialConductoresPage = () => {
   const [conductores, setConductores] = useState([]);
@@ -210,7 +211,7 @@ const HistorialConductoresPage = () => {
                                       : "bg-amber-100 text-amber-700"
                                 }`}
                             >
-                              {alq.estado}
+                              {formatearEstado(alq.estado)}
                             </span>
                           </div>
 

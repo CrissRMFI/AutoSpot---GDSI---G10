@@ -25,6 +25,7 @@ import {
 } from "../../reservas/api/reservasService";
 import ConfirmacionModal from "../../reservas/components/ConfirmacionModal";
 import MensajeModal from "../../reservas/components/MensajeModal";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const ACCENT = "#7b1c2e";
 
@@ -214,7 +215,7 @@ const ReservaEntregaCard = ({ reserva, onRegistrarSalida, procesandoId }) => {
           {estadoCheckin ? (
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
               <Chip
-                label={estadoCheckin}
+                label={formatearEstado(estadoCheckin)}
                 size="small"
                 color={
                   estadoCheckin === "APROBADO"

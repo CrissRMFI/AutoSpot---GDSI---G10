@@ -12,6 +12,7 @@ import {
 import CheckoutForm from "../../reservas/components/CheckoutForm";
 import ConfirmacionModal from "../../reservas/components/ConfirmacionModal";
 import MensajeModal from "../../reservas/components/MensajeModal";
+import { formatearEstado } from "../../../utils/formatStatus";
 import { formatearFechaHora, formatearMonto } from "../../reservas/utils/reservaFormatters";
 
 const ESTADO_UI = {
@@ -50,13 +51,13 @@ const CHECKOUT_ESTADO_UI = {
 
 const estadoReservaUi = (estado) =>
   ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     className: "bg-autospot-cream text-autospot-muted border border-autospot-border",
   };
 
 const estadoCheckoutUi = (estado) =>
   CHECKOUT_ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     className: "bg-autospot-cream text-autospot-muted border border-autospot-border",
   };
 
