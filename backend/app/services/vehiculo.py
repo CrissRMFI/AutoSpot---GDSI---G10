@@ -711,25 +711,27 @@ def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[
     from sqlalchemy import desc
     from app.models.checkout_vehiculo import CheckoutVehiculo
     from app.models.checkin_vehiculo import CheckinVehiculo
+    from app.models.reporte import Reporte
 
     vehiculo = db.query(Vehiculo).filter(Vehiculo.id == vehiculo_id).first()
     if not vehiculo:
         raise VehiculoNoEncontradoError()
 
     resultados = (
-        db.query(Reserva, DatosPersonalesUsuario, Testimonio, Valoracion, CheckoutVehiculo, CheckinVehiculo)
+        db.query(Reserva, DatosPersonalesUsuario, Testimonio, Valoracion, CheckoutVehiculo, CheckinVehiculo, Reporte)
         .join(DatosPersonalesUsuario, Reserva.conductor_id == DatosPersonalesUsuario.usuario_id)
         .outerjoin(Testimonio, Testimonio.reserva_id == Reserva.id)
         .outerjoin(Valoracion, Valoracion.reserva_id == Reserva.id)
         .outerjoin(CheckoutVehiculo, CheckoutVehiculo.reserva_id == Reserva.id)
         .outerjoin(CheckinVehiculo, CheckinVehiculo.reserva_id == Reserva.id)
+        .outerjoin(Reporte, Reporte.reserva_id == Reserva.id)
         .filter(Reserva.vehiculo_id == vehiculo_id)
         .order_by(desc(Reserva.created_at))
         .all()
     )
 
     historial = []
-    for res, usr, test, val, checkout, checkin in resultados:
+    for res, usr, test, val, checkout, checkin, reporte in resultados:
         fotos = []
         if checkout:
             fotos.extend([
@@ -761,20 +763,37 @@ def obtener_historial_uso_vehiculo(db: Session, vehiculo_id: uuid.UUID) -> list[
         co_danios = checkout.descripcion_danios if checkout else None
         co_rechazo = checkout.motivo_rechazo if checkout else None
         
+        reporte_incidencia = None
+        fecha_devolucion_real_res = res.fecha_devolucion_real
+
+        if reporte:
+            reporte_incidencia = {
+                "descripcion": reporte.descripcion,
+                "resolucion_descripcion": reporte.resolucion_descripcion,
+                "fotos": [foto.url for foto in reporte.fotos] if reporte.fotos else [],
+                "created_at": reporte.created_at,
+                "resuelto_at": reporte.resuelto_at
+            }
+            if not fecha_devolucion_real_res:
+                fecha_devolucion_real_res = reporte.created_at
+        
         if (checkin and (checkin.tiene_danios or checkin.estado == "RECHAZADO")) or \
-           (checkout and (checkout.tiene_danios or checkout.estado == "RECHAZADO")):
+           (checkout and (checkout.tiene_danios or checkout.estado == "RECHAZADO")) or \
+           reporte:
             tiene_reporte = True
             detalles_reporte = {
                 "descripcion_danios_checkin": ci_danios,
                 "motivo_rechazo_checkin": ci_rechazo,
                 "descripcion_danios_checkout": co_danios,
                 "motivo_rechazo_checkout": co_rechazo,
+                "reporte_incidencia": reporte_incidencia,
             }
 
         historial.append({
             "conductor_nombre": f"{usr.nombre} {usr.apellido}",
             "fecha_inicio": res.fecha_inicio,
             "fecha_fin": res.fecha_fin,
+            "fecha_devolucion_real": fecha_devolucion_real_res,
             "puntaje": val.puntaje if val else None,
             "resenia": test.descripcion if test else None,
             "fotos_entrega": fotos,
