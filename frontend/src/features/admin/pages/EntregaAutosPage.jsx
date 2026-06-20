@@ -439,6 +439,7 @@ const EntregaAutosPage = () => {
           value={filtros.conductor}
           onChange={setFiltro("conductor")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Nº de reserva"
@@ -447,6 +448,7 @@ const EntregaAutosPage = () => {
           value={filtros.reserva}
           onChange={setFiltro("reserva")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Patente"
@@ -454,6 +456,7 @@ const EntregaAutosPage = () => {
           value={filtros.patente}
           onChange={setFiltro("patente")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Fecha"
@@ -471,6 +474,7 @@ const EntregaAutosPage = () => {
           value={filtros.estado}
           onChange={setFiltro("estado")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         >
           {ESTADOS_ENTREGA.map((e) => (
             <MenuItem key={e.value} value={e.value}>

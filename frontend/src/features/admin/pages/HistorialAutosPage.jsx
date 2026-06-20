@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -27,6 +27,8 @@ import {
 import { getHistorialAutos } from "../api/historialAutosApi";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import { formatearEstado } from "../../../utils/formatStatus";
+
+const ACCENT = "#7b1c2e";
 
 function Row({ auto }) {
   const [open, setOpen] = useState(false);
@@ -103,7 +105,7 @@ const HistorialAutosPage = () => {
   const [filtroPatente, setFiltroPatente] = useState("");
   const [estacionesLista, setEstacionesLista] = useState([]);
 
-  const cargarHistorial = async () => {
+  const cargarHistorial = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -119,23 +121,22 @@ const HistorialAutosPage = () => {
     } finally {
       setCargando(false);
     }
-  };
+  }, [filtroEstacion, filtroFecha, filtroPatente]);
 
-  // Cargar al inicio sin filtros
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    cargarHistorial();
+    const timer = setTimeout(() => {
+      cargarHistorial();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cargarHistorial]);
 
+  useEffect(() => {
     getEstacionesActivas()
       .then((data) => setEstacionesLista(data))
       .catch((err) => console.error("Error al cargar estaciones:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleBuscar = (e) => {
-    e.preventDefault();
-    cargarHistorial();
-  };
+  const hayFiltrosActivos = Boolean(filtroEstacion || filtroFecha || filtroPatente);
 
   return (
     <Box sx={{ width: "100%", p: { xs: 2, md: 4 } }}>
@@ -146,14 +147,16 @@ const HistorialAutosPage = () => {
         Consultá el historial de vehículos que entraron y salieron, con trazabilidad de movimientos.
       </Typography>
 
-      <Box component="form" onSubmit={handleBuscar} sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
+      <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
         <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="select-estacion-label">Estación</InputLabel>
+          <InputLabel id="select-estacion-label" shrink>Estación</InputLabel>
           <Select
             labelId="select-estacion-label"
             label="Estación"
             value={filtroEstacion}
             onChange={(e) => setFiltroEstacion(e.target.value)}
+            displayEmpty
+            notched
           >
             <MenuItem value="">
               <em>Todas</em>
@@ -181,10 +184,20 @@ const HistorialAutosPage = () => {
           value={filtroPatente}
           onChange={(e) => setFiltroPatente(e.target.value)}
           placeholder="Ej. AB123CD"
+          InputLabelProps={{ shrink: true }}
         />
-        <Button variant="contained" type="submit" sx={{ height: 40, backgroundColor: "#000", "&:hover": { backgroundColor: "#333" } }}>
-          Filtrar
-        </Button>
+        {hayFiltrosActivos && (
+          <Button 
+            onClick={() => {
+              setFiltroEstacion("");
+              setFiltroFecha("");
+              setFiltroPatente("");
+            }} 
+            sx={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}
+          >
+            Limpiar filtros
+          </Button>
+        )}
       </Box>
 
       {error && (
