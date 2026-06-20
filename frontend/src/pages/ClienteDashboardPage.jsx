@@ -14,6 +14,7 @@ import {
 import ProximamenteModal from "../components/ProximamenteModal";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { obtenerDocumentacionHabilitante } from "../features/usuarios/api/documentacionHabilitanteService";
+import { formatearEstado } from "../utils/formatStatus";
 import { listarMisAlquileres } from "../features/reservas/api/reservasService";
 import {
   formatearFechaHora,
@@ -83,7 +84,7 @@ const nombrePresentable = (usuario) => {
 
 const obtenerEstadoAlquiler = (estado) =>
   ESTADO_ALQUILER_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     className: "bg-autospot-cream text-autospot-muted border-autospot-border",
   };
 

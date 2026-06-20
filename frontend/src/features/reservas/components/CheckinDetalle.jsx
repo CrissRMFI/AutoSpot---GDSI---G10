@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, Typography, Chip } from "@mui/material";
 import ImagenModal from "../../../components/ImagenModal";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 const Dato = ({ label, valor }) => (
   <Box>
@@ -52,7 +53,7 @@ const CheckinDetalle = ({ checkin }) => {
         <Typography variant="h5" sx={{ fontWeight: 700, color: "var(--text)" }}>
           Estado Inicial del Vehículo (Check-in)
         </Typography>
-        <Chip label={checkin.estado} color={checkin.estado === "PENDIENTE" ? "warning" : checkin.estado === "APROBADO" ? "success" : "error"} />
+        <Chip label={formatearEstado(checkin.estado)} color={checkin.estado === "PENDIENTE" ? "warning" : checkin.estado === "APROBADO" ? "success" : "error"} />
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, mb: 4 }}>

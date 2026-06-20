@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LayoutDashboard, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import { formatearEstado } from "../utils/formatStatus";
 import {
   getStatusSolicitud,
   listarVehiculosDelPropietario,
@@ -32,7 +33,7 @@ const formatEstado = (estado) => {
       };
     default:
       return {
-        label: estado || "Sin estado",
+        label: formatearEstado(estado),
         className: "bg-[#f3f4f6] text-[#374151]",
       };
   }
