@@ -423,6 +423,20 @@ class ReseniaVehiculoSchema(BaseModel):
         "from_attributes": True,
     }
 
+class ReporteIncidenciaResumenSchema(BaseModel):
+    """
+    Schema para devolver el detalle de un incidente critico reportado.
+    """
+    descripcion: str
+    resolucion_descripcion: str | None = None
+    fotos: list[str]
+    created_at: datetime | None = None
+    resuelto_at: datetime | None = None
+
+    model_config = {
+        "from_attributes": True,
+    }
+
 class DetallesReporteSchema(BaseModel):
     """
     Schema para devolver los detalles de incidentes o rechazos en un historial.
@@ -431,6 +445,7 @@ class DetallesReporteSchema(BaseModel):
     motivo_rechazo_checkin: str | None = None
     descripcion_danios_checkout: str | None = None
     motivo_rechazo_checkout: str | None = None
+    reporte_incidencia: ReporteIncidenciaResumenSchema | None = None
 
 class RecordHistorialUsoSchema(BaseModel):
     """
@@ -439,6 +454,7 @@ class RecordHistorialUsoSchema(BaseModel):
     conductor_nombre: str
     fecha_inicio: datetime
     fecha_fin: datetime
+    fecha_devolucion_real: datetime | None = None
     puntaje: int | None = None
     resenia: str | None = None
     fotos_entrega: list[str]

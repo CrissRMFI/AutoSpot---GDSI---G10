@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { getDetalleVehiculo, getHistorialUsoVehiculo } from "../api/vehiculoService";
+import LightboxGaleria from "../components/LightboxGaleria";
 
 export const HistorialUsoVehiculoPage = () => {
   const { vehiculoId } = useParams();
@@ -9,7 +10,15 @@ export const HistorialUsoVehiculoPage = () => {
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [reporteSeleccionado, setReporteSeleccionado] = useState(null);
+  const [lightboxAbierto, setLightboxAbierto] = useState(false);
+  const [fotosLightbox, setFotosLightbox] = useState([]);
+  const [indiceLightbox, setIndiceLightbox] = useState(0);
+
+  const abrirLightbox = (urls, index) => {
+    setFotosLightbox(urls.map((url) => ({ url, lado: "EXTRA" })));
+    setIndiceLightbox(index);
+    setLightboxAbierto(true);
+  };
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -76,7 +85,8 @@ export const HistorialUsoVehiculoPage = () => {
               <tr>
                 <th className="px-6 py-4 font-bold">Conductor</th>
                 <th className="px-6 py-4 font-bold">Retiro</th>
-                <th className="px-6 py-4 font-bold">Devolución</th>
+                <th className="px-6 py-4 font-bold">Devolución pactada</th>
+                <th className="px-6 py-4 font-bold">Devolución real</th>
                 <th className="px-6 py-4 font-bold">Reseña</th>
                 <th className="px-6 py-4 font-bold text-center">Fotos</th>
                 <th className="px-6 py-4 font-bold text-center whitespace-nowrap min-w-[150px]">Observaciones</th>
@@ -94,9 +104,16 @@ export const HistorialUsoVehiculoPage = () => {
                   <td className="px-6 py-4">
                     {new Date(registro.fecha_fin).toLocaleString()}
                   </td>
+                  <td className="px-6 py-4 font-medium text-gray-700">
+                    {registro.fecha_devolucion_real ? new Date(registro.fecha_devolucion_real).toLocaleString() : "-"}
+                  </td>
                   <td className="px-6 py-4 max-w-xs truncate" title={registro.resenia || ""}>
                     {registro.puntaje ? (
-                      <div className="mb-1 font-bold text-gray-700">{registro.puntaje}/5</div>
+                      <div className="mb-1 flex text-yellow-400">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className={`h-4 w-4 ${i < registro.puntaje ? "fill-current" : "text-gray-300"}`} />
+                        ))}
+                      </div>
                     ) : null}
                     {registro.resenia ? (
                       <span className="italic text-gray-500">"{registro.resenia}"</span>
@@ -108,16 +125,15 @@ export const HistorialUsoVehiculoPage = () => {
                     {registro.fotos_entrega && registro.fotos_entrega.length > 0 ? (
                       <div className="flex justify-center gap-1">
                         {registro.fotos_entrega.map((url, i) => (
-                          <a
+                          <button
                             key={i}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            type="button"
+                            onClick={() => abrirLightbox(registro.fotos_entrega, i)}
                             className="inline-block h-8 w-8 overflow-hidden rounded-md border border-gray-200 hover:border-autospot-accent hover:shadow-sm"
                             title={`Ver foto ${i + 1}`}
                           >
                             <img src={url} alt={`Foto ${i}`} className="h-full w-full object-cover" />
-                          </a>
+                          </button>
                         ))}
                       </div>
                     ) : (
@@ -125,13 +141,36 @@ export const HistorialUsoVehiculoPage = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 text-center whitespace-nowrap">
-                    {registro.tiene_reporte ? (
-                      <button
-                        onClick={() => setReporteSeleccionado(registro.detalles_reporte)}
-                        className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700"
-                      >
-                        Ver reporte
-                      </button>
+                    {registro.tiene_reporte && registro.detalles_reporte ? (
+                      <div className="flex flex-col items-center gap-2">
+                        {(registro.detalles_reporte.descripcion_danios_checkin || registro.detalles_reporte.motivo_rechazo_checkin) && (
+                          <Link
+                            to={`/vehiculos/${vehiculoId}/historial/reporte`}
+                            state={{ reporte: registro.detalles_reporte }}
+                            className="text-sm font-bold text-autospot-accent hover:underline transition-all block"
+                          >
+                            Reporte Check-in
+                          </Link>
+                        )}
+                        {(registro.detalles_reporte.descripcion_danios_checkout || registro.detalles_reporte.motivo_rechazo_checkout) && (
+                          <Link
+                            to={`/vehiculos/${vehiculoId}/historial/reporte`}
+                            state={{ reporte: registro.detalles_reporte }}
+                            className="text-sm font-bold text-autospot-accent hover:underline transition-all block"
+                          >
+                            Reporte Check-out
+                          </Link>
+                        )}
+                        {registro.detalles_reporte.reporte_incidencia && (
+                          <Link
+                            to={`/vehiculos/${vehiculoId}/historial/reporte`}
+                            state={{ reporte: registro.detalles_reporte }}
+                            className="text-sm font-bold text-autospot-accent hover:underline transition-all block"
+                          >
+                            Reporte de Incidencia
+                          </Link>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-gray-400">Ninguna</span>
                     )}
@@ -142,49 +181,13 @@ export const HistorialUsoVehiculoPage = () => {
           </table>
         )}
       </div>
-
-      {/* MODAL DE REPORTE */}
-      {reporteSeleccionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold text-gray-900">Detalles del Reporte</h2>
-            
-            <div className="space-y-4">
-              {reporteSeleccionado.descripcion_danios_checkin && (
-                <div>
-                  <h3 className="font-semibold text-gray-700">Daños en Check-in</h3>
-                  <p className="text-sm text-gray-600">{reporteSeleccionado.descripcion_danios_checkin}</p>
-                </div>
-              )}
-              {reporteSeleccionado.motivo_rechazo_checkin && (
-                <div>
-                  <h3 className="font-semibold text-red-600">Rechazo en Check-in</h3>
-                  <p className="text-sm text-gray-600">{reporteSeleccionado.motivo_rechazo_checkin}</p>
-                </div>
-              )}
-              {reporteSeleccionado.descripcion_danios_checkout && (
-                <div>
-                  <h3 className="font-semibold text-gray-700">Daños en Check-out</h3>
-                  <p className="text-sm text-gray-600">{reporteSeleccionado.descripcion_danios_checkout}</p>
-                </div>
-              )}
-              {reporteSeleccionado.motivo_rechazo_checkout && (
-                <div>
-                  <h3 className="font-semibold text-red-600">Rechazo en Check-out</h3>
-                  <p className="text-sm text-gray-600">{reporteSeleccionado.motivo_rechazo_checkout}</p>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => setReporteSeleccionado(null)}
-              className="mt-6 w-full rounded-full bg-gray-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-gray-800"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
+      <LightboxGaleria
+        isOpen={lightboxAbierto}
+        onClose={() => setLightboxAbierto(false)}
+        fotos={fotosLightbox}
+        indiceActivo={indiceLightbox}
+        setIndiceActivo={setIndiceLightbox}
+      />
     </div>
   );
 };
