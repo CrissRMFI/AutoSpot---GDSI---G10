@@ -255,6 +255,12 @@ const GananciaCard = ({ destacado = false, icono: Icono, titulo, valor, detalle 
   </article>
 );
 
+const etiquetaComparacionPeriodo = (periodoActivo) => {
+  const base =
+    (periodoActivo?.comparacion || "").replace(/^vs\s+/i, "") || "Período anterior";
+  return base.charAt(0).toUpperCase() + base.slice(1);
+};
+
 const GraficoGanancias = ({ reporte, cargando, periodo, periodoActivo }) => {
   const descripcionGrafico =
     DESCRIPCION_GRAFICO_PERIODO[periodo] || "Evolución del período";
@@ -275,6 +281,9 @@ const GraficoGanancias = ({ reporte, cargando, periodo, periodoActivo }) => {
 
       <EvolucionMensualChart
         datos={reporte?.evolucion_periodo}
+        datosComparacion={reporte?.evolucion_comparacion}
+        etiquetaActual="Período actual"
+        etiquetaComparacion={etiquetaComparacionPeriodo(periodoActivo)}
         cargando={cargando}
         emptyMessage="Sin ingresos registrados en este período."
       />

@@ -11,7 +11,7 @@ const AuthLayout = ({ children }) => {
           <img
             src={LOGO_URL}
             alt="AutoSpot"
-            className="h-[clamp(150px,28vh,230px)] w-[min(82vw,320px)] object-contain sm:h-[500px] sm:w-[500px]"
+            className="h-[clamp(150px,28vh,230px)] w-[min(82vw,320px)] object-contain sm:h-[300px] sm:w-[300px]"
           />
         </Link>
 

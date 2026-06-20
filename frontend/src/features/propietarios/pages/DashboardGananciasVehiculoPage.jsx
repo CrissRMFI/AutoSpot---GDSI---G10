@@ -393,6 +393,12 @@ const OcupacionPanel = ({ reporte, cargando }) => {
   );
 };
 
+const etiquetaComparacionPeriodo = (periodoActivo) => {
+  const base =
+    (periodoActivo?.comparacion || "").replace(/^vs\s+/i, "") || "Período anterior";
+  return base.charAt(0).toUpperCase() + base.slice(1);
+};
+
 const GraficoIngresos = ({ reporte, cargando, periodo, periodoActivo }) => {
   const descripcionGrafico =
     DESCRIPCION_GRAFICO_PERIODO[periodo] || "Evolución del período";
@@ -413,6 +419,9 @@ const GraficoIngresos = ({ reporte, cargando, periodo, periodoActivo }) => {
 
       <EvolucionMensualChart
         datos={reporte?.evolucion_periodo}
+        datosComparacion={reporte?.evolucion_comparacion}
+        etiquetaActual="Período actual"
+        etiquetaComparacion={etiquetaComparacionPeriodo(periodoActivo)}
         cargando={cargando}
         mostrarOcupacion
         emptyMessage="Sin ingresos registrados para esta unidad en este período."
