@@ -74,7 +74,7 @@ const ModalGenerarPrecioAI = ({ isOpen, onClose, datosVehiculo, onAccept }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl sm:p-8">
+      <div className="relative w-full max-w-2xl max-h-[75vh] overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:p-6">
         <button
           onClick={onClose}
           className="absolute right-6 top-6 rounded-full p-2 text-autospot-muted transition hover:bg-gray-100 hover:text-autospot-black"
@@ -87,7 +87,7 @@ const ModalGenerarPrecioAI = ({ isOpen, onClose, datosVehiculo, onAccept }) => {
             <Sparkles className="h-5 w-5" />
           </div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-autospot-black">
-            IA de Precios
+            Recomendación de precio
           </h2>
         </div>
 
@@ -117,20 +117,12 @@ const ModalGenerarPrecioAI = ({ isOpen, onClose, datosVehiculo, onAccept }) => {
           </div>
         ) : sugerencia ? (
           <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-autospot-muted">
-                Resumen del análisis
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-autospot-black">
-                {sugerencia.resumen}
-              </p>
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm leading-relaxed text-autospot-black">
+              {sugerencia.resumen}
             </div>
 
             <div className="pt-2">
-              <div className="mb-8 text-center">
-                <p className="text-sm font-bold text-autospot-muted">
-                  Valor seleccionado
-                </p>
+              <div className="mb-6 text-center">
                 <p className="font-display text-4xl font-black text-autospot-accent">
                   ${valorSeleccionado.toLocaleString("es-AR")}
                 </p>

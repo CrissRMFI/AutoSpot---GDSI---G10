@@ -8,11 +8,16 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 
 from app.models.checkin_vehiculo import CheckinVehiculo
+from app.models.datos_personales_usuario import DatosPersonalesUsuario
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.schemas.checkin_vehiculo import (
     CheckinCreatePayloadSchema,
     CheckinUpdatePayloadSchema,
+    CheckinResponseSchema,
+    CheckinAdminItemSchema,
+    ReservaResumenCheckinSchema,
+    VehiculoResumenCheckinSchema,
 )
 from app.services.notificacion import crear_notificacion_usuario
 
@@ -225,6 +230,63 @@ def listar_checkins(db: Session):
         )
         .all()
     )
+
+
+def _resumen_reserva_checkin(
+    db: Session, reserva: Reserva | None
+) -> ReservaResumenCheckinSchema | None:
+    """
+    Arma el resumen de la reserva asociada a un check-in para la vista admin:
+    código (AS-…), nombre del conductor, estación, fecha y datos del vehículo.
+    """
+    if reserva is None:
+        return None
+
+    # Nombre del conductor desde DatosPersonalesUsuario (mismo patrón que
+    # services/historial_autos.py).
+    datos = (
+        db.query(DatosPersonalesUsuario)
+        .filter(DatosPersonalesUsuario.usuario_id == reserva.conductor_id)
+        .first()
+    )
+    conductor_nombre = (
+        f"{datos.nombre} {datos.apellido}".strip() if datos else None
+    )
+
+    vehiculo = reserva.vehiculo
+    vehiculo_resumen = (
+        VehiculoResumenCheckinSchema(
+            marca=vehiculo.marca,
+            modelo=vehiculo.modelo,
+            patente=vehiculo.patente,
+        )
+        if vehiculo
+        else None
+    )
+
+    return ReservaResumenCheckinSchema(
+        codigo=reserva.codigo,
+        conductor_nombre=conductor_nombre,
+        estacion_retiro=reserva.estacion_retiro,
+        fecha_inicio=reserva.fecha_inicio,
+        vehiculo=vehiculo_resumen,
+    )
+
+
+def listar_checkins_admin(db: Session) -> list[CheckinAdminItemSchema]:
+    """
+    Lista de check-ins para el panel admin, enriquecida con el resumen de la
+    reserva (código AS-…, conductor, patente). Mantiene el orden de
+    listar_checkins (pendientes primero, luego por fecha desc).
+    """
+    checkins = listar_checkins(db)
+    return [
+        CheckinAdminItemSchema(
+            **CheckinResponseSchema.model_validate(c).model_dump(),
+            reserva=_resumen_reserva_checkin(db, c.reserva),
+        )
+        for c in checkins
+    ]
 
 
 def obtener_checkin(db: Session, checkin_id: uuid.UUID) -> CheckinVehiculo | None:

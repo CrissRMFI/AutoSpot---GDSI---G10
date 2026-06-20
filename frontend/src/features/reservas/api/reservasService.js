@@ -112,6 +112,16 @@ export const listarReservasParaEntregar = async () => {
   return response.data;
 };
 
+/**
+ * Panel de entregas: reservas por entregar + ya entregadas, ordenadas de
+ * más reciente a más antigua. Alimenta la pantalla de Entrega de autos.
+ */
+export const listarPanelEntregas = async () => {
+  const response = await httpClient.get("/alquiler/reservas/admin/entregas");
+
+  return response.data;
+};
+
 export const listarRecepcionAutos = async ({ page = 1, size = 10 } = {}) => {
   const response = await httpClient.get("/alquiler/reservas/admin/recepcion", {
     params: { page, size },

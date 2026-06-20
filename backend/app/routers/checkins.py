@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_usuario_actual, requerir_rol_admin
 from app.schemas.checkin_vehiculo import (
+    CheckinAdminItemSchema,
     CheckinCreatePayloadSchema,
     CheckinResponseSchema,
     CheckinUpdatePayloadSchema,
@@ -17,6 +18,7 @@ from app.services.checkin_service import (
     aprobar_checkin,
     crear_checkin,
     listar_checkins,
+    listar_checkins_admin,
     listar_checkins_pendientes,
     obtener_checkin,
     obtener_checkin_de_reserva_conductor,
@@ -106,7 +108,7 @@ def obtener_mi_checkin_de_reserva_endpoint(
 
 @router.get(
     "/admin/checkins",
-    response_model=list[CheckinResponseSchema],
+    response_model=list[CheckinAdminItemSchema],
     status_code=status.HTTP_200_OK,
     summary="Listar todos los check-ins",
 )
@@ -114,7 +116,7 @@ def listar_checkins_endpoint(
     db: Session = Depends(get_db),
     _usuario_actual: dict = Depends(requerir_rol_admin),
 ):
-    return listar_checkins(db)
+    return listar_checkins_admin(db)
 
 
 @router.get(

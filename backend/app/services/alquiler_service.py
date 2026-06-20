@@ -7,7 +7,7 @@ from math import floor
 import secrets
 import uuid
 
-from sqlalchemy import case
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
 
@@ -447,6 +447,40 @@ def listar_reservas_para_entregar(db: Session) -> list[Reserva]:
             joinedload(Reserva.checkin),
         )
         .order_by(Reserva.codigo_verificado_at.asc())
+        .all()
+    )
+
+
+def listar_reservas_panel_entrega(db: Session) -> list[Reserva]:
+    """
+    Panel de Entrega de autos: combina las reservas POR ENTREGAR
+    (VERIFICADA con check-in APROBADO, sin salida registrada) con las que
+    YA FUERON ENTREGADAS (cualquier reserva con fecha_salida_real).
+
+    Ordenadas cronológicamente, las más recientes primero: por fecha de salida
+    real cuando ya se entregó, o por fecha de inicio cuando está por entregar.
+    """
+    return (
+        db.query(Reserva)
+        .outerjoin(CheckinVehiculo, CheckinVehiculo.reserva_id == Reserva.id)
+        .filter(
+            or_(
+                and_(
+                    Reserva.estado == "VERIFICADA",
+                    CheckinVehiculo.estado == "APROBADO",
+                    Reserva.fecha_salida_real.is_(None),
+                ),
+                Reserva.fecha_salida_real.isnot(None),
+            )
+        )
+        .options(
+            joinedload(Reserva.vehiculo).joinedload(Vehiculo.fotos),
+            joinedload(Reserva.conductor),
+            joinedload(Reserva.checkin),
+        )
+        .order_by(
+            func.coalesce(Reserva.fecha_salida_real, Reserva.fecha_inicio).desc()
+        )
         .all()
     )
 

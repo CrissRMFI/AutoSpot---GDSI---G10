@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { listarRecepcionAutos } from "../../reservas/api/reservasService";
+import { formatearEstado } from "../../../utils/formatStatus";
 import {
   formatearFechaHora,
   formatearMonto,
@@ -34,7 +35,7 @@ const ESTADO_UI = {
 
 const obtenerEstadoUi = (estado) =>
   ESTADO_UI[(estado || "").toUpperCase()] || {
-    label: estado || "Sin estado",
+    label: formatearEstado(estado),
     action: "Ver detalle",
     className:
       "bg-autospot-cream text-autospot-muted border border-autospot-border",

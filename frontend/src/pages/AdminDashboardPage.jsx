@@ -5,11 +5,9 @@ import {
   ArrowRight,
   Car,
   ClipboardCheck,
-  Clock,
   FileText,
   Inbox,
   KeyRound,
-  ListChecks,
 } from "lucide-react";
 import { getSolicitudesDocumentacion } from "../features/admin/api/solicitudesApi";
 import { listarCheckins } from "../features/reservas/api/checkinService";
@@ -63,13 +61,17 @@ const AdminDashboardPage = () => {
     const cargarPanel = async () => {
       setCargando(true);
 
-      const [solicitudesResult, checkinsResult, entregasResult, recepcionResult] =
-        await Promise.allSettled([
-          getSolicitudesDocumentacion(),
-          listarCheckins(),
-          listarReservasParaEntregar(),
-          contarRecepcionNoFinalizada(),
-        ]);
+      const [
+        solicitudesResult,
+        checkinsResult,
+        entregasResult,
+        recepcionResult,
+      ] = await Promise.allSettled([
+        getSolicitudesDocumentacion(),
+        listarCheckins(),
+        listarReservasParaEntregar(),
+        contarRecepcionNoFinalizada(),
+      ]);
 
       if (cancelado) return;
 
@@ -80,7 +82,9 @@ const AdminDashboardPage = () => {
       }
 
       if (checkinsResult.status === "fulfilled") {
-        setCheckins(Array.isArray(checkinsResult.value) ? checkinsResult.value : []);
+        setCheckins(
+          Array.isArray(checkinsResult.value) ? checkinsResult.value : [],
+        );
       }
 
       if (entregasResult.status === "fulfilled") {
@@ -114,7 +118,12 @@ const AdminDashboardPage = () => {
       entregas: reservasParaEntregar.length,
       recepcion: totalRecepcion,
     };
-  }, [checkins, reservasParaEntregar.length, solicitudes.length, totalRecepcion]);
+  }, [
+    checkins,
+    reservasParaEntregar.length,
+    solicitudes.length,
+    totalRecepcion,
+  ]);
 
   return (
     <section className="w-full min-w-0">
@@ -122,32 +131,17 @@ const AdminDashboardPage = () => {
         <h1 className="text-3xl font-black leading-tight text-autospot-black sm:text-4xl">
           Panel administrativo
         </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-autospot-muted">
-          Vista operativa general para validar documentación, controlar
-          alquileres y gestionar entregas y devoluciones.
-        </p>
       </div>
 
       <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
           destacado
-          icono={Clock}
-          titulo="Operaciones hoy"
-          valor="Próximo a implementar"
-          detalle="Métrica diaria en preparación"
-        />
-        <StatCard
           icono={FileText}
           titulo="Documentos a revisar"
           valor={cargando ? "..." : resumen.documentos}
           detalle="Pendientes de validación"
         />
-        <StatCard
-          icono={Car}
-          titulo="Autos alquilados"
-          valor="Próximo a implementar"
-          detalle="Métrica en preparación"
-        />
+
         <StatCard
           icono={ClipboardCheck}
           titulo="Check-ins pendientes"
@@ -204,65 +198,19 @@ const AdminDashboardPage = () => {
               />
             </div>
           </section>
-
-          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
-            <div className="border-b border-autospot-border px-5 py-4">
-              <h2 className="text-base font-black text-autospot-black">
-                Resumen operativo
-              </h2>
-            </div>
-            <div className="divide-y divide-autospot-border">
-              <SummaryRow
-                icono={ListChecks}
-                titulo="Cola documental"
-                detalle={
-                  resumen.documentos > 0
-                    ? `${resumen.documentos} trámite${resumen.documentos === 1 ? "" : "s"} pendiente${resumen.documentos === 1 ? "" : "s"}`
-                    : "Sin trámites pendientes"
-                }
-              />
-              <SummaryRow
-                icono={Inbox}
-                titulo="Recepción y checkout"
-                detalle={
-                  resumen.recepcion > 0
-                    ? `${resumen.recepcion} registro${resumen.recepcion === 1 ? "" : "s"} en seguimiento`
-                    : "Sin autos para recibir"
-                }
-              />
-              <SummaryRow
-                icono={AlertCircle}
-                titulo="Incidencias"
-                detalle="Próximo a implementar."
-              />
-            </div>
-          </section>
         </div>
-
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-autospot-border bg-autospot-white p-5">
-            <h2 className="text-base font-black text-autospot-black">
-              Accesos rápidos
-            </h2>
-            <div className="mt-4 grid gap-3">
-              <QuickLink
-                principal
-                to="/admin/solicitudes-documentacion"
-                label="Ir a documentación"
-              />
-              <QuickLink to="/admin/reservas/verificar" label="Verificar reserva" />
-              <QuickLink to="/admin/checkins/revision" label="Abrir check-ins" />
-              <QuickLink to="/admin/entrega" label="Entregar autos" />
-              <QuickLink to="/admin/recepcion" label="Recepción de autos" />
-            </div>
-          </section>
-        </aside>
       </div>
     </section>
   );
 };
 
-const StatCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) => (
+const StatCard = ({
+  destacado = false,
+  icono: Icono,
+  titulo,
+  valor,
+  detalle,
+}) => (
   <article
     className={`rounded-lg border p-5 ${
       destacado
@@ -272,13 +220,19 @@ const StatCard = ({ destacado = false, icono: Icono, titulo, valor, detalle }) =
   >
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <p className={`text-xs font-bold uppercase ${destacado ? "text-white/60" : "text-autospot-muted"}`}>
+        <p
+          className={`text-xs font-bold uppercase ${destacado ? "text-white/60" : "text-autospot-muted"}`}
+        >
           {titulo}
         </p>
-        <p className={`mt-2 break-words text-2xl font-black ${destacado ? "text-white" : "text-autospot-black"}`}>
+        <p
+          className={`mt-2 break-words text-2xl font-black ${destacado ? "text-white" : "text-autospot-black"}`}
+        >
           {valor}
         </p>
-        <p className={`mt-1 text-xs ${destacado ? "text-white/60" : "text-autospot-muted"}`}>
+        <p
+          className={`mt-1 text-xs ${destacado ? "text-white/60" : "text-autospot-muted"}`}
+        >
           {detalle}
         </p>
       </div>
@@ -309,31 +263,6 @@ const TaskRow = ({ icono: Icono, titulo, detalle, to }) => (
       Abrir
       <ArrowRight className="h-4 w-4" aria-hidden="true" />
     </span>
-  </Link>
-);
-
-const SummaryRow = ({ icono: Icono, titulo, detalle }) => (
-  <div className="flex items-center gap-3 px-5 py-4">
-    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#efe9df] text-autospot-accent">
-      <Icono className="h-5 w-5" aria-hidden="true" />
-    </span>
-    <div className="min-w-0">
-      <h3 className="text-sm font-black text-autospot-black">{titulo}</h3>
-      <p className="mt-1 text-sm text-autospot-muted">{detalle}</p>
-    </div>
-  </div>
-);
-
-const QuickLink = ({ to, label, principal = false }) => (
-  <Link
-    to={to}
-    className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition ${
-      principal
-        ? "bg-autospot-accent !text-white hover:bg-[#5a1420]"
-        : "border border-autospot-border bg-white text-autospot-black hover:border-autospot-accent hover:text-autospot-accent"
-    }`}
-  >
-    {label}
   </Link>
 );
 

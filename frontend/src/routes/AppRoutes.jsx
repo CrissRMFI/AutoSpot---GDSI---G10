@@ -20,6 +20,7 @@ import DetalleVehiculoPage from "../features/vehiculos/pages/DetalleVehiculoPage
 import CatalogoVehiculosPage from "../features/vehiculos/pages/CatalogoVehiculosPage";
 import CatalogoDetalleVehiculoPage from "../features/vehiculos/pages/CatalogoDetalleVehiculoPage";
 import { HistorialUsoVehiculoPage } from "../features/vehiculos/pages/HistorialUsoVehiculoPage";
+import DetalleIncidenciaPage from "../features/vehiculos/pages/DetalleIncidenciaPage";
 import MisReservasPage from "../features/reservas/pages/MisReservasPage";
 import MisAlquileresPage from "../features/reservas/pages/MisAlquileresPage";
 import AlquilerDetallePage from "../features/reservas/pages/AlquilerDetallePage";
@@ -38,6 +39,7 @@ import RecepcionAutosPage from "../features/admin/pages/RecepcionAutosPage";
 import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
 import HistorialConductoresPage from "../features/admin/pages/HistorialConductoresPage";
 import HistorialAutosPage from "../features/admin/pages/HistorialAutosPage";
+import AdminAlquileresAutoPage from "../features/admin/pages/AdminAlquileresAutoPage";
 
 const DashboardHome = () => {
   const { estaAutenticado, usuario } = useAuth();
@@ -286,6 +288,15 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="/vehiculos/:vehiculoId/historial/reporte"
+          element={
+            <ProtectedRoute rolesPermitidos={["PROPIETARIO"]}>
+              <DetalleIncidenciaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/admin/dashboard"
           element={<Navigate to="/dashboard" replace />}
         />
@@ -376,6 +387,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <HistorialAutosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/autos/:vehiculoId/alquileres"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <AdminAlquileresAutoPage />
             </ProtectedRoute>
           }
         />

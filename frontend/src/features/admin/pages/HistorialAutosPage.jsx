@@ -26,6 +26,7 @@ import {
 } from "@mui/icons-material";
 import { getHistorialAutos } from "../api/historialAutosApi";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
+import { formatearEstado } from "../../../utils/formatStatus";
 
 function Row({ auto }) {
   const [open, setOpen] = useState(false);
@@ -70,7 +71,7 @@ function Row({ auto }) {
                             ? `${mov.conductor_nombre} ${mov.conductor_apellido}`
                             : mov.conductor_email}
                         </TableCell>
-                        <TableCell>{mov.estado}</TableCell>
+                        <TableCell>{formatearEstado(mov.estado)}</TableCell>
                         <TableCell>{mov.estacion_retiro}</TableCell>
                         <TableCell>{new Date(mov.fecha_inicio).toLocaleString("es-AR")}</TableCell>
                         <TableCell>{new Date(mov.fecha_fin).toLocaleString("es-AR")}</TableCell>

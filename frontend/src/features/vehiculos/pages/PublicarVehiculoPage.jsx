@@ -47,6 +47,7 @@ const PublicarVehiculoPage = () => {
   const [cargando, setCargando] = useState(false);
   const [catalogo, setCatalogo] = useState([]);
   const [isModalIAOpen, setIsModalIAOpen] = useState(false);
+  const [feedbackIA, setFeedbackIA] = useState("");
 
   useEffect(() => {
     let cancelado = false;
@@ -185,6 +186,25 @@ const PublicarVehiculoPage = () => {
     }
 
     return true;
+  };
+
+  const handleAbrirModalIA = () => {
+    const camposFaltantes = [];
+    if (!form.marca) camposFaltantes.push("Marca");
+    if (!form.modelo) camposFaltantes.push("Modelo");
+    if (!form.anio) camposFaltantes.push("Año");
+    if (!form.tipo_transmision) camposFaltantes.push("Transmisión");
+    if (!form.capacidad) camposFaltantes.push("Capacidad");
+    if (!form.categoria) camposFaltantes.push("Categoría");
+    if (!form.tipo_combustible) camposFaltantes.push("Combustible");
+
+    if (camposFaltantes.length > 0) {
+      setFeedbackIA(`Para usar la recomendación de precio, debés completar: ${camposFaltantes.join(", ")}.`);
+      return;
+    }
+    
+    setFeedbackIA("");
+    setIsModalIAOpen(true);
   };
 
   const enviarFormulario = async (evento) => {
@@ -506,13 +526,18 @@ const PublicarVehiculoPage = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setIsModalIAOpen(true)}
+                      onClick={handleAbrirModalIA}
                       className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#fce7f3] bg-[#fce7f3] px-4 py-3 text-sm font-bold text-autospot-accent transition hover:bg-autospot-accent hover:text-white"
                     >
                       <Sparkles className="h-4 w-4" />
                       Generar precio
                     </button>
                   </div>
+                  {feedbackIA && (
+                    <p className="mt-3 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-[#b42318] animate-in fade-in duration-300">
+                      {feedbackIA}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>

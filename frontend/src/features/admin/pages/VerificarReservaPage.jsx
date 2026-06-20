@@ -185,9 +185,6 @@ const VerificarReservaPage = () => {
     <section className="w-full min-w-0 px-5 py-6 sm:px-8 lg:px-10">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase text-autospot-accent">
-            US 5R
-          </p>
           <h1 className="mt-1 font-display text-3xl font-black text-autospot-black sm:text-4xl">
             Verificar código de reserva
           </h1>
@@ -246,10 +243,6 @@ const VerificarReservaPage = () => {
             )}
             {buscando ? "Buscando..." : "Buscar reserva"}
           </button>
-          <p className="mt-3 text-[11px] text-autospot-muted">
-            Buscar sólo muestra los datos. El código se marca como usado al
-            entregar o rechazar la reserva.
-          </p>
         </form>
 
         <div className="rounded-[28px] border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-7">
@@ -307,7 +300,7 @@ const ModalResultado = ({ resultado, onCerrar }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-autospot-black/65 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-autospot-black/65 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="resultado-titulo"
@@ -351,7 +344,7 @@ const ModalRechazarReserva = ({
   error,
 }) => (
   <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-autospot-black/65 p-4 backdrop-blur-sm"
+    className="fixed inset-0 z-[120] flex items-center justify-center bg-autospot-black/65 p-4 backdrop-blur-sm"
     role="dialog"
     aria-modal="true"
     aria-labelledby="rechazo-reserva-titulo"
@@ -476,9 +469,6 @@ const DetalleReservaVerificacion = ({
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase text-autospot-accent">
-            Reserva {detalle.codigo_reserva}
-          </p>
           <h2 className="mt-1 font-display text-2xl font-black text-autospot-black">
             {vehiculo.marca} {vehiculo.modelo}
           </h2>
