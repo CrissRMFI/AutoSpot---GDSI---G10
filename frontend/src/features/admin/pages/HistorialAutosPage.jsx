@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -14,9 +14,6 @@ import {
   CircularProgress,
   Collapse,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
 } from "@mui/material";
 import {
@@ -27,6 +24,26 @@ import {
 import { getHistorialAutos } from "../api/historialAutosApi";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import { formatearEstado } from "../../../utils/formatStatus";
+
+const ACCENT = "#7b1c2e";
+
+const campoSx = {
+  minWidth: { xs: "100%", sm: 180 },
+  "& .MuiInputBase-root": {
+    borderRadius: "12px",
+    fontFamily: "var(--font-sans)",
+  },
+  "& label": {
+    fontFamily: "var(--font-sans)",
+  },
+  "& label.Mui-focused": { color: ACCENT },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: ACCENT,
+  },
+  "& input[type='date']": {
+    accentColor: ACCENT,
+  },
+};
 
 function Row({ auto }) {
   const [open, setOpen] = useState(false);
@@ -103,7 +120,7 @@ const HistorialAutosPage = () => {
   const [filtroPatente, setFiltroPatente] = useState("");
   const [estacionesLista, setEstacionesLista] = useState([]);
 
-  const cargarHistorial = async () => {
+  const cargarHistorial = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -119,23 +136,22 @@ const HistorialAutosPage = () => {
     } finally {
       setCargando(false);
     }
-  };
+  }, [filtroEstacion, filtroFecha, filtroPatente]);
 
-  // Cargar al inicio sin filtros
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    cargarHistorial();
+    const timer = setTimeout(() => {
+      cargarHistorial();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cargarHistorial]);
 
+  useEffect(() => {
     getEstacionesActivas()
       .then((data) => setEstacionesLista(data))
       .catch((err) => console.error("Error al cargar estaciones:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleBuscar = (e) => {
-    e.preventDefault();
-    cargarHistorial();
-  };
+  const hayFiltrosActivos = Boolean(filtroEstacion || filtroFecha || filtroPatente);
 
   return (
     <Box sx={{ width: "100%", p: { xs: 2, md: 4 } }}>
@@ -146,45 +162,93 @@ const HistorialAutosPage = () => {
         Consultá el historial de vehículos que entraron y salieron, con trazabilidad de movimientos.
       </Typography>
 
-      <Box component="form" onSubmit={handleBuscar} sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
-        <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="select-estacion-label">Estación</InputLabel>
-          <Select
-            labelId="select-estacion-label"
-            label="Estación"
-            value={filtroEstacion}
-            onChange={(e) => setFiltroEstacion(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>Todas</em>
+      <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
+        <TextField
+          select
+          label="Estación"
+          size="small"
+          value={filtroEstacion}
+          onChange={(e) => setFiltroEstacion(e.target.value)}
+          sx={campoSx}
+          InputLabelProps={{ shrink: true }}
+          SelectProps={{
+            displayEmpty: true,
+            MenuProps: {
+              PaperProps: {
+                sx: {
+                  borderRadius: "12px",
+                  mt: 0.5,
+                  boxShadow: "var(--shadow-autospot-soft)",
+                },
+              },
+              sx: {
+                "& .MuiMenuItem-root": {
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "14px",
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "rgba(123, 28, 46, 0.08) !important",
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                },
+                "& .MuiMenuItem-root:hover": {
+                  backgroundColor: "rgba(123, 28, 46, 0.04)",
+                },
+              },
+            },
+          }}
+        >
+          <MenuItem value="">
+            <em>Todas</em>
+          </MenuItem>
+          {estacionesLista.map((est) => (
+            <MenuItem key={est.id} value={est.nombre}>
+              {est.nombre}
             </MenuItem>
-            {estacionesLista.map((est) => (
-              <MenuItem key={est.id} value={est.nombre}>
-                {est.nombre}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+          ))}
+        </TextField>
+
         <TextField
           label="Fecha"
           type="date"
-          variant="outlined"
           size="small"
-          InputLabelProps={{ shrink: true }}
           value={filtroFecha}
           onChange={(e) => setFiltroFecha(e.target.value)}
+          sx={{
+            ...campoSx,
+            "& input[type='date']::-webkit-datetime-edit": {
+              color: filtroFecha ? "inherit !important" : "transparent",
+            },
+            "& input[type='date']:focus::-webkit-datetime-edit": {
+              color: "inherit !important",
+            },
+          }}
+          InputLabelProps={{
+            shrink: Boolean(filtroFecha) || undefined,
+          }}
         />
+
         <TextField
           label="Patente"
-          variant="outlined"
           size="small"
           value={filtroPatente}
           onChange={(e) => setFiltroPatente(e.target.value)}
           placeholder="Ej. AB123CD"
+          sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
-        <Button variant="contained" type="submit" sx={{ height: 40, backgroundColor: "#000", "&:hover": { backgroundColor: "#333" } }}>
-          Filtrar
-        </Button>
+        {hayFiltrosActivos && (
+          <Button 
+            onClick={() => {
+              setFiltroEstacion("");
+              setFiltroFecha("");
+              setFiltroPatente("");
+            }} 
+            sx={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}
+          >
+            Limpiar filtros
+          </Button>
+        )}
       </Box>
 
       {error && (
@@ -206,9 +270,9 @@ const HistorialAutosPage = () => {
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
+        <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", "& .MuiTableCell-root": { fontFamily: "var(--font-sans)" } }}>
           <Table aria-label="historial autos table">
-            <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableHead sx={{ backgroundColor: "var(--panel-2)", borderBottom: "1px solid var(--border)" }}>
               <TableRow>
                 <TableCell />
                 <TableCell sx={{ fontWeight: "bold" }}>Vehículo</TableCell>

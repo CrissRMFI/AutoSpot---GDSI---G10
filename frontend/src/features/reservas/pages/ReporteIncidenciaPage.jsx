@@ -383,27 +383,51 @@ const ReporteDuplicadoModal = ({ abierto, onVolver }) => (
 
 const ReporteEnviadoPanel = ({ reservaId, navigate }) => (
   <div className="mx-auto w-full max-w-2xl px-4 py-10">
-    <div className="rounded-2xl border border-autospot-border bg-white p-6 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#fef3c7]">
-        <AlertTriangle className="text-[#b42318]" size={28} />
+    <div className="rounded-xl border border-autospot-border bg-white p-8 text-center shadow-autospot-soft">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fef3c7]">
+        <AlertTriangle className="text-[#b42318]" size={32} />
       </div>
-      <h1 className="mt-4 text-2xl font-black text-autospot-text">Reporte recibido</h1>
-      <p className="mt-3 text-sm text-autospot-muted">
-        Registramos la incidencia critica del vehículo. Nuestro equipo revisará el caso y se
+      <h1 className="mt-5 text-3xl font-black text-autospot-text">Reporte recibido</h1>
+      <p className="mt-4 text-base text-autospot-muted">
+        Registramos la incidencia crítica del vehículo. Nuestro equipo revisará el caso y se
         comunicará con usted a la brevedad.
       </p>
-      <p className="mt-3 text-sm font-semibold text-autospot-text">
-        Por seguridad, no continúe utilizando el vehículo si no está en condiciones de circular.
-      </p>
-      <p className="mt-3 text-sm text-autospot-muted">
-        Comuníquese con AutoSpot al{" "}
-        <span className="font-bold text-autospot-text">{TELEFONO_AUTOSPOT}</span>.
-      </p>
-      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-        <Button variant="outlined" onClick={() => navigate("/usuario/alquileres")}>
+      <div className="mx-auto mt-5 max-w-md rounded-lg border border-[#fecaca] bg-[#fee2e2] p-4">
+        <p className="text-sm font-bold text-[#b42318]">
+          Por seguridad, no continúe utilizando el vehículo si no está en condiciones de circular.
+        </p>
+        <p className="mt-2 text-sm font-medium text-[#b42318]">
+          Comuníquese con asistencia AutoSpot al{" "}
+          <span className="font-black underline">{TELEFONO_AUTOSPOT}</span>
+        </p>
+      </div>
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+        <Button 
+          variant="outlined" 
+          onClick={() => navigate("/usuario/alquileres")}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 700,
+            fontFamily: "var(--font-sans)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
+        >
           Volver a Mis alquileres
         </Button>
-        <Button variant="contained" onClick={() => navigate(`/usuario/alquileres/${reservaId}`)}>
+        <Button 
+          variant="contained" 
+          onClick={() => navigate(`/usuario/alquileres/${reservaId}`)}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 700,
+            fontFamily: "var(--font-sans)",
+            backgroundColor: "#7b1c2e",
+            "&:hover": { backgroundColor: "#5a1320" },
+          }}
+        >
           Ver detalle del alquiler
         </Button>
       </div>

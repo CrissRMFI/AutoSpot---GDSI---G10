@@ -125,7 +125,7 @@ const LoginPage = () => {
             <button
               type="button"
               onClick={() => setMostrarPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-autospot-muted transition hover:text-autospot-accent"
+              className="absolute right-3 top-1/2 -translate-y-1/2 appearance-none border-none bg-transparent p-1 outline-none text-autospot-muted transition hover:text-autospot-accent focus:outline-none"
               aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
             >
               {mostrarPassword ? (
