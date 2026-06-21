@@ -8,12 +8,26 @@ import {
 } from "../api/checkinService";
 import ReservaCodigoModal from "../components/ReservaCodigoModal";
 import EstacionInfoModal from "../components/EstacionInfoModal";
+import MensajeModal from "../components/MensajeModal";
 import { formatearFechaHora, formatearMonto } from "../utils/reservaFormatters";
 
 const PAGE_SIZE = 5;
 const ESTADOS_PENDIENTES_VERIFICACION = new Set(["CONFIRMADA"]);
 
-const estadoReserva = (reserva) => (reserva.estado || "").toUpperCase();
+const estadoReserva = (reserva) => {
+  const estadoOriginal = (reserva.estado || "").toUpperCase();
+  if (estadoOriginal === "PENDIENTE" || estadoOriginal === "CONFIRMADA") {
+    if (reserva.fecha_inicio) {
+      const fechaInicio = new Date(reserva.fecha_inicio);
+      const ahora = new Date();
+      const minutosPasados = (ahora - fechaInicio) / (1000 * 60);
+      if (minutosPasados > 3) {
+        return "EXPIRADO";
+      }
+    }
+  }
+  return estadoOriginal;
+};
 
 const puedeHacerCheckin = (reserva) => estadoReserva(reserva) === "VERIFICADA";
 
@@ -38,6 +52,7 @@ const prioridadReserva = (reserva) => {
 
   if (estaPendienteDeVerificacion(reserva)) return 3;
   if (estado === "RECHAZADA") return 5;
+  if (estado === "EXPIRADO") return 6;
   return 4;
 };
 
@@ -48,9 +63,21 @@ const ordenarReservas = (reservas) =>
     return (a._ordenOriginal ?? 0) - (b._ordenOriginal ?? 0);
   });
 
-const presentacionEstado = (reserva) => {
+const presentacionEstado = (reserva, abrirContactoModal) => {
   const estado = estadoReserva(reserva);
   const checkinEstado = (reserva.checkin?.estado || "").toUpperCase();
+
+  if (estado === "EXPIRADO") {
+    return {
+      cta: "Contactar a soporte",
+      ctaIcon: <ChevronRight className="h-4 w-4" strokeWidth={2.4} />,
+      ctaClass: "border border-autospot-border bg-white text-autospot-black",
+      onClick: abrirContactoModal,
+      etiqueta: "Expirado",
+      etiquetaIcon: <X className="h-3 w-3" strokeWidth={2.4} />,
+      etiquetaClass: "bg-[#fee2e2] text-[#b42318]",
+    };
+  }
 
   if (estado === "RECHAZADA") {
     return {
@@ -142,6 +169,7 @@ const etiquetaEstadoReserva = (estado) => {
 const MisReservasPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get("focus");
+  const estadoFiltro = searchParams.get("estado") || "TODOS";
   const pageParam = Number(searchParams.get("page") || "1");
   const paginaActual = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const [reservas, setReservas] = useState([]);
@@ -153,6 +181,7 @@ const MisReservasPage = () => {
     () => new Set(),
   );
   const [focusConsumido, setFocusConsumido] = useState(false);
+  const [contactoModalVisible, setContactoModalVisible] = useState(false);
   const reservaRefs = useRef({});
 
   useEffect(() => {
@@ -163,7 +192,7 @@ const MisReservasPage = () => {
       setError("");
 
       try {
-        const data = await listarMisReservas();
+        const data = await listarMisReservas(estadoFiltro === "TODOS" ? null : estadoFiltro);
         const items = Array.isArray(data) ? data : [];
         const enriquecidas = await Promise.all(
           items.map(async (reserva, index) => {
@@ -202,7 +231,7 @@ const MisReservasPage = () => {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [estadoFiltro]);
 
   const totalPaginas = Math.max(Math.ceil(reservas.length / PAGE_SIZE), 1);
   const reservasPagina = useMemo(
@@ -270,6 +299,9 @@ const MisReservasPage = () => {
   };
 
   const abrirReserva = (reserva) => {
+    if (estadoReserva(reserva) === "EXPIRADO") {
+      return; // El boton abrirá el modal de contacto en su lugar
+    }
     if (puedeHacerCheckin(reserva)) {
       actualizarReservaConCheckin(reserva);
     }
@@ -301,6 +333,19 @@ const MisReservasPage = () => {
     setFocusConsumido(true);
   };
 
+  const cambiarFiltro = (e) => {
+    const nuevoEstado = e.target.value;
+    const proximo = new URLSearchParams(searchParams);
+    if (nuevoEstado === "TODOS") {
+      proximo.delete("estado");
+    } else {
+      proximo.set("estado", nuevoEstado);
+    }
+    proximo.set("page", "1");
+    proximo.delete("focus");
+    setSearchParams(proximo);
+  };
+
   const cerrarModal = () => {
     setReservaSeleccionadaId(null);
     setFocusConsumido(true);
@@ -323,12 +368,22 @@ const MisReservasPage = () => {
               Mis reservas
             </h1>
           </div>
-          <Link
-            to="/catalogo"
-            className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-          >
-            Ir al catálogo
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+            <select
+              value={estadoFiltro}
+              onChange={cambiarFiltro}
+              className="rounded-full border border-autospot-border bg-white px-4 py-2 text-sm font-semibold outline-none focus:border-autospot-primary"
+            >
+              <option value="TODOS">Todas las reservas</option>
+              <option value="EXPIRADO">Solo expiradas</option>
+            </select>
+            <Link
+              to="/catalogo"
+              className="inline-flex justify-center rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+            >
+              Ir al catálogo
+            </Link>
+          </div>
         </div>
 
         {cargando && (
@@ -351,14 +406,16 @@ const MisReservasPage = () => {
         {!cargando && !error && reservas.length === 0 && (
           <div className="rounded-[28px] border border-autospot-border bg-autospot-white p-8 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
             <h2 className="font-display text-2xl font-black tracking-[-0.04em] text-autospot-black">
-              Todavía no tenés reservas
+              {estadoFiltro === "EXPIRADO" ? "No tenés reservas expiradas" : "Todavía no tenés reservas"}
             </h2>
-            <Link
-              to="/catalogo"
-              className="mt-6 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
-            >
-              Ver autos disponibles
-            </Link>
+            {estadoFiltro === "TODOS" && (
+              <Link
+                to="/catalogo"
+                className="mt-6 inline-flex rounded-full bg-autospot-accent px-5 py-3 text-sm font-bold !text-white transition hover:bg-[#5a1420]"
+              >
+                Ver autos disponibles
+              </Link>
+            )}
           </div>
         )}
 
@@ -370,7 +427,7 @@ const MisReservasPage = () => {
                 const tituloVehiculo = vehiculo
                   ? `${vehiculo.marca} ${vehiculo.modelo}`
                   : "Vehículo reservado";
-                const presentacion = presentacionEstado(reserva);
+                const presentacion = presentacionEstado(reserva, () => setContactoModalVisible(true));
                 const estaFocus = focusId === reserva.id;
 
                 return (
@@ -384,7 +441,13 @@ const MisReservasPage = () => {
                       }
                     }}
                     type="button"
-                    onClick={() => abrirReserva(reserva)}
+                    onClick={(e) => {
+                      if (presentacion.onClick) {
+                        presentacion.onClick(e);
+                      } else {
+                        abrirReserva(reserva);
+                      }
+                    }}
                     className={`grid w-full gap-4 rounded-[24px] border bg-autospot-white p-5 text-left shadow-[0_18px_50px_rgba(15,23,42,0.07)] transition hover:border-autospot-accent sm:grid-cols-[1.3fr_0.9fr_auto] sm:items-center ${estaFocus
                         ? "border-autospot-accent ring-2 ring-autospot-accent/40"
                         : "border-autospot-border"
@@ -478,6 +541,15 @@ const MisReservasPage = () => {
         onClose={cerrarModal}
       />
       <EstacionInfoModal estacion={estacionModalData} onClose={() => setEstacionModalData(null)} />
+      
+      <MensajeModal
+        abierto={contactoModalVisible}
+        tipo="advertencia"
+        titulo="Comunicarse con AutoSpot"
+        mensaje="Por favor, comunicate con soporte al 0800-4444-28867768 para más información."
+        textoCerrar="Entendido"
+        onClose={() => setContactoModalVisible(false)}
+      />
     </>
   );
 };

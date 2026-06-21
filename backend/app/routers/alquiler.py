@@ -58,6 +58,7 @@ from app.services.alquiler_service import (
     obtener_alquiler_conductor,
     obtener_datos_personales_de_conductor,
     obtener_reserva_admin,
+    expirar_reservas_vencidas,
     registrar_entrada,
     rechazar_reserva,
     registrar_salida,
@@ -260,12 +261,14 @@ def crear_reserva(
     summary="Listar reservas del cliente autenticado",
 )
 def listar_mis_reservas(
+    estado: str | None = Query(None, description="Filtrar por estado de la reserva"),
     usuario_actual: dict = Depends(requerir_rol_cliente),
     db: Session = Depends(get_db),
 ) -> list[ReservaCodigoResponseSchema]:
     """Reservas del conductor autenticado (pantalla Mis reservas)."""
+    expirar_reservas_vencidas(db)
     conductor_id = uuid.UUID(str(usuario_actual["sub"]))
-    reservas = listar_reservas_de_conductor(db=db, conductor_id=conductor_id)
+    reservas = listar_reservas_de_conductor(db=db, conductor_id=conductor_id, estado=estado)
     return [_reserva_codigo_response(db, reserva) for reserva in reservas]
 
 
@@ -299,6 +302,7 @@ def listar_para_entregar_endpoint(
     db: Session = Depends(get_db),
 ) -> list[ReservaEntregaResponseSchema]:
     """Reservas VERIFICADA con check-in aprobado, listas para la salida."""
+    expirar_reservas_vencidas(db)
     return [
         ReservaEntregaResponseSchema(
             **_reserva_codigo_response(db, reserva).model_dump(),
@@ -323,6 +327,7 @@ def listar_panel_entregas_endpoint(
     fueron entregadas (con fecha de salida), ordenadas de más reciente a más
     antigua.
     """
+    expirar_reservas_vencidas(db)
     return [
         ReservaEntregaResponseSchema(
             **_reserva_codigo_response(db, reserva).model_dump(),

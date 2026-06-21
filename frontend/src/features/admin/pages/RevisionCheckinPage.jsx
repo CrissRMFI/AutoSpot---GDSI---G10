@@ -117,6 +117,21 @@ const RevisionCheckinPage = () => {
     const codigoReserva = r.codigo || null;
     const patente = r.vehiculo?.patente || null;
 
+    const estadoReservaCalculado = (() => {
+      const original = (r.estado || "").toUpperCase();
+      if (original === "PENDIENTE" || original === "CONFIRMADA") {
+        if (r.fecha_inicio) {
+          const fechaInicio = new Date(r.fecha_inicio);
+          const ahora = new Date();
+          if ((ahora - fechaInicio) / (1000 * 60) > 3) {
+            return "EXPIRADO";
+          }
+        }
+      }
+      return original;
+    })();
+    const reservaExpirada = estadoReservaCalculado === "EXPIRADO";
+
     return (
       <Card
         key={checkin.id}
@@ -170,9 +185,9 @@ const RevisionCheckinPage = () => {
 
             {/* Estado */}
             <Chip
-              label={formatearEstado(checkin.estado)}
+              label={reservaExpirada ? "RESERVA EXPIRADA" : formatearEstado(checkin.estado)}
               size="small"
-              color={colorChip(checkin.estado)}
+              color={reservaExpirada ? "error" : colorChip(checkin.estado)}
             />
             <ChevronRightIcon color="action" />
           </CardContent>

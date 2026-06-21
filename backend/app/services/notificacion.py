@@ -47,9 +47,9 @@ def _url_notificacion(
         return f"/admin/recepcion?focus={recurso_id}"
     if tipo == TIPO_CHECKOUT_PENDIENTE_CONFIRMACION and recurso_id:
         return f"/usuario/alquileres?focus={recurso_id}"
-    if tipo == TIPO_RESERVA_PENDIENTE_VERIFICACION and recurso_id:
+    if tipo in {TIPO_RESERVA_PENDIENTE_VERIFICACION, "RESERVA_EXPIRADA_ADMIN"} and recurso_id:
         return f"/admin/reservas/verificar?reservaId={recurso_id}"
-    if tipo in {TIPO_RESERVA_APROBADA, TIPO_RESERVA_RECHAZADA} and recurso_id:
+    if tipo in {TIPO_RESERVA_APROBADA, TIPO_RESERVA_RECHAZADA, "RESERVA_EXPIRADA_CONDUCTOR"} and recurso_id:
         return f"/usuario/reservas?focus={recurso_id}"
     if tipo == TIPO_VEHICULO_DOCUMENTACION_PENDIENTE and recurso_id:
         return f"/vehiculos/{recurso_id}/documentacion"

@@ -23,8 +23,10 @@ from app.services.checkin_service import (
     obtener_checkin,
     obtener_checkin_de_reserva_conductor,
     re_enviar_checkin,
+    re_enviar_checkin,
     rechazar_checkin,
 )
+from app.services.alquiler_service import expirar_reservas_vencidas
 
 
 router = APIRouter(tags=["checkins"])
@@ -116,6 +118,7 @@ def listar_checkins_endpoint(
     db: Session = Depends(get_db),
     _usuario_actual: dict = Depends(requerir_rol_admin),
 ):
+    expirar_reservas_vencidas(db)
     return listar_checkins_admin(db)
 
 

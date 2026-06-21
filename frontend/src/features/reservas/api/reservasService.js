@@ -12,8 +12,10 @@ export const crearReservaConCodigo = async ({
   return response.data;
 };
 
-export const listarMisReservas = async () => {
-  const response = await httpClient.get("/alquiler/reservas");
+export const listarMisReservas = async (estado = null) => {
+  const response = await httpClient.get("/alquiler/reservas", {
+    params: estado ? { estado } : {},
+  });
 
   return response.data;
 };

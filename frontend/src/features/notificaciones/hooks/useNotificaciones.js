@@ -183,14 +183,16 @@ export const useNotificaciones = () => {
       return `/usuario/alquileres?focus=${notificacion.recurso_id}`;
     }
     if (
-      notificacion.tipo === "RESERVA_PENDIENTE_VERIFICACION" &&
+      (notificacion.tipo === "RESERVA_PENDIENTE_VERIFICACION" ||
+        notificacion.tipo === "RESERVA_EXPIRADA_ADMIN") &&
       notificacion.recurso_id
     ) {
       return `/admin/reservas/verificar?reservaId=${notificacion.recurso_id}`;
     }
     if (
       (notificacion.tipo === "RESERVA_APROBADA" ||
-        notificacion.tipo === "RESERVA_RECHAZADA") &&
+        notificacion.tipo === "RESERVA_RECHAZADA" ||
+        notificacion.tipo === "RESERVA_EXPIRADA_CONDUCTOR") &&
       notificacion.recurso_id
     ) {
       return `/usuario/reservas?focus=${notificacion.recurso_id}`;
