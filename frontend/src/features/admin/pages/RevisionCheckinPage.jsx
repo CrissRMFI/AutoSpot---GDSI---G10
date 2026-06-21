@@ -208,6 +208,7 @@ const RevisionCheckinPage = () => {
           value={filtros.conductor}
           onChange={setFiltro("conductor")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Nº de reserva"
@@ -216,6 +217,7 @@ const RevisionCheckinPage = () => {
           value={filtros.reserva}
           onChange={setFiltro("reserva")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Patente"
@@ -223,6 +225,7 @@ const RevisionCheckinPage = () => {
           value={filtros.patente}
           onChange={setFiltro("patente")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Fecha"
@@ -240,6 +243,7 @@ const RevisionCheckinPage = () => {
           value={filtros.estado}
           onChange={setFiltro("estado")}
           sx={campoSx}
+          InputLabelProps={{ shrink: true }}
         >
           {ESTADOS.map((e) => (
             <MenuItem key={e.value} value={e.value}>
