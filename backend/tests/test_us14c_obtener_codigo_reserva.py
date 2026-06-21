@@ -49,6 +49,7 @@ def _crear_vehiculo_reservable(db_session, propietario_id) -> Vehiculo:
         categoria="SEDAN",
         tipo_combustible="NAFTA",
         pets_friendly=True,
+        kilometros=50000,
         patente="AB123CD",
         estacion="Estación Belgrano",
         precio_por_dia=Decimal("48000.00"),

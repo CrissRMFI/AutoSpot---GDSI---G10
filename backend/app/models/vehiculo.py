@@ -81,6 +81,12 @@ class Vehiculo(Base):
         nullable=False,
         doc="Indica si el vehículo acepta mascotas.",
     )
+    kilometros: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        doc="Kilometraje (odómetro) actual del vehículo. Se carga al publicar y "
+        "se actualiza al finalizar cada checkout.",
+    )
     # ── Datos legales y de documentación ─────────────────────────────────────
     patente: Mapped[str | None] = mapped_column(
         String(20),

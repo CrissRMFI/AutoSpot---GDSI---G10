@@ -36,6 +36,7 @@ def _payload_registro_vehiculo(propietario_id):
         "categoria": "SEDAN",
         "tipo_combustible": "NAFTA",
         "pets_friendly": True,
+        "kilometros": 50000,
         "fotos": [
             {"lado": "FRENTE", "url": "u/frente.jpg", "formato": "jpg", "tamanio_bytes": 100_000},
             {"lado": "TRASERA", "url": "u/trasera.jpg", "formato": "jpg", "tamanio_bytes": 100_000},

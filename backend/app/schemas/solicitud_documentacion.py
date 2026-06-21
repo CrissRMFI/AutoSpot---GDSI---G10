@@ -16,7 +16,7 @@ Criterios de Aceptación cubiertos:
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 TIPO_SOLICITUD_VEHICULO = "VEHICULO"
@@ -65,6 +65,8 @@ class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
     """
 
     documentos: list[DocumentoSolicitudSchema]
+    # Fotos del vehículo (lado en `nombre`, url en `url`) para la galería del admin.
+    fotos: list[DocumentoSolicitudSchema] = Field(default_factory=list)
 
     marca: str | None = None
     modelo: str | None = None
@@ -74,6 +76,7 @@ class SolicitudDocumentacionDetalleSchema(SolicitudDocumentacionSchema):
     categoria_vehiculo: str | None = None
     tipo_combustible: str | None = None
     pets_friendly: bool | None = None
+    kilometros: int | None = None
     patente: str | None = None
     chasis: str | None = None
     motor: str | None = None

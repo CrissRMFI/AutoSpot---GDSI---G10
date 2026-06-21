@@ -113,6 +113,7 @@ def registrar_vehiculo(db: Session, schema: RegistroVehiculoSchema) -> Vehiculo:
       categoria=schema.categoria,
       tipo_combustible=schema.tipo_combustible,
       pets_friendly=schema.pets_friendly,
+      kilometros=schema.kilometros,
     )
 
     vehiculo.fotos = [

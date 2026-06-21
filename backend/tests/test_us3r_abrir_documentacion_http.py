@@ -99,6 +99,7 @@ def _agregar_vehiculo_documentado(testing_session_local) -> str:
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             patente="AB123CD",
             chasis="CHASIS-HTTP",
             motor="MOTOR-HTTP",

@@ -50,6 +50,7 @@ class VehiculoReservaResumenSchema(BaseModel):
     categoria: str | None = None
     tipo_combustible: str | None = None
     pets_friendly: bool | None = None
+    kilometros: int | None = None
     patente: str | None = None
     descripcion: str | None = None
     precio_por_dia: Decimal | None = None

@@ -232,6 +232,18 @@ class CheckoutNoDisponibleError(AutoSpotError):
         )
 
 
+class CheckoutKilometrajeInvalidoError(AutoSpotError):
+    """
+    El kilometraje de checkout no puede ser menor al odómetro actual del
+    vehículo (el kilometraje no puede retroceder).
+    """
+    def __init__(self, kilometraje_actual: int) -> None:
+        super().__init__(
+            "El kilometraje del checkout no puede ser menor al actual del "
+            f"vehículo ({kilometraje_actual} km)."
+        )
+
+
 class CheckoutYaRegistradoError(AutoSpotError):
     """Se lanza cuando ya existe un checkout para la reserva."""
     def __init__(self) -> None:

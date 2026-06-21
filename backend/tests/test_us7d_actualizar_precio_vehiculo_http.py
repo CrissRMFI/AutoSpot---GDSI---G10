@@ -104,6 +104,7 @@ def _payload_vehiculo_valido() -> dict:
         "categoria": "SEDAN",
         "tipo_combustible": "NAFTA",
         "pets_friendly": False,
+        "kilometros": 50000,
         "fotos": [
             {"lado": "FRENTE", "url": "uploads/etios/frente.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "TRASERA", "url": "uploads/etios/trasera.jpg", "formato": "jpg", "tamanio_bytes": 100},
