@@ -14,9 +14,6 @@ import {
   CircularProgress,
   Collapse,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
 } from "@mui/material";
 import {
@@ -29,6 +26,24 @@ import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
 import { formatearEstado } from "../../../utils/formatStatus";
 
 const ACCENT = "#7b1c2e";
+
+const campoSx = {
+  minWidth: { xs: "100%", sm: 180 },
+  "& .MuiInputBase-root": {
+    borderRadius: "12px",
+    fontFamily: "var(--font-sans)",
+  },
+  "& label": {
+    fontFamily: "var(--font-sans)",
+  },
+  "& label.Mui-focused": { color: ACCENT },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: ACCENT,
+  },
+  "& input[type='date']": {
+    accentColor: ACCENT,
+  },
+};
 
 function Row({ auto }) {
   const [open, setOpen] = useState(false);
@@ -148,42 +163,78 @@ const HistorialAutosPage = () => {
       </Typography>
 
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
-        <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="select-estacion-label" shrink>Estación</InputLabel>
-          <Select
-            labelId="select-estacion-label"
-            label="Estación"
-            value={filtroEstacion}
-            onChange={(e) => setFiltroEstacion(e.target.value)}
-            displayEmpty
-            notched
-          >
-            <MenuItem value="">
-              <em>Todas</em>
+        <TextField
+          select
+          label="Estación"
+          size="small"
+          value={filtroEstacion}
+          onChange={(e) => setFiltroEstacion(e.target.value)}
+          sx={campoSx}
+          InputLabelProps={{ shrink: true }}
+          SelectProps={{
+            displayEmpty: true,
+            MenuProps: {
+              PaperProps: {
+                sx: {
+                  borderRadius: "12px",
+                  mt: 0.5,
+                  boxShadow: "var(--shadow-autospot-soft)",
+                },
+              },
+              sx: {
+                "& .MuiMenuItem-root": {
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "14px",
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "rgba(123, 28, 46, 0.08) !important",
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                },
+                "& .MuiMenuItem-root:hover": {
+                  backgroundColor: "rgba(123, 28, 46, 0.04)",
+                },
+              },
+            },
+          }}
+        >
+          <MenuItem value="">
+            <em>Todas</em>
+          </MenuItem>
+          {estacionesLista.map((est) => (
+            <MenuItem key={est.id} value={est.nombre}>
+              {est.nombre}
             </MenuItem>
-            {estacionesLista.map((est) => (
-              <MenuItem key={est.id} value={est.nombre}>
-                {est.nombre}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+          ))}
+        </TextField>
+
         <TextField
           label="Fecha"
           type="date"
-          variant="outlined"
           size="small"
-          InputLabelProps={{ shrink: true }}
           value={filtroFecha}
           onChange={(e) => setFiltroFecha(e.target.value)}
+          sx={{
+            ...campoSx,
+            "& input[type='date']::-webkit-datetime-edit": {
+              color: filtroFecha ? "inherit !important" : "transparent",
+            },
+            "& input[type='date']:focus::-webkit-datetime-edit": {
+              color: "inherit !important",
+            },
+          }}
+          InputLabelProps={{
+            shrink: Boolean(filtroFecha) || undefined,
+          }}
         />
+
         <TextField
           label="Patente"
-          variant="outlined"
           size="small"
           value={filtroPatente}
           onChange={(e) => setFiltroPatente(e.target.value)}
           placeholder="Ej. AB123CD"
+          sx={campoSx}
           InputLabelProps={{ shrink: true }}
         />
         {hayFiltrosActivos && (
@@ -219,9 +270,9 @@ const HistorialAutosPage = () => {
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
+        <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden", "& .MuiTableCell-root": { fontFamily: "var(--font-sans)" } }}>
           <Table aria-label="historial autos table">
-            <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableHead sx={{ backgroundColor: "var(--panel-2)", borderBottom: "1px solid var(--border)" }}>
               <TableRow>
                 <TableCell />
                 <TableCell sx={{ fontWeight: "bold" }}>Vehículo</TableCell>

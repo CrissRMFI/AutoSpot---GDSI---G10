@@ -15,6 +15,7 @@ import {
   listarRecepcionAutos,
   listarReservasParaEntregar,
 } from "../features/reservas/api/reservasService";
+import { listarReportesAdmin } from "../features/reportes/api/reportesService";
 
 const RECEPCION_PAGE_SIZE = 50;
 
@@ -53,6 +54,7 @@ const AdminDashboardPage = () => {
   const [checkins, setCheckins] = useState([]);
   const [reservasParaEntregar, setReservasParaEntregar] = useState([]);
   const [totalRecepcion, setTotalRecepcion] = useState(0);
+  const [totalIncidentes, setTotalIncidentes] = useState(0);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -66,11 +68,13 @@ const AdminDashboardPage = () => {
         checkinsResult,
         entregasResult,
         recepcionResult,
+        incidentesResult,
       ] = await Promise.allSettled([
         getSolicitudesDocumentacion(),
         listarCheckins(),
         listarReservasParaEntregar(),
         contarRecepcionNoFinalizada(),
+        listarReportesAdmin({ estado: "ACTIVO" }),
       ]);
 
       if (cancelado) return;
@@ -97,6 +101,12 @@ const AdminDashboardPage = () => {
         setTotalRecepcion(Number(recepcionResult.value || 0));
       }
 
+      if (incidentesResult.status === "fulfilled") {
+        setTotalIncidentes(
+          Array.isArray(incidentesResult.value) ? incidentesResult.value.length : 0,
+        );
+      }
+
       setCargando(false);
     };
 
@@ -117,12 +127,14 @@ const AdminDashboardPage = () => {
       checkinsPendientes,
       entregas: reservasParaEntregar.length,
       recepcion: totalRecepcion,
+      incidentes: totalIncidentes,
     };
   }, [
     checkins,
     reservasParaEntregar.length,
     solicitudes.length,
     totalRecepcion,
+    totalIncidentes,
   ]);
 
   return (
@@ -151,8 +163,8 @@ const AdminDashboardPage = () => {
         <StatCard
           icono={AlertCircle}
           titulo="Incidentes abiertos"
-          valor="Próximo a implementar"
-          detalle="Módulo pendiente"
+          valor={cargando ? "..." : resumen.incidentes}
+          detalle="Pendientes de resolución"
         />
       </section>
 

@@ -29,12 +29,32 @@ import { formatearEstado } from "../../../utils/formatStatus";
 
 const ACCENT = "#7b1c2e";
 
-// Estilo MUI con los colores de marca (acento vino en foco/labels).
 const campoSx = {
   minWidth: { xs: "100%", sm: 180 },
+  "& .MuiInputBase-root": {
+    borderRadius: "12px",
+    fontFamily: "var(--font-sans)",
+  },
+  "& label": {
+    fontFamily: "var(--font-sans)",
+  },
   "& label.Mui-focused": { color: ACCENT },
   "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
     borderColor: ACCENT,
+  },
+  "& input[type='date']": {
+    accentColor: ACCENT,
+  },
+};
+
+const alertVacioSx = {
+  borderRadius: "12px",
+  fontFamily: "var(--font-sans)",
+  backgroundColor: "transparent",
+  border: "1px solid var(--border)",
+  color: "var(--text)",
+  "& .MuiAlert-icon": {
+    color: "var(--muted)",
   },
 };
 
@@ -462,10 +482,20 @@ const EntregaAutosPage = () => {
           label="Fecha"
           type="date"
           size="small"
-          InputLabelProps={{ shrink: true }}
           value={filtros.fecha}
           onChange={setFiltro("fecha")}
-          sx={campoSx}
+          sx={{
+            ...campoSx,
+            "& input[type='date']::-webkit-datetime-edit": {
+              color: filtros.fecha ? "inherit !important" : "transparent",
+            },
+            "& input[type='date']:focus::-webkit-datetime-edit": {
+              color: "inherit !important",
+            },
+          }}
+          InputLabelProps={{
+            shrink: Boolean(filtros.fecha) || undefined,
+          }}
         />
         <TextField
           select
@@ -474,7 +504,31 @@ const EntregaAutosPage = () => {
           value={filtros.estado}
           onChange={setFiltro("estado")}
           sx={campoSx}
-          InputLabelProps={{ shrink: true }}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: {
+                  borderRadius: "12px",
+                  mt: 0.5,
+                  boxShadow: "var(--shadow-autospot-soft)",
+                },
+              },
+              sx: {
+                "& .MuiMenuItem-root": {
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "14px",
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "rgba(123, 28, 46, 0.08) !important",
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                },
+                "& .MuiMenuItem-root:hover": {
+                  backgroundColor: "rgba(123, 28, 46, 0.04)",
+                },
+              },
+            },
+          }}
         >
           {ESTADOS_ENTREGA.map((e) => (
             <MenuItem key={e.value} value={e.value}>
@@ -499,9 +553,11 @@ const EntregaAutosPage = () => {
       )}
 
       {reservas.length === 0 && !error ? (
-        <Alert severity="info">No hay autos listos para entregar.</Alert>
+        <Alert icon={false} sx={alertVacioSx}>
+          No hay autos listos para entregar.
+        </Alert>
       ) : reservasFiltradas.length === 0 ? (
-        <Alert severity="info">
+        <Alert icon={false} sx={alertVacioSx}>
           No hay reservas que coincidan con los filtros aplicados.
         </Alert>
       ) : (
