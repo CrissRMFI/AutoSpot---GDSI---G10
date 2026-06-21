@@ -52,6 +52,7 @@ const AlquilerStepperPage = () => {
   const [verificando, setVerificando] = useState(false);
   const [reservando, setReservando] = useState(false);
   const [advertenciaPagoAbierta, setAdvertenciaPagoAbierta] = useState(false);
+  const [modalErrorAbierto, setModalErrorAbierto] = useState(false);
 
   useEffect(() => {
     if (!vehiculoId) return;
@@ -218,6 +219,7 @@ const AlquilerStepperPage = () => {
       setErrorAlquiler(
         err.response?.data?.detail || "No se pudo confirmar la reserva.",
       );
+      setModalErrorAbierto(true);
     } finally {
       setReservando(false);
     }
@@ -368,6 +370,12 @@ const AlquilerStepperPage = () => {
         precioPorDia={vehiculo.precio_por_dia}
         onCancelar={() => setAdvertenciaPagoAbierta(false)}
         onConfirmar={handleConfirmarReserva}
+      />
+
+      <ErrorReservaModal
+        abierto={modalErrorAbierto}
+        mensaje={errorAlquiler}
+        onCerrar={() => setModalErrorAbierto(false)}
       />
     </section>
   );
@@ -689,6 +697,59 @@ const AdvertenciaPagoModal = ({
           ) : (
             "Pagar y aceptar"
           )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const ErrorReservaModal = ({ abierto, mensaje, onCerrar }) => {
+  return (
+    <Dialog
+      open={abierto}
+      onClose={onCerrar}
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          bgcolor: "#fcfaf8",
+          border: "1px solid #fecdd3", // red-200 aprox
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          color: "#b91c1c", // red-700
+          fontFamily: "Unbounded, sans-serif",
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          pb: 1,
+        }}
+      >
+        No se pudo confirmar
+      </DialogTitle>
+      <DialogContent>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-bold leading-6 text-red-700">
+            {mensaje}
+          </p>
+        </div>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button
+          onClick={onCerrar}
+          variant="contained"
+          sx={{
+            bgcolor: "#b91c1c",
+            color: "white",
+            borderRadius: 999,
+            fontWeight: 800,
+            px: 3,
+            "&:hover": { bgcolor: "#991b1b" },
+          }}
+        >
+          Entendido
         </Button>
       </DialogActions>
     </Dialog>

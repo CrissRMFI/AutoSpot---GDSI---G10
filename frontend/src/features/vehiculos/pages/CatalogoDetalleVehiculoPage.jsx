@@ -11,6 +11,7 @@ import { useAuth } from "../../auth/hooks/useAuth";
 import { obtenerDocumentacionHabilitante } from "../../usuarios/api/documentacionHabilitanteService";
 import { obtenerDatosPersonales } from "../../usuarios/api/usuarioService";
 import { getDetalleVehiculoCatalogo } from "../api/vehiculoService";
+import { listarMisReservas } from "../../reservas/api/reservasService";
 import LightboxGaleria from "../components/LightboxGaleria";
 import PuntuacionVehiculo from "../components/PuntuacionVehiculo";
 import ModalResenias from "../components/ModalResenias";
@@ -118,6 +119,38 @@ const CatalogoDetalleVehiculoPage = () => {
       });
       setValidandoAlquiler(false);
       return;
+    }
+
+    try {
+      const reservas = await listarMisReservas();
+      const estadosActivos = [
+        "CONFIRMADA",
+        "CODIGO_GENERADO",
+        "VERIFICADA",
+        "EN_CURSO",
+        "ENTREGA_SOLICITADA",
+        "DEVUELTO",
+        "CHECKOUT_PENDIENTE",
+      ];
+      
+      const tieneReservaActiva = reservas.some((r) =>
+        estadosActivos.includes(r.estado)
+      );
+
+      if (tieneReservaActiva) {
+        setRequisitoPendiente({
+          titulo: "Reserva en curso",
+          mensaje:
+            "Ya posees una reserva en curso y debes finalizarla o cancelarla antes de realizar otra.",
+          accion: "Ir a mis reservas",
+          to: "/usuario/reservas",
+        });
+        setValidandoAlquiler(false);
+        return;
+      }
+    } catch {
+      // Si falla la consulta, permitimos pasar y el error de backend lo atajará luego
+      console.error("No se pudo validar reservas activas");
     }
 
     navigate(`/catalogo/${vehiculo.id}/alquilar`);
