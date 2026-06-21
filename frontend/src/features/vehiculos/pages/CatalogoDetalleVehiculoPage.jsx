@@ -187,7 +187,7 @@ const CatalogoDetalleVehiculoPage = () => {
             <PuntuacionVehiculo valor={vehiculo.calificacion_promedio} size="medium" />
             <button
               onClick={() => setModalReseniasAbierto(true)}
-              className="text-sm font-semibold text-autospot-accent hover:underline hover:text-[#5a1420] transition"
+              className="inline-flex items-center rounded-full border border-autospot-accent/20 bg-autospot-accent/5 px-3 py-1 text-xs font-bold text-autospot-accent transition hover:bg-autospot-accent/10 hover:border-autospot-accent/30"
             >
               Ver reseñas
             </button>

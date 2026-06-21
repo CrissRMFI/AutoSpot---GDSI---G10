@@ -110,7 +110,7 @@ const HistorialConductoresPage = () => {
 
       {/* Empty State (CA 3) */}
       {!cargando && !error && conductoresFiltrados.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-autospot-border bg-autospot-white px-6 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-autospot-border bg-autospot-white px-6 py-16 text-center">
           <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#efe9df]">
             <Inbox className="h-8 w-8 text-autospot-accent" aria-hidden="true" />
           </span>
@@ -131,13 +131,13 @@ const HistorialConductoresPage = () => {
           {conductoresFiltrados.map((conductor) => (
             <article
               key={conductor.id}
-              className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white transition-shadow hover:shadow-autospot-soft"
+              className="overflow-hidden rounded-xl border border-autospot-border bg-autospot-white transition-shadow hover:shadow-autospot-soft"
             >
               {/* Cabecera del conductor */}
               <button
                 type="button"
                 onClick={() => toggleExpandido(conductor.id)}
-                className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#fafaf9]"
+                className="flex w-full items-center gap-4 appearance-none border-none bg-transparent px-5 py-4 text-left outline-none transition hover:bg-[#fafaf9] focus:bg-[#fafaf9] focus:outline-none"
                 aria-expanded={expandido === conductor.id}
               >
                 <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-autospot-accent text-sm font-bold text-white">
@@ -188,7 +188,7 @@ const HistorialConductoresPage = () => {
                       {conductor.alquileres.map((alq) => (
                         <div
                           key={alq.id}
-                          className="rounded-lg border border-autospot-border bg-autospot-white p-4"
+                          className="rounded-xl border border-autospot-border bg-autospot-white p-4"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="min-w-0">
