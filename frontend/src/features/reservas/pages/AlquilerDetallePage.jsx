@@ -52,6 +52,10 @@ const ESTADO_UI = {
     label: "Finalizado",
     className: "bg-white text-autospot-muted border border-autospot-border",
   },
+  EXPIRADO: {
+    label: "Expirado",
+    className: "bg-[#fee2e2] text-[#b42318] border border-[#fecaca]",
+  },
 };
 
 const CHECKOUT_ESTADO_UI = {
@@ -262,7 +266,22 @@ const AlquilerDetallePage = () => {
   const vehiculo = alquiler.vehiculo || {};
   const fotos = vehiculo.fotos || [];
   const fotoPrincipal = fotos[0];
-  const estado = estadoReservaUi(alquiler.estado);
+
+  const estadoCalculado = (() => {
+    const original = (alquiler.estado || "").toUpperCase();
+    if (original === "PENDIENTE" || original === "CONFIRMADA") {
+      if (alquiler.fecha_inicio) {
+        const fechaInicio = new Date(alquiler.fecha_inicio);
+        const ahora = new Date();
+        if ((ahora - fechaInicio) / (1000 * 60) > 3) {
+          return "EXPIRADO";
+        }
+      }
+    }
+    return original;
+  })();
+
+  const estado = estadoReservaUi(estadoCalculado);
   const estadoCheckout = estadoCheckoutUi(checkout?.estado);
   const puedeEntregar = (alquiler.estado || "").toUpperCase() === "EN_CURSO";
   const incidenteReportado =

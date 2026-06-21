@@ -18,6 +18,7 @@ export const etiquetaEstado = (estado) => {
     APROBADO: "Aprobada",
     HABILITADO: "Habilitado",
     RECHAZADO: "Rechazado",
+    EXPIRADO: "Expirado",
   };
   return estados[estado] || formatearEstado(estado);
 };

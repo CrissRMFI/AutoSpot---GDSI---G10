@@ -21,8 +21,10 @@ from app.services.notificacion import (
 )
 from app.services.push import (
     eliminar_suscripcion_push,
+    eliminar_suscripcion_push,
     registrar_suscripcion_push,
 )
+from app.services.alquiler_service import expirar_reservas_vencidas
 
 
 router = APIRouter(
@@ -50,6 +52,7 @@ def listar_notificaciones(
     db: Session = Depends(get_db),
 ) -> list[NotificacionSchema]:
     """GET /notificaciones"""
+    expirar_reservas_vencidas(db)
     return listar_notificaciones_no_vistas(
         db=db,
         usuario_id=_usuario_id_desde_token(usuario_actual),

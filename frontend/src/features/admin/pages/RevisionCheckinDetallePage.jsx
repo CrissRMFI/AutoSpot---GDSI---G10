@@ -124,6 +124,22 @@ const RevisionCheckinDetallePage = () => {
   const pendiente = estado === "PENDIENTE";
   const aprobado = estado === "APROBADO";
 
+  const reserva = checkin?.reserva || {};
+  const estadoReservaCalculado = (() => {
+    const original = (reserva.estado || "").toUpperCase();
+    if (original === "PENDIENTE" || original === "CONFIRMADA") {
+      if (reserva.fecha_inicio) {
+        const fechaInicio = new Date(reserva.fecha_inicio);
+        const ahora = new Date();
+        if ((ahora - fechaInicio) / (1000 * 60) > 3) {
+          return "EXPIRADO";
+        }
+      }
+    }
+    return original;
+  })();
+  const reservaExpirada = estadoReservaCalculado === "EXPIRADO";
+
   return (
     <section className="w-full min-w-0">
       <Button startIcon={<ArrowBackIcon />} onClick={volverAlListado} sx={{ mb: 3 }}>
@@ -134,8 +150,12 @@ const RevisionCheckinDetallePage = () => {
 
       {checkin && (
         <>
-          {/* Banner de estado para checkins ya resueltos */}
-          {!pendiente && (
+          {/* Banner de estado para checkins ya resueltos o reservas expiradas */}
+          {reservaExpirada ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              La reserva asociada ha expirado (pasó el tiempo de tolerancia). Ya no es posible aprobar este check-in.
+            </Alert>
+          ) : !pendiente ? (
             <Alert
               severity={aprobado ? "success" : "warning"}
               sx={{ mb: 3 }}
@@ -157,12 +177,12 @@ const RevisionCheckinDetallePage = () => {
                 ? "Este check-in fue aprobado. La reserva está lista para entregar."
                 : `Este check-in fue rechazado.${checkin.motivo_rechazo ? ` Motivo: ${checkin.motivo_rechazo}` : ""}`}
             </Alert>
-          )}
+          ) : null}
 
           <CheckinDetalle checkin={checkin} />
 
-          {/* Botones solo mientras el check-in está PENDIENTE */}
-          {pendiente && (
+          {/* Botones solo mientras el check-in está PENDIENTE y la reserva no expiró */}
+          {pendiente && !reservaExpirada && (
             <>
               <Typography variant="body2" color="textSecondary" sx={{ mt: 3, mb: 1 }}>
                 Revisá el formulario y las fotos del conductor antes de tomar una decisión.
