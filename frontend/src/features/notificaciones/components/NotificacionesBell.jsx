@@ -169,6 +169,17 @@ const presentacionItem = (item) => {
       acento: "bg-autospot-muted",
     };
   }
+  if (
+    item.fuente === "NOTIFICACION_USUARIO" &&
+    (tipo === "RESERVA_EXPIRADA_CONDUCTOR" || tipo === "RESERVA_EXPIRADA_ADMIN")
+  ) {
+    return {
+      label: "Reserva expirada",
+      Icono: IconoAlerta,
+      iconoBg: "bg-[#fee2e2] text-[#b42318]",
+      acento: "bg-[#b42318]",
+    };
+  }
   if (item.fuente === "NOTIFICACION_USUARIO" && tipo === "AUTO_DEVUELTO") {
     return {
       label: "Recepción",

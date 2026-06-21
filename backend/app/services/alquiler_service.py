@@ -202,15 +202,18 @@ def crear_reserva_con_codigo(
 def listar_reservas_de_conductor(
     db: Session,
     conductor_id: uuid.UUID,
+    estado: str | None = None,
 ) -> list[Reserva]:
     """Lista las reservas del conductor autenticado, de más nueva a más antigua."""
-    return (
+    query = (
         db.query(Reserva)
         .options(joinedload(Reserva.vehiculo).joinedload(Vehiculo.fotos))
         .filter(Reserva.conductor_id == conductor_id)
-        .order_by(Reserva.created_at.desc())
-        .all()
     )
+    if estado:
+        query = query.filter(Reserva.estado == estado)
+    
+    return query.order_by(Reserva.created_at.desc()).all()
 
 
 def obtener_reserva_admin(
@@ -634,6 +637,56 @@ def listar_mis_alquileres(
         .all()
     )
     return items, total
+
+
+def expirar_reservas_vencidas(db: Session) -> None:
+    """
+    Marca como EXPIRADO las reservas cuyo inicio pactado pasó hace más de 30 minutos
+    y siguen en estado PENDIENTE o CONFIRMADA. Además, libera el vehículo.
+    """
+    from datetime import timedelta
+    ahora = datetime.now(timezone.utc)
+    limite = ahora - timedelta(minutes=3)
+
+    reservas_vencidas = (
+        db.query(Reserva)
+        .filter(
+            Reserva.estado.in_(["PENDIENTE", "CONFIRMADA"]),
+            Reserva.fecha_inicio <= limite,
+        )
+        .with_for_update()
+        .all()
+    )
+
+    for reserva in reservas_vencidas:
+        reserva.estado = "EXPIRADO"
+        if reserva.vehiculo:
+            reserva.vehiculo.disponible = True
+            
+        # Cerrar notificación pendiente para el admin
+        cerrar_notificaciones_reserva_pendiente_verificacion(db=db, reserva=reserva)
+        
+        # Notificar a los admins
+        _notificar_admins(
+            db=db,
+            tipo="RESERVA_EXPIRADA_ADMIN",
+            titulo="Reserva expirada",
+            mensaje=f"La reserva {reserva.codigo} ha expirado (más de 3 minutos de tolerancia).",
+            reserva=reserva,
+        )
+        
+        # Notificar al conductor
+        crear_notificacion_usuario(
+            db=db,
+            usuario_id=reserva.conductor_id,
+            tipo="RESERVA_EXPIRADA_CONDUCTOR",
+            titulo="Reserva expirada",
+            mensaje=f"Tu reserva {reserva.codigo} ha expirado por superar el tiempo de tolerancia para el check-in.",
+            recurso_tipo=RECURSO_RESERVA,
+            recurso_id=reserva.id,
+        )
+
+    db.commit()
 
 
 def obtener_alquiler_conductor(

@@ -69,8 +69,21 @@ const VerificarReservaPage = () => {
 
   const codigoNormalizado = useMemo(() => codigo.trim(), [codigo]);
   const estadoNormalizado = (detalle?.estado || "").toUpperCase();
+  const reservaExpirada = estadoNormalizado === "EXPIRADO" || (() => {
+    if (estadoNormalizado === "PENDIENTE" || estadoNormalizado === "CONFIRMADA") {
+      if (detalle?.fecha_inicio) {
+        const fechaInicio = new Date(detalle.fecha_inicio);
+        const ahora = new Date();
+        if ((ahora - fechaInicio) / (1000 * 60) > 3) {
+          return true;
+        }
+      }
+    }
+    return false;
+  })();
+
   const yaResuelta =
-    estadoNormalizado === "VERIFICADA" || estadoNormalizado === "RECHAZADA";
+    estadoNormalizado === "VERIFICADA" || estadoNormalizado === "RECHAZADA" || reservaExpirada;
   const puedeRechazar = Boolean(
     detalle?.id && !yaResuelta && !detalle.codigo_verificado_at,
   );
@@ -448,6 +461,18 @@ const DetalleReservaVerificacion = ({
     .filter(Boolean)
     .join(" ");
   const estado = (detalle.estado || "").toUpperCase();
+  const estaExpirada = estado === "EXPIRADO" || (() => {
+    if (estado === "PENDIENTE" || estado === "CONFIRMADA") {
+      if (detalle.fecha_inicio) {
+        const fechaInicio = new Date(detalle.fecha_inicio);
+        const ahora = new Date();
+        if ((ahora - fechaInicio) / (1000 * 60) > 3) {
+          return true;
+        }
+      }
+    }
+    return false;
+  })();
   const estaRechazada = estado === "RECHAZADA";
   const estaVerificada =
     Boolean(detalle.codigo_verificado_at) || estado === "VERIFICADA";
@@ -455,7 +480,11 @@ const DetalleReservaVerificacion = ({
   let badgeIcon = null;
   let badgeClass = "bg-autospot-cream text-autospot-muted";
   let badgeText = "Pendiente";
-  if (estaRechazada) {
+  if (estaExpirada) {
+    badgeClass = "bg-[#fee2e2] text-[#b42318] border border-[#fecaca]";
+    badgeText = "Expirada";
+    badgeIcon = <X className="h-3.5 w-3.5" strokeWidth={2.4} />;
+  } else if (estaRechazada) {
     badgeClass = "border border-autospot-border bg-white text-autospot-muted";
     badgeText = "Rechazada";
     badgeIcon = <X className="h-3.5 w-3.5" strokeWidth={2.4} />;
@@ -513,13 +542,22 @@ const DetalleReservaVerificacion = ({
         </div>
       )}
 
-      {!estaRechazada && detalle.motivo_bloqueo && (
+      {!estaRechazada && !estaExpirada && detalle.motivo_bloqueo && (
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-autospot-border bg-autospot-cream/60 p-4 text-sm font-semibold text-autospot-black">
           <AlertCircle
             className="mt-0.5 h-4 w-4 shrink-0 text-autospot-accent"
             strokeWidth={2.4}
           />
           <span>{detalle.motivo_bloqueo}</span>
+        </div>
+      )}
+
+      {estaExpirada && (
+        <div className="mt-5 rounded-2xl border-l-4 border-[#b42318] bg-[#fee2e2]/60 p-4 text-sm text-autospot-black">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#b42318]">
+            Reserva expirada
+          </p>
+          <p className="mt-1 font-semibold text-[#b42318]">Esta reserva ha superado los 3 minutos de tolerancia y ya no puede ser procesada.</p>
         </div>
       )}
 
@@ -535,7 +573,12 @@ const DetalleReservaVerificacion = ({
             Rechazar reserva
           </button>
         )}
-        {estaRechazada ? (
+        {estaExpirada ? (
+          <span className="inline-flex items-center justify-center gap-2 rounded-full border border-[#fecaca] bg-[#fee2e2] px-5 py-3 text-sm font-bold text-[#b42318]">
+            <X className="h-4 w-4" strokeWidth={2.4} />
+            Reserva expirada
+          </span>
+        ) : estaRechazada ? (
           <span className="inline-flex items-center justify-center gap-2 rounded-full border border-autospot-border bg-autospot-cream px-5 py-3 text-sm font-bold text-autospot-muted">
             <X className="h-4 w-4" strokeWidth={2.4} />
             Reserva rechazada
