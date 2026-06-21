@@ -260,3 +260,73 @@ class TestUS14CHTTP:
             app.dependency_overrides.clear()
             Base.metadata.drop_all(engine)
             engine.dispose()
+
+    def test_creacion_exitosa_sin_reservas_activas(self):
+        engine, client_context = _crear_cliente()
+        try:
+            with client_context as client:
+                vehiculo, _ = _registrar_vehiculo(client, "prop_regla1@autospot.com")
+                _hacer_vehiculo_reservable(engine, vehiculo["id"])
+                
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
+                    client,
+                    "cliente_regla1@autospot.com",
+                )
+                _registrar_datos_personales_directo(engine, cliente_id)
+
+                # Cliente sin reservas previas intenta crear una
+                response = client.post(
+                    "/alquiler/reservas",
+                    json=_payload_reserva(vehiculo["id"]),
+                    headers=_auth_headers(token_cliente),
+                )
+
+                # Debe ser exitoso
+                assert response.status_code == 201
+                body = response.json()
+                assert body["estado"] == "CONFIRMADA"
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()
+
+    def test_creacion_falla_por_reserva_activa_del_usuario(self):
+        engine, client_context = _crear_cliente()
+        try:
+            with client_context as client:
+                # Se registran dos vehiculos distintos
+                vehiculo1, _ = _registrar_vehiculo(client, "prop_regla2a@autospot.com")
+                _hacer_vehiculo_reservable(engine, vehiculo1["id"])
+                
+                vehiculo2, _ = _registrar_vehiculo(client, "prop_regla2b@autospot.com")
+                _hacer_vehiculo_reservable(engine, vehiculo2["id"])
+
+                cliente_id, token_cliente = _registrar_y_loguear_usuario(
+                    client,
+                    "cliente_regla2@autospot.com",
+                )
+                _registrar_datos_personales_directo(engine, cliente_id)
+
+                # Cliente crea la PRIMERA reserva (activa)
+                primera_reserva = client.post(
+                    "/alquiler/reservas",
+                    json=_payload_reserva(vehiculo1["id"]),
+                    headers=_auth_headers(token_cliente),
+                )
+                assert primera_reserva.status_code == 201
+
+                # Cliente intenta crear una SEGUNDA reserva para otro vehiculo
+                segunda_reserva = client.post(
+                    "/alquiler/reservas",
+                    json=_payload_reserva(vehiculo2["id"]),
+                    headers=_auth_headers(token_cliente),
+                )
+
+                # Debe fallar devolviendo codigo HTTP apropiado (ej. 409 Conflict)
+                assert segunda_reserva.status_code in [400, 409]
+                # Validar la presencia del mensaje solicitado para el frontend en el cuerpo del error
+                assert "Ya posees una reserva en curso y debes finalizarla o cancelarla antes de realizar otra" in segunda_reserva.text
+        finally:
+            app.dependency_overrides.clear()
+            Base.metadata.drop_all(engine)
+            engine.dispose()

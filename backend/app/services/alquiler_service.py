@@ -22,7 +22,8 @@ from app.exceptions import (
     ReservaSinCheckinAprobadoError,
     VehiculoNoDisponibleParaReservaError,
     VehiculoNoEncontradoError,
-    DatosPersonalesNoRegistradosError
+    DatosPersonalesNoRegistradosError,
+    ConductorConReservaActivaError
 )
 from app.models.checkin_vehiculo import CheckinVehiculo
 from app.models.datos_personales_usuario import DatosPersonalesUsuario
@@ -149,6 +150,17 @@ def crear_reserva_con_codigo(
     )
     if reserva_activa is not None:
         raise ReservaActivaExistenteError()
+
+    reserva_activa_conductor = (
+        db.query(Reserva)
+        .filter(
+            Reserva.conductor_id == conductor_id,
+            Reserva.estado.in_(ESTADOS_RESERVA_ACTIVA),
+        )
+        .first()
+    )
+    if reserva_activa_conductor is not None:
+        raise ConductorConReservaActivaError()
 
     if (
         vehiculo.estado_registro != "HABILITADO"
