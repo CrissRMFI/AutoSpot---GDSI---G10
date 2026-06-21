@@ -11,6 +11,8 @@ import { subirFotoCheckout } from "../api/checkoutService";
 const COMBUSTIBLE_OPTIONS = ["1/4", "1/2", "3/4", "Lleno"];
 
 const CheckoutForm = ({ onSubmit, isLoading, reservaResumen, initialData }) => {
+  // Odómetro actual del vehículo: el km del checkout no puede ser menor.
+  const kmMinimo = reservaResumen?.vehiculo?.kilometros ?? null;
   const [formData, setFormData] = useState({
     nivel_combustible: initialData?.nivel_combustible || "Lleno",
     kilometraje_actual: initialData?.kilometraje_actual || "",
@@ -209,8 +211,14 @@ const CheckoutForm = ({ onSubmit, isLoading, reservaResumen, initialData }) => {
             type="number"
             value={formData.kilometraje_actual}
             onChange={handleChange}
+            onWheel={(e) => e.currentTarget.blur()}
             required
-            InputProps={{ inputProps: { min: 0 } }}
+            InputProps={{ inputProps: { min: kmMinimo } }}
+            helperText={
+              kmMinimo != null
+                ? `Odómetro actual del vehículo: ${kmMinimo.toLocaleString("es-AR")} km (no puede ser menor)`
+                : undefined
+            }
             sx={{ bgcolor: "white", borderRadius: 2 }}
           />
         </FormControl>

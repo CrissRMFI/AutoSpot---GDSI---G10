@@ -561,6 +561,7 @@ class TestCA3_ConsolidacionPromedios:
                         "categoria": "SEDAN",
                         "tipo_combustible": "NAFTA",
                         "pets_friendly": False,
+                        "kilometros": 50000,
                         "fotos": [
                             {"lado": "FRENTE", "url": "url1", "formato": "jpg", "tamanio_bytes": 100},
                             {"lado": "TRASERA", "url": "url2", "formato": "jpg", "tamanio_bytes": 100},

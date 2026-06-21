@@ -62,6 +62,7 @@ def _crear_vehiculo(client: TestClient, propietario_id: str, token: str) -> str:
         "categoria": "SEDAN",
         "tipo_combustible": "NAFTA",
         "pets_friendly": True,
+        "kilometros": 50000,
         "fotos": [
             {"lado": "FRENTE", "url": "f.jpg", "formato": "jpg", "tamanio_bytes": 100},
             {"lado": "TRASERA", "url": "t.jpg", "formato": "jpg", "tamanio_bytes": 100},
@@ -94,6 +95,7 @@ class TestActualizarVehiculoHTTP:
                     "categoria": "HATCHBACK",
                     "tipo_combustible": "GNC",
                     "pets_friendly": False,
+                    "kilometros": 50000,
                     "fotos": [
                         {"lado": "FRENTE", "url": "nf.jpg", "formato": "jpg", "tamanio_bytes": 100},
                         {"lado": "TRASERA", "url": "nt.jpg", "formato": "jpg", "tamanio_bytes": 100},

@@ -44,6 +44,7 @@ def test_get_resenias_exito(client: TestClient, db_session):
         categoria="SEDAN", 
         tipo_combustible="NAFTA", 
         pets_friendly=False,
+        kilometros=50000,
         precio_por_dia=Decimal("1000")
     )
     db_session.add(vehiculo)
@@ -102,6 +103,7 @@ def test_get_resenias_vacia(client: TestClient, db_session):
         categoria="HATCHBACK", 
         tipo_combustible="NAFTA", 
         pets_friendly=False,
+        kilometros=50000,
         precio_por_dia=Decimal("800")
     )
     db_session.add(vehiculo)

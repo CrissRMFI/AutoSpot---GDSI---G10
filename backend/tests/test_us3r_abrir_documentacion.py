@@ -47,6 +47,7 @@ def _crear_vehiculo_documentado(db_session, propietario_id) -> Vehiculo:
         categoria="SEDAN",
         tipo_combustible="NAFTA",
         pets_friendly=True,
+        kilometros=50000,
         patente="AB123CD",
         chasis="CHASIS-123",
         motor="MOTOR-123",

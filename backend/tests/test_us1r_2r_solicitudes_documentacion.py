@@ -55,6 +55,7 @@ def _crear_vehiculo_en_revision(
         categoria="SEDAN",
         tipo_combustible="NAFTA",
         pets_friendly=True,
+        kilometros=50000,
         estado_registro="EN_REVISION",
         created_at=fecha_solicitud,
         updated_at=fecha_solicitud,

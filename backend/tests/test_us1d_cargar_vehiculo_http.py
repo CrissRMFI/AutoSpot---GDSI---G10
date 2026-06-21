@@ -165,6 +165,7 @@ def _payload_vehiculo_valido():
         "categoria": "SEDAN",
         "tipo_combustible": "NAFTA",
         "pets_friendly": True,
+        "kilometros": 50000,
         "fotos": [
             {
                 "lado": "FRENTE",

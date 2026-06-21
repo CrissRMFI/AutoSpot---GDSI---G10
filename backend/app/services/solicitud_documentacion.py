@@ -165,6 +165,10 @@ def _obtener_detalle_vehiculo(
             ("VTV / revision tecnica", vehiculo.vtv),
         ]
     )
+    # Fotos del vehículo (lado como nombre) para la galería del admin.
+    fotos = _documentos_desde_campos(
+        [(foto.lado, foto.url) for foto in (vehiculo.fotos or [])]
+    )
 
     return SolicitudDocumentacionDetalleSchema(
         tipo=TIPO_SOLICITUD_VEHICULO,
@@ -175,6 +179,8 @@ def _obtener_detalle_vehiculo(
         fecha_solicitud=vehiculo.updated_at,
         resumen=f"{vehiculo.marca} {vehiculo.modelo} ({vehiculo.anio})",
         documentos=documentos,
+        fotos=fotos,
+        kilometros=vehiculo.kilometros,
         marca=vehiculo.marca,
         modelo=vehiculo.modelo,
         anio=vehiculo.anio,

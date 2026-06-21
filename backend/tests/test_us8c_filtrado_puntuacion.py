@@ -46,6 +46,7 @@ def _crear_vehiculo_disponible(
         categoria="SEDAN",
         tipo_combustible="NAFTA",
         pets_friendly=True,
+        kilometros=50000,
         estado_registro="HABILITADO",
         disponible=True,
         precio_por_dia=Decimal("50000.00"),

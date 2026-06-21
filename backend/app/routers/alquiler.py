@@ -94,6 +94,7 @@ def _vehiculo_resumen(reserva) -> VehiculoReservaResumenSchema:
         categoria=vehiculo.categoria,
         tipo_combustible=vehiculo.tipo_combustible,
         pets_friendly=vehiculo.pets_friendly,
+        kilometros=vehiculo.kilometros,
         patente=vehiculo.patente,
         descripcion=vehiculo.descripcion,
         precio_por_dia=vehiculo.precio_por_dia,

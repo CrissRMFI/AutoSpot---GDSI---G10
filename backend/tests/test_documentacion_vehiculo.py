@@ -50,6 +50,7 @@ def crear_vehiculo_base(db_session):
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",

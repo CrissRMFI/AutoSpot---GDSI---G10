@@ -49,6 +49,7 @@ class TestActualizarVehiculoService:
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",
@@ -97,6 +98,7 @@ class TestActualizarVehiculoService:
             categoria="HATCHBACK",
             tipo_combustible="GNC",
             pets_friendly=False,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",
@@ -172,6 +174,7 @@ class TestActualizarVehiculoService:
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             patente="AB123CD",
             chasis="CHASIS123",
             motor="MOTOR123",
@@ -216,6 +219,7 @@ class TestActualizarVehiculoService:
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             patente="BB222BB",
             fotos=[
                 FotoVehiculoSchema(lado="FRENTE", url="f.jpg", formato="jpg", tamanio_bytes=100),
@@ -243,6 +247,7 @@ class TestActualizarVehiculoService:
             categoria="SEDAN",
             tipo_combustible="GNC",
             pets_friendly=False,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(lado="FRENTE", url="f.jpg", formato="jpg", tamanio_bytes=100),
                 FotoVehiculoSchema(lado="TRASERA", url="t.jpg", formato="jpg", tamanio_bytes=100),

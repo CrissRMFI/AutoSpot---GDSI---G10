@@ -64,6 +64,7 @@ def _crear_propietario_con_vehiculo(db_session):
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",

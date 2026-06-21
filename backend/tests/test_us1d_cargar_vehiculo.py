@@ -61,6 +61,7 @@ class TestCA6_RegistroExitosoVehiculo:
             categoria="SEDAN",
             tipo_combustible="NAFTA",
             pets_friendly=True,
+            kilometros=50000,
             fotos=[
                 FotoVehiculoSchema(
                     lado="FRENTE",
@@ -140,6 +141,7 @@ class TestCA1_CamposObligatoriosVehiculo:
         "categoria": "SEDAN",
         "tipo_combustible": "NAFTA",
         "pets_friendly": True,
+        "kilometros": 50000,
         "fotos": [
             {
                 "lado": "FRENTE",
