@@ -166,6 +166,12 @@ class ReservaActivaExistenteError(AutoSpotError):
         super().__init__("El vehículo ya tiene una reserva activa")
 
 
+class ConductorConReservaActivaError(AutoSpotError):
+    """Se lanza cuando el conductor ya posee una reserva activa en curso."""
+    def __init__(self) -> None:
+        super().__init__("Ya posees una reserva en curso y debes finalizarla o cancelarla antes de realizar otra")
+
+
 class ReservaNoEncontradaError(AutoSpotError):
     """Se lanza cuando no existe una reserva para el código informado."""
     def __init__(self) -> None:
