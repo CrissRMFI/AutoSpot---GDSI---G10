@@ -77,11 +77,18 @@ def crear_checkin(
         )
 
     # 3. Crear el check-in
+    # El kilometraje se autocompleta desde el odómetro del vehículo (autoritativo):
+    # ya no es responsabilidad del conductor cargarlo.
+    km_vehiculo = reserva.vehiculo.kilometros if reserva.vehiculo else None
+    kilometraje_actual = (
+        km_vehiculo if km_vehiculo is not None else schema.kilometraje_actual
+    )
+
     nuevo_checkin = CheckinVehiculo(
         reserva_id=reserva.id,
         conductor_id=conductor_id,
         nivel_combustible=schema.nivel_combustible,
-        kilometraje_actual=schema.kilometraje_actual,
+        kilometraje_actual=kilometraje_actual,
         esta_limpio=schema.esta_limpio,
         tiene_danios=schema.tiene_danios,
         descripcion_danios=schema.descripcion_danios,
@@ -142,9 +149,16 @@ def re_enviar_checkin(
             detail="Solo se pueden editar check-ins en estado RECHAZADO.",
         )
 
-    # Actualizar datos
+    # Actualizar datos (el km se mantiene autocompletado desde el vehículo)
+    km_vehiculo = (
+        checkin.reserva.vehiculo.kilometros
+        if checkin.reserva and checkin.reserva.vehiculo
+        else None
+    )
     checkin.nivel_combustible = schema.nivel_combustible
-    checkin.kilometraje_actual = schema.kilometraje_actual
+    checkin.kilometraje_actual = (
+        km_vehiculo if km_vehiculo is not None else schema.kilometraje_actual
+    )
     checkin.esta_limpio = schema.esta_limpio
     checkin.tiene_danios = schema.tiene_danios
     checkin.descripcion_danios = schema.descripcion_danios

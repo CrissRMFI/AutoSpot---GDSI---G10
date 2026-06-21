@@ -10,10 +10,14 @@ import { subirFotoCheckin } from "../api/checkinService";
 
 const COMBUSTIBLE_OPTIONS = ["1/4", "1/2", "3/4", "Lleno"];
 
-const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
+const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo, kilometrosVehiculo }) => {
+  // El kilometraje se autocompleta desde el odómetro del vehículo (ya no lo
+  // carga el conductor). El backend lo vuelve a derivar del vehículo.
+  const kmAutocompletado =
+    kilometrosVehiculo ?? initialData?.kilometraje_actual ?? 0;
   const [formData, setFormData] = useState({
     nivel_combustible: initialData?.nivel_combustible || "Lleno",
-    kilometraje_actual: initialData?.kilometraje_actual || "",
+    kilometraje_actual: kmAutocompletado,
     esta_limpio: initialData?.esta_limpio ?? true,
     tiene_danios: initialData?.tiene_danios ?? false,
     descripcion_danios: initialData?.descripcion_danios || "",
@@ -205,15 +209,25 @@ const CheckinForm = ({ initialData, onSubmit, isLoading, motivoRechazo }) => {
 
         <FormControl fullWidth>
           <FormLabel sx={{ fontWeight: 700, color: "var(--text)", mb: 1 }}>Kilometraje Actual</FormLabel>
-          <TextField
-            name="kilometraje_actual"
-            type="number"
-            value={formData.kilometraje_actual}
-            onChange={handleChange}
-            required
-            InputProps={{ inputProps: { min: 0 } }}
-            sx={{ bgcolor: "white", borderRadius: 2 }}
-          />
+          <Box
+            sx={{
+              bgcolor: "#f5f2ed",
+              border: "1px solid var(--border)",
+              borderRadius: 2,
+              px: 2,
+              py: 1.75,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 1,
+            }}
+          >
+            <Typography sx={{ fontWeight: 800, color: "var(--text)", fontSize: 18 }}>
+              {Number(formData.kilometraje_actual).toLocaleString("es-AR")} km
+            </Typography>
+            <Typography variant="caption" sx={{ color: "var(--muted)" }}>
+              (automático, según el vehículo)
+            </Typography>
+          </Box>
         </FormControl>
       </Box>
 

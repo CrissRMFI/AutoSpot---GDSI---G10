@@ -38,6 +38,7 @@ const PublicarVehiculoPage = () => {
     categoria: "",
     tipo_combustible: "",
     pets_friendly: "true",
+    kilometros: "",
     precio_por_dia: "",
     fotos: [],
   });
@@ -136,6 +137,7 @@ const PublicarVehiculoPage = () => {
     datosVehiculo,
     anioParsed,
     capacidadParsed,
+    kilometrosParsed,
     precioParsed,
   }) => {
     if (!usuario?.id) {
@@ -156,6 +158,11 @@ const PublicarVehiculoPage = () => {
         "Por favor completá todos los campos obligatorios básicos.",
         "error",
       );
+      return false;
+    }
+
+    if (Number.isNaN(kilometrosParsed) || kilometrosParsed < 0) {
+      mostrarFeedback("Ingresá los kilómetros del vehículo (0 o más).", "error");
       return false;
     }
 
@@ -214,6 +221,7 @@ const PublicarVehiculoPage = () => {
 
     const anioParsed = parseInt(datosVehiculo.anio, 10);
     const capacidadParsed = parseInt(datosVehiculo.capacidad, 10);
+    const kilometrosParsed = parseInt(datosVehiculo.kilometros, 10);
     const petsParsed = datosVehiculo.pets_friendly === "true";
     const precioParsed = Number(precio_por_dia);
 
@@ -221,6 +229,7 @@ const PublicarVehiculoPage = () => {
       datosVehiculo,
       anioParsed,
       capacidadParsed,
+      kilometrosParsed,
       precioParsed,
     });
 
@@ -232,6 +241,7 @@ const PublicarVehiculoPage = () => {
       ...datosVehiculo,
       anio: anioParsed,
       capacidad: capacidadParsed,
+      kilometros: kilometrosParsed,
       pets_friendly: petsParsed,
     };
 
@@ -445,6 +455,24 @@ const PublicarVehiculoPage = () => {
                     placeholder="Ej. 5"
                     value={form.capacidad}
                     onChange={actualizarCampo}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="kilometros" className={labelClassName}>
+                    Kilómetros *
+                  </label>
+
+                  <input
+                    id="kilometros"
+                    name="kilometros"
+                    className={inputClassName}
+                    type="number"
+                    min="0"
+                    placeholder="Ej. 45000"
+                    value={form.kilometros}
+                    onChange={actualizarCampo}
+                    onWheel={(e) => e.currentTarget.blur()}
                   />
                 </div>
 

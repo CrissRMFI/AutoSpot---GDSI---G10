@@ -155,6 +155,9 @@ class VehiculoBaseSchema(BaseModel):
     categoria: str
     tipo_combustible: str
     pets_friendly: bool
+    # Opcional a nivel API (el frontend lo exige al publicar). Permite que los
+    # vehículos creados sin km queden con odómetro NULL hasta el backfill.
+    kilometros: int | None = None
     fotos: list[FotoVehiculoSchema]
 
     @field_validator(
@@ -176,6 +179,14 @@ class VehiculoBaseSchema(BaseModel):
     def validar_capacidad(cls, valor: int) -> int:
         if valor <= 0:
             raise ValueError("Capacidad invalida")
+
+        return valor
+
+    @field_validator("kilometros")
+    @classmethod
+    def validar_kilometros(cls, valor: int | None) -> int | None:
+        if valor is not None and valor < 0:
+            raise ValueError("Kilometros invalido")
 
         return valor
 
@@ -231,6 +242,7 @@ class VehiculoPublicoSchema(BaseModel):
     categoria: str
     tipo_combustible: str
     pets_friendly: bool
+    kilometros: int | None = None
     estado_registro: str
     motivo_rechazo: str | None = None
     fotos: list[FotoVehiculoPublicoSchema]

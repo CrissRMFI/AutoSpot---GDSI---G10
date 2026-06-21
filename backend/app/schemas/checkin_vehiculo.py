@@ -14,8 +14,11 @@ class CheckinBaseSchema(BaseModel):
     )
     kilometraje_actual: int = Field(
         ...,
-        gt=0,
-        description="Kilometraje marcado en el panel.",
+        ge=0,
+        description=(
+            "Kilometraje (odómetro) del vehículo. En el check-in se autocompleta "
+            "desde el vehículo en el backend (no lo carga el conductor)."
+        ),
     )
     esta_limpio: bool = Field(
         ...,

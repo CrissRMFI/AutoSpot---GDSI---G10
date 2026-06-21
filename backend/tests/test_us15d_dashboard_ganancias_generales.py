@@ -40,6 +40,7 @@ def _crear_vehiculo(db_session, propietario_id: uuid.UUID) -> Vehiculo:
         categoria="SEDAN",
         tipo_combustible="NAFTA",
         pets_friendly=True,
+        kilometros=50000,
         patente="GAN123",
         estacion="Estación Belgrano",
         precio_por_dia=Decimal("50000.00"),

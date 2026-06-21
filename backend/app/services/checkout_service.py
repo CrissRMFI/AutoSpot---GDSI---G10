@@ -6,6 +6,7 @@ import uuid
 from sqlalchemy.orm import Session, joinedload
 
 from app.exceptions import (
+    CheckoutKilometrajeInvalidoError,
     CheckoutNoConfirmableError,
     CheckoutNoDisponibleError,
     CheckoutNoEncontradoError,
@@ -53,6 +54,11 @@ def crear_checkout(
 
     if (reserva.estado or "").upper() != "DEVUELTO" or reserva.fecha_devolucion_real is None:
         raise CheckoutNoDisponibleError()
+
+    # El kilometraje no puede retroceder respecto del odómetro actual del auto.
+    km_vehiculo = reserva.vehiculo.kilometros if reserva.vehiculo else None
+    if km_vehiculo is not None and schema.kilometraje_actual < km_vehiculo:
+        raise CheckoutKilometrajeInvalidoError(km_vehiculo)
 
     nuevo_checkout = CheckoutVehiculo(
         reserva_id=reserva.id,
@@ -141,6 +147,10 @@ def confirmar_checkout(
     reserva = checkout.reserva
     reserva.estado = "FINALIZADA"
     if reserva.vehiculo is not None:
+        # Al finalizar, el odómetro del vehículo avanza al km registrado en el
+        # checkout (así el próximo check-in lo autocompleta actualizado).
+        if checkout.kilometraje_actual is not None:
+            reserva.vehiculo.kilometros = checkout.kilometraje_actual
         # El auto solo vuelve al catalogo si no tiene un reporte critico activo.
         tiene_reporte_activo = (
             obtener_reporte_activo_por_vehiculo(

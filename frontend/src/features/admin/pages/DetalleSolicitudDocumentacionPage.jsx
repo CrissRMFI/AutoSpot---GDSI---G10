@@ -6,6 +6,7 @@ import {
   rechazarSolicitudDocumentacion,
 } from "../api/solicitudesApi";
 import { etiquetaEstado } from "../../../utils/formatStatus";
+import LightboxGaleria from "../../vehiculos/components/LightboxGaleria";
 
 const labelClassName = "mb-2 block text-sm font-bold text-autospot-black";
 
@@ -211,6 +212,8 @@ const DetalleSolicitudDocumentacionPage = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [documentoActivo, setDocumentoActivo] = useState(null);
+  const [galeriaAbierta, setGaleriaAbierta] = useState(false);
+  const [indiceGaleria, setIndiceGaleria] = useState(0);
   const [procesando, setProcesando] = useState(false);
   const [mostrarRechazo, setMostrarRechazo] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState("");
@@ -312,6 +315,14 @@ const DetalleSolicitudDocumentacionPage = () => {
               value: detalle.tipo_transmision,
             },
             { id: "capacidad", label: "Capacidad", value: detalle.capacidad },
+            {
+              id: "kilometros",
+              label: "Kilómetros",
+              value:
+                detalle.kilometros != null
+                  ? `${Number(detalle.kilometros).toLocaleString("es-AR")} km`
+                  : null,
+            },
             {
               id: "categoria",
               label: "Categoría",
@@ -474,6 +485,46 @@ const DetalleSolicitudDocumentacionPage = () => {
               </section>
             )}
 
+            {detalle.tipo === "VEHICULO" && (detalle.fotos?.length ?? 0) > 0 && (
+              <section className="mb-8">
+                <div className="mb-6">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
+                    Fotos del vehículo
+                  </p>
+                  <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-autospot-black">
+                    Galería del auto
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-autospot-muted">
+                    Tocá una foto para verla en grande y recorrer la galería.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {detalle.fotos.map((foto, indice) => (
+                    <button
+                      key={`${foto.nombre}-${foto.url}`}
+                      type="button"
+                      onClick={() => {
+                        setIndiceGaleria(indice);
+                        setGaleriaAbierta(true);
+                      }}
+                      className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-autospot-border bg-autospot-cream"
+                    >
+                      <img
+                        src={foto.url}
+                        alt={foto.nombre}
+                        className="h-full w-full object-cover transition group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white">
+                        {foto.nombre}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section>
               <div className="mb-6">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
@@ -582,6 +633,17 @@ const DetalleSolicitudDocumentacionPage = () => {
       <ModalDocumento
         documento={documentoActivo}
         onCerrar={() => setDocumentoActivo(null)}
+      />
+
+      <LightboxGaleria
+        isOpen={galeriaAbierta}
+        onClose={() => setGaleriaAbierta(false)}
+        fotos={(detalle?.fotos ?? []).map((foto) => ({
+          url: foto.url,
+          lado: foto.nombre,
+        }))}
+        indiceActivo={indiceGaleria}
+        setIndiceActivo={setIndiceGaleria}
       />
     </>
   );

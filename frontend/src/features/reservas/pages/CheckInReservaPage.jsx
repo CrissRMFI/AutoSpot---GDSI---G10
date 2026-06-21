@@ -221,6 +221,7 @@ const CheckInReservaPage = () => {
           isLoading={isSubmitting}
           initialData={initialData}
           motivoRechazo={initialData?.motivo_rechazo}
+          kilometrosVehiculo={reserva?.vehiculo?.kilometros}
         />
       )}
 
