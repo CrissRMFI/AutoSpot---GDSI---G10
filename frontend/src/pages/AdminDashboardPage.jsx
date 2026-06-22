@@ -145,79 +145,65 @@ const AdminDashboardPage = () => {
         </h1>
       </div>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           destacado
           icono={FileText}
           titulo="Documentos a revisar"
           valor={cargando ? "..." : resumen.documentos}
           detalle="Pendientes de validación"
+          to="/admin/solicitudes-documentacion"
         />
-
         <StatCard
           icono={ClipboardCheck}
           titulo="Check-ins pendientes"
           valor={cargando ? "..." : resumen.checkinsPendientes}
           detalle="Con fotos obligatorias"
+          to="/admin/checkins/revision"
         />
         <StatCard
           icono={AlertCircle}
           titulo="Incidentes abiertos"
           valor={cargando ? "..." : resumen.incidentes}
           detalle="Pendientes de resolución"
+          to="/admin/incidentes"
         />
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        <div className="min-w-0 space-y-5">
-          <section className="overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
-            <div className="border-b border-autospot-border px-5 py-4">
-              <h2 className="text-base font-black text-autospot-black">
-                Tareas prioritarias
-              </h2>
-            </div>
-
-            <div className="divide-y divide-autospot-border">
-              <TaskRow
-                icono={FileText}
-                titulo="Validar documentación"
-                detalle={`${resumen.documentos} solicitud${resumen.documentos === 1 ? "" : "es"} pendiente${resumen.documentos === 1 ? "" : "s"}`}
-                to="/admin/solicitudes-documentacion"
-              />
-              <TaskRow
-                icono={KeyRound}
-                titulo="Verificar reservas"
-                detalle="Buscar por código y aprobar o rechazar"
-                to="/admin/reservas/verificar"
-              />
-              <TaskRow
-                icono={ClipboardCheck}
-                titulo="Revisar check-ins"
-                detalle={`${resumen.checkinsPendientes} pendiente${resumen.checkinsPendientes === 1 ? "" : "s"} de revisión`}
-                to="/admin/checkins/revision"
-              />
-              <TaskRow
-                icono={Car}
-                titulo="Entrega de autos"
-                detalle={`${resumen.entregas} reserva${resumen.entregas === 1 ? "" : "s"} lista${resumen.entregas === 1 ? "" : "s"} para entregar`}
-                to="/admin/entrega"
-              />
-              <TaskRow
-                icono={Inbox}
-                titulo="Recepción de autos"
-                detalle={`${resumen.recepcion} alquiler${resumen.recepcion === 1 ? "" : "es"} en recepción o checkout`}
-                to="/admin/recepcion"
-              />
-              <TaskRow
-                icono={AlertCircle}
-                titulo="Reporte de incidentes"
-                detalle={`${resumen.incidentes} incidente${resumen.incidentes === 1 ? "" : "s"} abierto${resumen.incidentes === 1 ? "" : "s"}`}
-                to="/admin/incidentes"
-              />
-            </div>
-          </section>
+      <section className="w-full overflow-hidden rounded-lg border border-autospot-border bg-autospot-white">
+        <div className="border-b border-autospot-border px-5 py-4">
+          <h2 className="text-base font-black text-autospot-black">
+            Tareas prioritarias
+          </h2>
         </div>
-      </div>
+
+        <div className="divide-y divide-autospot-border">
+          <TaskRow
+            icono={FileText}
+            titulo="Validar documentación"
+            detalle={`${resumen.documentos} solicitud${resumen.documentos === 1 ? "" : "es"} pendiente${resumen.documentos === 1 ? "" : "s"}`}
+            to="/admin/solicitudes-documentacion"
+          />
+          <TaskRow
+            icono={KeyRound}
+            titulo="Verificar reservas"
+            detalle="Buscar por código y aprobar o rechazar"
+            to="/admin/reservas/verificar"
+          />
+          <TaskRow
+            icono={Car}
+            titulo="Entrega de autos"
+            detalle={`${resumen.entregas} reserva${resumen.entregas === 1 ? "" : "s"} lista${resumen.entregas === 1 ? "" : "s"} para entregar`}
+            to="/admin/entrega"
+          />
+          <TaskRow
+            icono={Inbox}
+            titulo="Recepción de autos"
+            detalle={`${resumen.recepcion} alquiler${resumen.recepcion === 1 ? "" : "es"} en recepción o checkout`}
+            to="/admin/recepcion"
+          />
+        </div>
+      </section>
     </section>
   );
 };
@@ -228,14 +214,15 @@ const StatCard = ({
   titulo,
   valor,
   detalle,
-}) => (
-  <article
-    className={`rounded-lg border p-5 ${
-      destacado
-        ? "border-autospot-black bg-autospot-black text-white md:col-span-2 xl:col-span-1"
-        : "border-autospot-border bg-autospot-white text-autospot-black"
-    }`}
-  >
+  to,
+}) => {
+  const className = `block rounded-lg border p-5 ${
+    destacado
+      ? "border-autospot-black bg-autospot-black text-white"
+      : "border-autospot-border bg-autospot-white text-autospot-black"
+  } ${to ? "transition hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(15,23,42,0.12)]" : ""}`;
+
+  const contenido = (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
         <p
@@ -262,8 +249,18 @@ const StatCard = ({
         <Icono className="h-5 w-5" aria-hidden="true" />
       </span>
     </div>
-  </article>
-);
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {contenido}
+      </Link>
+    );
+  }
+
+  return <article className={className}>{contenido}</article>;
+};
 
 const TaskRow = ({ icono: Icono, titulo, detalle, to }) => (
   <Link
