@@ -40,6 +40,8 @@ import RecepcionDetallePage from "../features/admin/pages/RecepcionDetallePage";
 import HistorialConductoresPage from "../features/admin/pages/HistorialConductoresPage";
 import HistorialAutosPage from "../features/admin/pages/HistorialAutosPage";
 import AdminAlquileresAutoPage from "../features/admin/pages/AdminAlquileresAutoPage";
+import IncidentesPage from "../features/admin/pages/IncidentesPage";
+import IncidenteDetallePage from "../features/admin/pages/IncidenteDetallePage";
 
 const DashboardHome = () => {
   const { estaAutenticado, usuario } = useAuth();
@@ -405,6 +407,24 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute rolesPermitidos={["ADMIN"]}>
               <DetalleSolicitudDocumentacionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/incidentes"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <IncidentesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/incidentes/:id"
+          element={
+            <ProtectedRoute rolesPermitidos={["ADMIN"]}>
+              <IncidenteDetallePage />
             </ProtectedRoute>
           }
         />
