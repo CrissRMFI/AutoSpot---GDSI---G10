@@ -369,7 +369,91 @@ const DetalleVehiculoPage = () => {
         )}
       </div>
 
-      <div className="grid w-full gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.7fr)] 2xl:grid-cols-[minmax(0,1.65fr)_minmax(420px,0.7fr)]">
+      {esPropietario && reporteActivo && (
+        <div className="mb-5 rounded-2xl border border-[#fecaca] bg-[#fee2e2] p-4 text-[#7f1d1d] sm:p-5">
+          <p className="text-sm font-black text-[#b42318]">
+            No disponible por incidencia crítica
+          </p>
+          <p className="mt-1 text-sm">{reporteActivo.descripcion}</p>
+
+          {reporteActivo.fotos?.length > 0 && (
+            <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+              {reporteActivo.fotos.map((foto) => (
+                <button
+                  key={foto.id}
+                  type="button"
+                  onClick={() => setFotoReporteAbierta(foto)}
+                  className="group block w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-[#fecaca] bg-white text-left"
+                  title={foto.descripcion}
+                >
+                  <img
+                    src={foto.url}
+                    alt={foto.descripcion}
+                    className="h-24 w-full object-cover transition group-hover:opacity-90"
+                  />
+                  <p className="truncate px-2 py-1 text-[11px] text-[#7f1d1d]">
+                    {foto.descripcion}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-2 text-xs">
+            El vehículo permanece fuera del catálogo hasta que registres la resolución y lo
+            vuelvas a publicar manualmente.
+          </p>
+
+          {mostrarFormResolucion ? (
+            <div className="mt-3 space-y-2">
+              <textarea
+                value={resolucionTexto}
+                onChange={(e) => setResolucionTexto(e.target.value.slice(0, 1000))}
+                rows={3}
+                placeholder="Describí cómo se resolvió la incidencia."
+                className="w-full rounded-lg border border-[#fecaca] bg-white px-3 py-2 text-sm text-autospot-black outline-none focus:border-[#b42318]"
+              />
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormResolucion(false)}
+                  className="rounded-full border border-[#fecaca] bg-white px-4 py-2 text-sm font-bold text-[#b42318]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResolverReporte}
+                  disabled={resolviendo || resolucionTexto.trim().length === 0}
+                  className="rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {resolviendo ? "Registrando..." : "Confirmar resolución"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMostrarFormResolucion(true)}
+              className="mt-3 inline-flex items-center justify-center rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d]"
+            >
+              Registrar resolución
+            </button>
+          )}
+        </div>
+      )}
+
+      {esPropietario && reporteResuelto && !reporteActivo && (
+        <div className="mb-5 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] p-4 text-[#166534] sm:p-5">
+          <p className="text-sm font-black">Incidencia resuelta</p>
+          <p className="mt-1 text-sm">
+            El vehículo sigue fuera del catálogo hasta que lo marques como disponible.
+          </p>
+        </div>
+      )}
+
+      <div className="grid w-full items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,1fr)]">
+        <div className="min-w-0 space-y-5">
         <article className="min-w-0 rounded-lg border border-autospot-border bg-autospot-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="relative overflow-hidden rounded-lg bg-[#0f0f0f]">
             {fotoActiva ? (
@@ -485,17 +569,14 @@ const DetalleVehiculoPage = () => {
           )}
         </article>
 
-        <aside className="min-w-0 xl:sticky xl:top-28 xl:self-start">
-          <div className="rounded-lg bg-autospot-black p-5 text-autospot-white shadow-autospot-large sm:p-6">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
+        <article className="min-w-0 rounded-lg border border-autospot-border bg-autospot-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-autospot-accent">
             Ficha técnica
           </p>
-
-          <h2 className="font-display text-xl font-black leading-[1.1] tracking-[-0.04em] !text-autospot-white sm:text-2xl">
+          <h2 className="mt-1 font-display text-xl font-black leading-[1.1] tracking-[-0.04em] text-autospot-black sm:text-2xl">
             Datos del vehículo
           </h2>
-
-          <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+          <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <DatoFicha label="Marca" valor={vehiculo.marca} />
             <DatoFicha label="Modelo" valor={vehiculo.modelo} />
             <DatoFicha label="Año" valor={vehiculo.anio} />
@@ -506,6 +587,14 @@ const DetalleVehiculoPage = () => {
             <DatoFicha
               label="Acepta mascotas"
               valor={vehiculo.pets_friendly ? "Sí" : "No"}
+            />
+            <DatoFicha
+              label="Kilómetros"
+              valor={
+                vehiculo.kilometros != null
+                  ? `${Number(vehiculo.kilometros).toLocaleString("es-AR")} km`
+                  : "—"
+              }
             />
             {esPropietario && (
               <DatoFicha
@@ -526,6 +615,18 @@ const DetalleVehiculoPage = () => {
               valor={vehiculo.disponible ? "Sí" : "No"}
             />
           </dl>
+        </article>
+        </div>
+
+        <aside className="min-w-0 xl:sticky xl:top-28 xl:self-start">
+          <div className="rounded-lg bg-autospot-black p-5 text-autospot-white shadow-autospot-large sm:p-6">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.1em] !text-autospot-accent-2">
+            Gestión
+          </p>
+
+          <h2 className="font-display text-xl font-black leading-[1.1] tracking-[-0.04em] !text-autospot-white sm:text-2xl">
+            Estado y acciones
+          </h2>
 
           {reputacion && (
             <div className="mt-5 flex items-center gap-4">
@@ -547,91 +648,6 @@ const DetalleVehiculoPage = () => {
                 <p className="mt-1 leading-5">{vehiculo.motivo_rechazo}</p>
               </div>
             )}
-
-          {esPropietario && reporteActivo && (
-            <div className="mt-6 rounded-2xl border border-[#fecaca] bg-[#fee2e2] p-4 text-[#7f1d1d]">
-              <p className="text-sm font-black text-[#b42318]">
-                No disponible por incidencia critica
-              </p>
-              <p className="mt-1 text-sm">
-                {reporteActivo.descripcion}
-              </p>
-
-              {reporteActivo.fotos?.length > 0 && (
-                <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
-                  {reporteActivo.fotos.map((foto) => (
-                    <button
-                      key={foto.id}
-                      type="button"
-                      onClick={() => setFotoReporteAbierta(foto)}
-                      className="group block w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-[#fecaca] bg-white text-left"
-                      title={foto.descripcion}
-                    >
-                      <img
-                        src={foto.url}
-                        alt={foto.descripcion}
-                        className="h-24 w-full object-cover transition group-hover:opacity-90"
-                      />
-                      <p className="truncate px-2 py-1 text-[11px] text-[#7f1d1d]">
-                        {foto.descripcion}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <p className="mt-2 text-xs">
-                El vehículo permanece fuera del catálogo hasta que registres la resolución y lo
-                vuelvas a publicar manualmente.
-              </p>
-
-              {mostrarFormResolucion ? (
-                <div className="mt-3 space-y-2">
-                  <textarea
-                    value={resolucionTexto}
-                    onChange={(e) => setResolucionTexto(e.target.value.slice(0, 1000))}
-                    rows={3}
-                    placeholder="Describí cómo se resolvió la incidencia."
-                    className="w-full rounded-lg border border-[#fecaca] bg-white px-3 py-2 text-sm text-autospot-black outline-none focus:border-[#b42318]"
-                  />
-                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setMostrarFormResolucion(false)}
-                      className="rounded-full border border-[#fecaca] bg-white px-4 py-2 text-sm font-bold text-[#b42318]"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResolverReporte}
-                      disabled={resolviendo || resolucionTexto.trim().length === 0}
-                      className="rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {resolviendo ? "Registrando..." : "Confirmar resolución"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setMostrarFormResolucion(true)}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#b42318] px-4 py-2 text-sm font-bold !text-white transition hover:bg-[#7f1d1d]"
-                >
-                  Registrar resolución
-                </button>
-              )}
-            </div>
-          )}
-
-          {esPropietario && reporteResuelto && !reporteActivo && (
-            <div className="mt-6 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] p-4 text-[#166534]">
-              <p className="text-sm font-black">Incidencia resuelta</p>
-              <p className="mt-1 text-sm">
-                El vehículo sigue fuera del catálogo hasta que lo marques como disponible.
-              </p>
-            </div>
-          )}
 
           {esPropietario && (
             <div className="mt-6 space-y-4">
@@ -854,11 +870,11 @@ const DetalleVehiculoPage = () => {
 };
 
 const DatoFicha = ({ label, valor }) => (
-  <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-3">
-    <dt className="text-[11px] font-bold uppercase tracking-[0.08em] !text-white/55">
+  <div className="min-w-0 rounded-lg border border-autospot-border bg-[#fafaf9] p-3">
+    <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-autospot-muted">
       {label}
     </dt>
-    <dd className="mt-1 break-words text-sm font-bold !text-autospot-white">
+    <dd className="mt-1 break-words text-sm font-bold text-autospot-black">
       {valor || "—"}
     </dd>
   </div>
