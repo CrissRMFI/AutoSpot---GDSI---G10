@@ -35,6 +35,7 @@ from app.routers import ia as router_ia
 from app.routers import historial_conductores as router_historial_conductores
 from app.routers import historial_autos as router_historial_autos
 from app.routers import reportes as router_reportes
+from app.routers import incidentes as router_incidentes
 
 def obtener_origenes_cors() -> list[str]:
     """
@@ -93,3 +94,4 @@ app.include_router(router_ia.router)
 app.include_router(router_historial_conductores.router)
 app.include_router(router_historial_autos.router)
 app.include_router(router_reportes.router)
+app.include_router(router_incidentes.router)

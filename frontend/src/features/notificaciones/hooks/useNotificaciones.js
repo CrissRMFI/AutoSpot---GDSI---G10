@@ -210,7 +210,7 @@ export const useNotificaciones = () => {
       return "/documentacion-habilitante";
     }
     if (notificacion.recurso_tipo === "REPORTE" && notificacion.recurso_id) {
-      return `/admin/reportes/${notificacion.recurso_id}`;
+      return `/admin/incidentes/${notificacion.recurso_id}`;
     }
     if (notificacion.recurso_tipo === "VEHICULO" && notificacion.recurso_id) {
       return `/vehiculos/${notificacion.recurso_id}/detalle`;
