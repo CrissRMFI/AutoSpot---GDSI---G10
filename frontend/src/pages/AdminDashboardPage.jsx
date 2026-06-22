@@ -208,6 +208,12 @@ const AdminDashboardPage = () => {
                 detalle={`${resumen.recepcion} alquiler${resumen.recepcion === 1 ? "" : "es"} en recepción o checkout`}
                 to="/admin/recepcion"
               />
+              <TaskRow
+                icono={AlertCircle}
+                titulo="Reporte de incidentes"
+                detalle={`${resumen.incidentes} incidente${resumen.incidentes === 1 ? "" : "s"} abierto${resumen.incidentes === 1 ? "" : "s"}`}
+                to="/admin/incidentes"
+              />
             </div>
           </section>
         </div>
