@@ -362,8 +362,8 @@ const CatalogoVehiculosPage = () => {
 
       {/* Modal Búsqueda Avanzada */}
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl sm:p-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl sm:p-8">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="font-display text-2xl font-black tracking-[-0.04em] text-autospot-black">
                 Búsqueda avanzada
