@@ -99,6 +99,13 @@ export const obtenerCatalogoVehiculos = async (puntuacionMinima) => {
   return response.data;
 };
 
+export const obtenerVehiculosDestacados = async (limite = 3) => {
+  const response = await httpClient.get(`/vehiculos/destacados`, {
+    params: { limite },
+  });
+  return response.data;
+};
+
 export const getDetalleVehiculoCatalogo = async (vehiculoId) => {
   const response = await httpClient.get(`/vehiculos/catalogo/${vehiculoId}`);
   return response.data;
