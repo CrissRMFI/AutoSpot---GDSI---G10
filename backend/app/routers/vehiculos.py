@@ -21,6 +21,7 @@ Seguridad:
         se verifica que el vehículo exista y que pertenezca al usuario autenticado.
 """
 
+import random
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -271,6 +272,43 @@ def listar_vehiculos_usuario(
             detail=str(exc),
         ) from exc
 
+    return [
+        VehiculoPublicoSchema.model_validate(vehiculo)
+        for vehiculo in vehiculos
+    ]
+
+
+@router.get(
+    "/vehiculos/destacados",
+    response_model=list[VehiculoPublicoSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Vehículos destacados para la landing pública",
+    description=(
+        "Devuelve una muestra aleatoria de vehículos habilitados y disponibles "
+        "para alquilar. Endpoint público (sin autenticación) usado por la "
+        "landing page para mostrar ejemplos reales del catálogo."
+    ),
+)
+def listar_vehiculos_destacados(
+    db: Session = Depends(get_db),
+    limite: int = Query(
+        default=3,
+        ge=1,
+        le=12,
+        description="Cantidad de vehículos a devolver (1 a 12).",
+    ),
+) -> list[VehiculoPublicoSchema]:
+    """
+    GET /vehiculos/destacados
+
+    Flujo:
+        1. Obtiene el catálogo de vehículos disponibles (sin filtro de rol).
+        2. Toma una muestra aleatoria de hasta `limite` vehículos.
+        3. Retorna la muestra para alimentar la landing pública.
+    """
+    vehiculos = listar_vehiculos_disponibles(db=db)
+    if len(vehiculos) > limite:
+        vehiculos = random.sample(vehiculos, limite)
     return [
         VehiculoPublicoSchema.model_validate(vehiculo)
         for vehiculo in vehiculos

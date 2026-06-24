@@ -1,6 +1,27 @@
 import { useEffect, useState } from "react";
 import { getEstacionesActivas } from "../../estaciones/api/estacionesApi";
+import { obtenerVehiculosDestacados } from "../../vehiculos/api/vehiculoService";
 import { useAuth } from "../../auth/hooks/useAuth";
+import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
+import InsertChartRoundedIcon from "@mui/icons-material/InsertChartRounded";
+import TimelineRoundedIcon from "@mui/icons-material/TimelineRounded";
+import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
+import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import CalculateRoundedIcon from "@mui/icons-material/CalculateRounded";
+import PostAddRoundedIcon from "@mui/icons-material/PostAddRounded";
+import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
+import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import PinRoundedIcon from "@mui/icons-material/PinRounded";
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
 
 const rutaPorRol = (rol) => {
   switch ((rol || "").toUpperCase()) {
@@ -14,54 +35,33 @@ const rutaPorRol = (rol) => {
   }
 };
 
-const cars = [
-  {
-    icon: "🌿",
-    iconClassName: "bg-[#e8f5e9]",
-    name: "Toyota Etios 2022",
-    category: "Económico • Palermo",
-    rating: "4.9 (32 reseñas)",
-    price: "$8.500/día",
-    featured: false,
-  },
-  {
-    icon: "🚙",
-    iconClassName: "bg-[rgba(245,166,35,0.2)]",
-    name: "VW Tiguan 2023",
-    category: "Familiar • Belgrano",
-    rating: "4.8 (19 reseñas)",
-    price: "$14.200/día",
-    featured: true,
-  },
-  {
-    icon: "✨",
-    iconClassName: "bg-[#fff3e0]",
-    name: "BMW Serie 3 2023",
-    category: "Premium • Puerto Madero",
-    rating: "5.0 (8 reseñas)",
-    price: "$28.000/día",
-    featured: false,
-  },
+// Paleta para el icono de cada card del hero: cada vehículo destacado recibe
+// un color distinto (fondo suave + color del icono MUI).
+const carIconPalette = [
+  { bg: "bg-[#e8f5e9]", color: "text-[#2e7d32]" },
+  { bg: "bg-[#e3f2fd]", color: "text-[#1565c0]" },
+  { bg: "bg-[#fff3e0]", color: "text-[#ef6c00]" },
+  { bg: "bg-[#f3e5f5]", color: "text-[#7b1fa2]" },
 ];
 
 const steps = [
   {
     number: "01",
-    icon: "📋",
+    Icon: PostAddRoundedIcon,
     title: "Publicá tu auto",
     description:
       "Cargá las características, fotos y disponibilidad. Recibís una recomendación de precio basada en el mercado actual.",
   },
   {
     number: "02",
-    icon: "🏢",
+    Icon: WarehouseRoundedIcon,
     title: "Dejalo en la estación",
     description:
       "Llevás el auto a la estación AutoSpot más cercana. Nuestro equipo lo verifica y queda disponible en el catálogo.",
   },
   {
     number: "03",
-    icon: "💰",
+    Icon: PaymentsRoundedIcon,
     title: "Cobrás sin vueltas",
     description:
       "El inquilino paga, el auto se entrega con checklist fotográfico, y vos recibís tu dinero al finalizar el alquiler.",
@@ -70,75 +70,100 @@ const steps = [
 
 const features = [
   {
-    icon: "📸",
+    Icon: PhotoCameraRoundedIcon,
     title: "Checklist fotográfico",
     description:
       "Al retirar el auto, el inquilino completa un checklist con fotos del estado. Sin discusiones, todo documentado.",
     variant: "light",
   },
   {
-    icon: "⭐",
+    Icon: StarRoundedIcon,
     title: "Sistema de reseñas",
     description:
       "Calificaciones verificadas de autos y conductores. La reputación importa y se construye con cada alquiler.",
     variant: "accent",
   },
   {
-    icon: "🏆",
-    title: "Puntos de fidelidad",
+    Icon: VerifiedUserRoundedIcon,
+    title: "Verificación de conductor",
     description:
-      "Conductores que devuelven el auto en perfectas condiciones acumulan puntos y acceden a mejores precios.",
+      "Cada conductor valida su licencia y documentación habilitante antes de poder reservar. Más seguridad para tu auto.",
     variant: "light",
   },
   {
-    icon: "📊",
+    Icon: InsertChartRoundedIcon,
     title: "Dashboard del propietario",
     description:
       "Métricas de ingresos, historial de alquileres, estado del vehículo y todo lo que necesitás para gestionar tu flota.",
     variant: "dark",
   },
   {
-    icon: "⚡",
+    Icon: TimelineRoundedIcon,
     title: "Seguimiento operativo",
     description:
       "Estados claros para retiro, check-in, devolución y revisión del vehículo durante todo el flujo.",
     variant: "light",
   },
   {
-    icon: "🛣️",
-    title: "Control de kilometraje",
+    Icon: EventAvailableRoundedIcon,
+    title: "Alquiler sin contacto",
     description:
-      "Cada plan incluye un límite diario. Si se excede, se cobra automáticamente el excedente al finalizar el alquiler.",
+      "El conductor reserva online y retira el auto con un código en la estación. Sin coordinar encuentros ni entregar llaves en mano.",
     variant: "light",
   },
   {
-    icon: "🚨",
+    Icon: ReportProblemRoundedIcon,
     title: "Reporte de incidentes",
     description:
       "Accidentes, daños o problemas mecánicos: reportalos desde la app y el equipo de soporte actúa de inmediato.",
     variant: "light",
   },
   {
-    icon: "💡",
+    Icon: AutoAwesomeRoundedIcon,
     title: "Precio sugerido",
     description:
       "Algoritmo que analiza el mercado y recomienda el precio ideal para maximizar tus ingresos sin quedar fuera de mercado.",
     variant: "light",
   },
   {
-    icon: "🎁",
-    title: "Descuentos por flota",
+    Icon: CalculateRoundedIcon,
+    title: "Costo antes de reservar",
     description:
-      "Cuantos más autos ponés a disposición, menor es la comisión. Escala tu negocio con beneficios crecientes.",
+      "El conductor simula las fechas y conoce el precio total del alquiler antes de confirmar. Transparencia desde el primer paso.",
     variant: "accent",
   },
 ];
 
 const ownerBenefits = [
-  "Cobrás por cada día que tu auto está alquilado",
   "Vos definís los días disponibles y el precio",
   "Dashboard en tiempo real con tus ingresos",
-  "Comisión más baja cuantos más autos publicás",
+];
+
+const driverFeatures = [
+  {
+    Icon: SearchRoundedIcon,
+    title: "Encontrá el auto ideal",
+    description:
+      "Explorá el catálogo y filtrá por categoría, precio, calificación y más hasta dar con el vehículo perfecto.",
+  },
+  {
+    Icon: ReceiptLongRoundedIcon,
+    title: "Sabés cuánto vas a pagar",
+    description:
+      "Simulás las fechas y conocés el costo total del alquiler antes de confirmar. Sin sorpresas al final.",
+  },
+  {
+    Icon: PinRoundedIcon,
+    title: "Retirás con un código",
+    description:
+      "Reservás online y retirás el auto en la estación con un código numérico. Sin coordinar con el dueño ni esperar llaves.",
+  },
+  {
+    Icon: RateReviewRoundedIcon,
+    title: "Reseñá y calificá el auto",
+    description:
+      "Al terminar el alquiler, dejás tu reseña y le ponés puntos al auto. Ayudás a otros conductores a elegir mejor.",
+  },
 ];
 
 const dashboardMetrics = [
@@ -170,25 +195,25 @@ const dashboardMetrics = [
 
 const trustItems = [
   {
-    icon: "🔒",
+    Icon: BadgeRoundedIcon,
     title: "Identidad verificada",
     description:
       "Todos los usuarios pasan por un proceso de verificación antes de poder alquilar un vehículo.",
   },
   {
-    icon: "📷",
+    Icon: PhotoCameraRoundedIcon,
     title: "Evidencia fotográfica",
     description:
       "Checklist con fotos al inicio y fin de cada alquiler. Sin dudas sobre el estado del vehículo.",
   },
   {
-    icon: "🛡️",
+    Icon: GavelRoundedIcon,
     title: "Reglas claras",
     description:
       "Condiciones transparentes para que propietarios y conductores sepan cómo avanza cada alquiler.",
   },
   {
-    icon: "💬",
+    Icon: SupportAgentRoundedIcon,
     title: "Soporte 24hs",
     description:
       "Equipo disponible ante cualquier problema durante el alquiler. Respuesta rápida, siempre.",
@@ -211,6 +236,12 @@ const featureDescriptionClasses = {
   dark: "text-[rgba(245,242,237,0.45)]",
 };
 
+const featureIconClasses = {
+  light: "text-autospot-accent",
+  accent: "text-autospot-white",
+  dark: "text-autospot-accent-2",
+};
+
 function Logo() {
   return (
     <a
@@ -218,7 +249,7 @@ function Logo() {
       className={`flex items-center gap-2 font-display text-xl font-black tracking-[-0.04em] text-white`}
     >
       <img src="/logo.png" alt="AutoSpot Logo" height="55px" />
-      <span>Auto<span className="text-white">Spot</span></span>
+      <span>Auto<span className="text-autospot-accent-2">Spot</span></span>
     </a>
   );
 }
@@ -291,50 +322,73 @@ function SectionHeader({
   );
 }
 
-function CarCard({ car }) {
-  const cardClassName = car.featured
+const formatearPrecio = (valor) => {
+  const numero = Number(valor ?? 0);
+  if (!numero) return "Consultar";
+  return `$${new Intl.NumberFormat("es-AR", {
+    maximumFractionDigits: 0,
+  }).format(numero)}/día`;
+};
+
+function CarCard({ vehiculo, palette, featured }) {
+  const cardClassName = featured
     ? "scale-[1.04] border-transparent bg-autospot-black"
     : "border-autospot-border bg-autospot-white";
 
-  const textClassName = car.featured
+  const textClassName = featured
     ? "text-autospot-white"
     : "text-autospot-black";
 
-  const mutedClassName = car.featured
+  const mutedClassName = featured
     ? "text-[rgba(245,242,237,0.5)]"
     : "text-autospot-muted";
+
+  const calificacion = Number(vehiculo.calificacion_promedio ?? 0);
+  const subtitulo = [vehiculo.categoria, vehiculo.estacion]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <article
       className={`flex min-w-[300px] items-center gap-4 rounded-[18px] border p-5 shadow-autospot-soft transition hover:-translate-x-1.5 ${cardClassName}`}
     >
       <div
-        className={`flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl text-2xl ${car.iconClassName}`}
+        className={`flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl ${palette.bg}`}
       >
-        {car.icon}
+        <DirectionsCarRoundedIcon className={palette.color} sx={{ fontSize: 28 }} />
       </div>
 
       <div className="flex-1">
-        <div className={`text-sm font-medium ${textClassName}`}>{car.name}</div>
-        <div className={`mt-0.5 text-xs ${mutedClassName}`}>{car.category}</div>
+        <div className={`text-sm font-medium ${textClassName}`}>
+          {vehiculo.marca} {vehiculo.modelo} {vehiculo.anio}
+        </div>
+        {subtitulo && (
+          <div className={`mt-0.5 text-xs ${mutedClassName}`}>{subtitulo}</div>
+        )}
         <div className="mt-1 flex items-center gap-1 text-xs text-autospot-accent-2">
-          ★★★★★ <span className={mutedClassName}>{car.rating}</span>
+          <StarRoundedIcon sx={{ fontSize: 14 }} />
+          <span className={mutedClassName}>
+            {calificacion > 0 ? calificacion.toFixed(1) : "Nuevo"}
+          </span>
         </div>
       </div>
 
       <div className="font-display text-sm font-bold text-autospot-accent">
-        {car.price}
+        {formatearPrecio(vehiculo.precio_por_dia)}
       </div>
     </article>
   );
 }
 
 function FeatureCard({ feature }) {
+  const Icon = feature.Icon;
   return (
     <article
       className={`cursor-default rounded-[18px] border p-8 transition hover:-translate-y-1 ${featureVariantClasses[feature.variant]}`}
     >
-      <div className="mb-4 text-3xl">{feature.icon}</div>
+      <div className="mb-4">
+        <Icon className={featureIconClasses[feature.variant]} sx={{ fontSize: 34 }} />
+      </div>
 
       <h3 className="mb-2.5 font-display text-sm font-bold tracking-[-0.02em] md:text-[0.95rem]">
         {feature.title}
@@ -351,6 +405,61 @@ function FeatureCard({ feature }) {
   );
 }
 
+// Mini gráfico de líneas (ingresos) para el mockup del panel del propietario.
+// Reproduce el estilo de curva suave + área de EvolucionMensualChart, adaptado
+// al panel oscuro de la landing.
+function MiniLineChart() {
+  const valores = [38, 52, 46, 70, 61, 84, 76, 92];
+  const ancho = 320;
+  const alto = 88;
+  const padX = 10;
+  const padY = 14;
+  const maximo = Math.max(...valores);
+  const paso = (ancho - padX * 2) / (valores.length - 1);
+
+  const puntos = valores.map((valor, index) => ({
+    x: padX + index * paso,
+    y: alto - padY - (valor / maximo) * (alto - padY * 2),
+  }));
+
+  const linea = puntos.reduce((path, punto, index) => {
+    if (index === 0) return `M ${punto.x} ${punto.y}`;
+    const anterior = puntos[index - 1];
+    const cpx = (anterior.x + punto.x) / 2;
+    return `${path} C ${cpx} ${anterior.y}, ${cpx} ${punto.y}, ${punto.x} ${punto.y}`;
+  }, "");
+  const area = `${linea} L ${puntos[puntos.length - 1].x} ${alto} L ${puntos[0].x} ${alto} Z`;
+  const ultimo = puntos[puntos.length - 1];
+
+  return (
+    <div className="rounded-xl border border-[#222] bg-[#161616] p-4">
+      <svg
+        viewBox={`0 0 ${ancho} ${alto}`}
+        role="img"
+        aria-label="Evolución de ingresos del propietario"
+        className="block h-20 w-full"
+      >
+        <defs>
+          <linearGradient id="landing-area" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#b5304a" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#b5304a" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#landing-area)" />
+        <path
+          d={linea}
+          fill="none"
+          stroke="#b5304a"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx={ultimo.x} cy={ultimo.y} r="4" fill="#161616" stroke="#b5304a" strokeWidth="2.5" />
+      </svg>
+    </div>
+  );
+}
+
 const ESTACIONES_POR_PAGINA = 4;
 
 export default function LandingPage() {
@@ -363,6 +472,7 @@ export default function LandingPage() {
 
   const [estaciones, setEstaciones] = useState([]);
   const [paginaEstaciones, setPaginaEstaciones] = useState(0);
+  const [destacados, setDestacados] = useState([]);
 
   useEffect(() => {
     const fetchEstaciones = async () => {
@@ -373,7 +483,16 @@ export default function LandingPage() {
         console.error("Error al cargar las estaciones en la Landing", error);
       }
     };
+    const fetchDestacados = async () => {
+      try {
+        const data = await obtenerVehiculosDestacados(3);
+        setDestacados(data);
+      } catch (error) {
+        console.error("Error al cargar los vehículos destacados", error);
+      }
+    };
     fetchEstaciones();
+    fetchDestacados();
   }, []);
 
   const totalPaginasEstaciones = Math.max(
@@ -398,7 +517,7 @@ export default function LandingPage() {
         className="autospot-noise pointer-events-none fixed inset-0 z-[9999] opacity-50"
       />
 
-      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-[#7b1c2e] bg-[#7b1c2e] px-5 py-4 shadow-md md:px-12">
+      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-autospot-black bg-autospot-black px-5 py-4 shadow-md md:px-12">
         <Logo />
 
         <ul className="hidden list-none items-center gap-8 lg:flex">
@@ -428,8 +547,16 @@ export default function LandingPage() {
           </li>
           <li>
             <a
+              className="text-sm text-white/90 hover:text-white font-medium"
+              href="#conductores"
+            >
+              Para conductores
+            </a>
+          </li>
+          <li>
+            <a
               href={hrefLogin}
-              className="rounded-full bg-[#7b1c2e] px-5 py-2.5 text-sm font-medium !text-[#f5f2ed] transition hover:scale-[1.03] hover:bg-[#5a1420]"
+              className="rounded-full bg-autospot-accent px-5 py-2.5 text-sm font-medium !text-[#f5f2ed] transition hover:scale-[1.03] hover:bg-autospot-accent-2"
             >
               {labelPanel("Iniciar sesión")}
             </a>
@@ -438,7 +565,7 @@ export default function LandingPage() {
 
         <a
           href={hrefLogin}
-          className="rounded-full bg-[#7b1c2e] px-4 py-2 text-xs font-medium !text-[#f5f2ed] lg:hidden"
+          className="rounded-full bg-autospot-accent px-4 py-2 text-xs font-medium !text-[#f5f2ed] lg:hidden"
         >
           {estaAutenticado ? "Mi panel" : "Entrar"}
         </a>
@@ -476,15 +603,6 @@ export default function LandingPage() {
           <div className="animate-autospot-fade-up mt-14 flex gap-9">
             <div>
               <div className="font-display text-2xl font-bold tracking-[-0.03em]">
-                0%
-              </div>
-              <div className="mt-1 text-xs text-autospot-muted">
-                Comisión lanzamiento
-              </div>
-            </div>
-
-            <div>
-              <div className="font-display text-2xl font-bold tracking-[-0.03em]">
                 24hs
               </div>
               <div className="mt-1 text-xs text-autospot-muted">
@@ -496,8 +614,13 @@ export default function LandingPage() {
 
         <div className="relative hidden items-center justify-center overflow-hidden lg:flex">
           <div className="relative z-10 flex flex-col gap-4">
-            {cars.map((car) => (
-              <CarCard key={car.name} car={car} />
+            {destacados.map((vehiculo, index) => (
+              <CarCard
+                key={vehiculo.id}
+                vehiculo={vehiculo}
+                palette={carIconPalette[index % carIconPalette.length]}
+                featured={index === 1}
+              />
             ))}
           </div>
         </div>
@@ -630,7 +753,9 @@ export default function LandingPage() {
         />
 
         <div className="mt-14 grid overflow-hidden rounded-[20px] border border-[#222] md:grid-cols-3">
-          {steps.map((step, index) => (
+          {steps.map((step, index) => {
+            const StepIcon = step.Icon;
+            return (
             <article
               key={step.number}
               className={`cursor-default p-9 transition hover:bg-[#161616] lg:p-11 ${
@@ -643,7 +768,9 @@ export default function LandingPage() {
                 {step.number}
               </div>
 
-              <div className="my-5 text-3xl">{step.icon}</div>
+              <div className="my-5">
+                <StepIcon className="text-autospot-accent-2" sx={{ fontSize: 32 }} />
+              </div>
 
               <h3 className="mb-2.5 font-display text-base font-bold tracking-[-0.02em]">
                 {step.title}
@@ -653,7 +780,8 @@ export default function LandingPage() {
                 {step.description}
               </p>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -734,19 +862,83 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              <div className="flex h-20 items-end gap-1.5 rounded-xl border border-[#222] bg-[#161616] p-4">
-                {[40, 60, 50, 85, 70, 90, 75, 55].map((height, index) => (
-                  <div
-                    key={`${height}-${index}`}
-                    className={`flex-1 rounded-t ${
-                      index === 3 || index === 6
-                        ? "bg-autospot-accent"
-                        : "bg-[#333]"
-                    }`}
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
+              <MiniLineChart />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="conductores"
+        className="bg-autospot-black px-6 py-[72px] text-autospot-white md:px-12 lg:px-[72px] lg:py-[100px]"
+      >
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="order-2 lg:order-1">
+            <div className="mx-auto max-w-sm rounded-[20px] border border-[#222] bg-autospot-white p-3 shadow-autospot-large">
+              <div className="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#0f0f0f]">
+                <DirectionsCarRoundedIcon className="text-white/30" sx={{ fontSize: 72 }} />
+                <span className="absolute left-3 top-3 rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-2.5 py-1 text-[11px] font-bold text-[#166534]">
+                  Disponible
+                </span>
               </div>
+              <div className="px-3 py-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-display text-lg font-bold tracking-[-0.04em] text-autospot-black">
+                    Toyota Corolla 2023
+                  </h3>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-autospot-accent-2">
+                    <StarRoundedIcon sx={{ fontSize: 16 }} /> 4.9
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-autospot-muted">
+                  Sedán • Estación Palermo
+                </p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-autospot-muted">
+                      Precio diario
+                    </p>
+                    <p className="font-display text-xl font-bold text-autospot-black">
+                      $12.000
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-autospot-accent px-5 py-2.5 text-sm font-bold text-autospot-white">
+                    Alquilar
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <SectionHeader
+              tag="Para conductores"
+              title="Alquilá el auto que necesitás, cuando lo necesitás"
+              subtitle="Sin trámites eternos ni encuentros incómodos. Reservás desde la app, retirás en la estación y manejás con tranquilidad."
+              dark
+            />
+
+            <div className="mt-8 grid gap-6 sm:grid-cols-2">
+              {driverFeatures.map((item) => {
+                const ItemIcon = item.Icon;
+                return (
+                  <div key={item.title} className="flex flex-col gap-2">
+                    <ItemIcon className="text-autospot-accent-2" sx={{ fontSize: 30 }} />
+                    <h3 className="font-display text-sm font-bold tracking-[-0.02em] text-autospot-white">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm leading-6 text-[rgba(245,242,237,0.45)]">
+                      {item.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-9">
+              <PrimaryButton href={hrefRegistro}>
+                {labelPanel("Buscar autos")} →
+              </PrimaryButton>
             </div>
           </div>
         </div>
@@ -764,12 +956,16 @@ export default function LandingPage() {
         />
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {trustItems.map((item) => (
+          {trustItems.map((item) => {
+            const ItemIcon = item.Icon;
+            return (
             <article
               key={item.title}
               className="rounded-2xl border border-autospot-border bg-autospot-white px-6 py-9 text-center transition hover:-translate-y-1"
             >
-              <div className="mb-3.5 text-4xl">{item.icon}</div>
+              <div className="mb-3.5">
+                <ItemIcon className="text-autospot-accent" sx={{ fontSize: 38 }} />
+              </div>
 
               <h3 className="mb-2 font-display text-sm font-bold tracking-[-0.02em]">
                 {item.title}
@@ -779,7 +975,8 @@ export default function LandingPage() {
                 {item.description}
               </p>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 
