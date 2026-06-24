@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -361,8 +362,8 @@ const CatalogoVehiculosPage = () => {
       )}
 
       {/* Modal Búsqueda Avanzada */}
-      {modalAbierto && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+      {modalAbierto && createPortal(
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl sm:p-8">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="font-display text-2xl font-black tracking-[-0.04em] text-autospot-black">
@@ -500,7 +501,8 @@ const CatalogoVehiculosPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
