@@ -368,7 +368,11 @@ def obtener_detalle_vehiculo_catalogo(
             detail=str(exc),
         ) from exc
 
-    if vehiculo.estado_registro != "HABILITADO" or not vehiculo.disponible:
+    if (
+        vehiculo.estado_registro != "HABILITADO"
+        or not vehiculo.disponible
+        or verificar_alquileres_activos(db=db, vehiculo_id=vehiculo_id)
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El vehículo no está disponible para alquiler.",

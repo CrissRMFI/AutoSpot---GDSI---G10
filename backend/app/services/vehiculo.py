@@ -614,6 +614,12 @@ def listar_vehiculos_disponibles(
         Vehiculo.disponible == True,
         Vehiculo.precio_por_dia.isnot(None),
         Vehiculo.precio_por_dia > 0,
+        ~db.query(Reserva.id)
+        .filter(
+            Reserva.vehiculo_id == Vehiculo.id,
+            Reserva.estado.in_(ESTADOS_RESERVA_QUE_BLOQUEAN_DISPONIBILIDAD),
+        )
+        .exists(),
     )
 
     if puntuacion_minima is not None:
